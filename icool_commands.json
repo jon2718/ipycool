@@ -1,0 +1,62 @@
+{"ICOOL_COMMANDS" :
+		{"CONT" : {
+					"BETAPERP" 	: ["Beta value to be used in calculating amplitude value A^2", "R", null],
+		         	"BGEN" 		: ["If .true. => generate initial beam particles, otherwise read input from FOR003.DAT", "L", true],
+		 			"BUNCHCUT" 	: ["Maximum time difference allowed between a particle and the reference particle[s]2", "R", 1E6],
+					"BZFLDPRD" 	: ["Bz for solenoid at location of production plane (0.) This is used for output to file for009.dat and for canonical angular momentum correction.", "R", null],
+	 		   	 	"DECTRK" 	: ["If .true. => continue tracking daughter particle following decay.", "L", "False"],
+		 	  	  	"DIAGREF"	: ["If .true. => specify pZ and t relative to the reference particle for ICOOL internal diagnostics", "L", "False"],
+		 	 	   	"EPSF" 		: ["desired tolerance on fractional field variation, energy loss, and multiple scattering per step", "R", 0.05],
+		 			"EPSREQ" 	: ["Required tolerance on error in tracking parameters. This parameter is only used if varstep = true", "R", 1E-3],
+					"EPSSTEP" 	: ["Desired tolerance in spatial stepping to reach each destination plane [m]", "R", 1E-6],
+				  	"FFCR" 		: ["If .true. => inserts form feed and carriage returns in the output log file so there are two plots per page starting at the top of a page", "L", false],
+					"FORCERP" 	: ["if .true. => set x, y, Px, and Py for reference particle to 0 for each new REFP command and for each ACCEL region with phasemodel=4.", "L", true]			  
+				  
+				}
+		  , 
+		 "BMT" : {
+			 		"NBEAMTYP" 	:  ["# of beam types, e.g. particles of different mass {1-5}", "I", 1],
+					"BMALT" 	:  ["If true => flip sign of alternate particles when BGEN = .true.", "L", false],
+					"PARTNUM" 	:  ["Particle Number", "I", null],
+					"BEAMTYP" 	:  ["(I) beam type {magnitude = mass code; sign = charge} 1: e 2: μ 3: π 4: K 5: p 6: d 7: He3 8: Li7", "I", null],		
+					"FRACBT" 	:  ["Fraction of beam of this type {0-1} The sum of all fracbt(i) should =1.0", "R", null],
+					"BDISTYP" 	:  ["Beam distribution type {1:Gaussian 2:uniform circular segment}", "I", null],
+					"CORRTYP" 	:  ["1 angular momentum appropriate for constant solenoid field, 2 Palmer amplitude correlation, 3 rf bucket, small amplitude ellipse, 4 rf bucket, small amplitude separatrix, 5 rf bucket, large amplitude separatrix, 6 Twiss parameters in x Px, 7 Twiss parameters in y Py, 8 (not used), 9 equal time in solenoid, 10 Balbekov version of amplitude-energy, 11 dispersion", "I", null]
+			
+				},
+			
+		"INTS": {
+					"LDEDX" 	:  ["If .true. => simulate mean ionization energy loss dE/dx", "L", true],
+					"LSCATTER" 	:  ["If .true. => simulate multiple scattering", "L", true],
+					"LSTRAG" 	:  ["If .true. => simulate energy straggling", "L", true],
+					"LDECAY" 	:  ["If .true. => simulate particle decays", "L", true],
+					"LDRAY" 	:  ["If .true. => simulate discrete energy loss from delta rays (true).  When LDRAY is true, the program forces the parameters DELEV=2 and STRAGLEV=5", "L", true],
+					"LINTERACT" :  ["If .true. => simulate inelastic nuclear interactions of pions, kaons and protons", "L", false],
+					"LSPACE" 	:  ["If .true. => consider effects of space charge", "L", false],
+					"LELMS" 	:  ["If .true. => use ELMS model2 for energy loss and scattering (false). When this command is true an external file ELMSCOM.TXT must be provided. ELMS only works in regions containing hydrogen (the SCATLEV model is used in other regions). For hydrogen regions use a stepsize around 5 mm for maximum accuracy. A stepsize of 1 mm gives significantly worse results.", "L", false],
+					"LSAMCS" 	:  ["If .true. => use SAMCS model3 of correlated straggling and scattering", "L", false],
+					"DELEV" 	:  ["Model level for dEdx (2) 1: Bethe-Bloch, 2: Bethe-Bloch with density effect, 3: restricted Bethe-Bloch with density effect4: test mode with dE = const * dz, independent of velocity and angle", "I", 2],
+					"SCATLEV" 	:  ["Model level for multiple scattering 1: Gaussian(0, Rossi-Greisen), Gaussian(0, Highland), 3: Gaussian(0, Lynch-Dahl), 4: Bethe version of Moliere distribution (with Rutherford limit), 5: Rutherford, 6: Fano (with Rutherford limit), 7: Tollestrup (with Rutherford limit)", "I", 6],
+					"STRAGLEV" 	:  ["Model level for straggling 1: Gaussian(Bohr), 2: Landau distribution, 3: (not used), 4: Vavilov distribution (with appropriate Landau and Gaussian limits determined by the program), 5: restricted energy fluctuations from continuous processes with energy below DCUTx.", "I", 4],
+					"DECLEV" 	:  ["Model level for particle decays 1: uniform polar decay angle for daughter particle in parent rest frame, 2: 90 degree polar decay angle for daughter particle in parent rest frame, 3: uniform polar decay angle for daughter particle in parent rest frame; no mu-->e decays., 4: 90 degree polar decay angle for daughter particle in parent rest frame; no mu->e decays, 5: uniform polar decay angle for daughter particle in parent rest frame; no mu-->e decays;save accumulated fractional decay length in POL(1).", "I", 1],
+					"INTLEV" 	:  ["Model level for nuclear interactions 1: stop tracking after an interaction, 2: stop tracking after an interaction, except for protons which generate a pion from the Wang distribution.", "I", 1],
+					"SPACELEV" 	:  ["Model level for space charge 1: image charge of moving bunch in cylindrical, metallic can, 2: crude transverse space charge for free space applied to all regions, 3: Gaussian bunch space charge (transverse and longitudinal) for free space applied to allregions, 4: same as model 3 for single bunch in a bunch train. All the particles are superimposed", "I", 3]
+					
+					
+				}
+				
+		
+},
+"REGION_COMMANDS": 
+		{"REGULAR" :
+
+				{	
+					"SECTION" 	:  ["Start of cooling section region definition; the data must end with an ENDSECTION ; it can enclose any number of other commands. If it is desired to repeat the section definitions, the control variable NSECTIONS should be set >1 and a BEGS command is used to define where to start repeating.", null, null],
+					"BEGS" 		:  ["This marks the beginning of the part of region definitions that will be repeated with the NSECTIONS control variable. This command doesn’t do anything if NSECTIONS = 1.", null, null]
+				}
+				
+								
+			
+		}
+	   
+}
