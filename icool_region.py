@@ -37,9 +37,21 @@ class ICoolInput():
     PseudoRegion command objects include: 
         Aperture, Cutv, Denp, Dens, Disp, Dummy, Dvar, Edge, Grid, Output, Refp, Ref2, Reset, Rkick,
         Rotate, Taper, Tilt, Transport, Background, Bfield, ! and & 
+        
+    title is a problem title object.
+    cont is a control variables object.
+    bmt is a beam generation variables object.
+    ints is a physics interactions control variables object.
+    nhs is a histogram defintion variables object.
+    nsc is a scatterplot definition variables object.
+    nzh is a z-history defintion variables object.
+    nrh is a r-history defintion variables object.
+    nem is an emittance plane definition variables object.
+    ncv is a covariance plane definition variables object.
+    sec is a region definition variables object, which contains all region definitions.
     
     """
-    def __init__(self, title=None, cont=None, bmt=None, ints=None, nhs=None, nsc=None, nzh=None, nrh=None, nem=None, ncv=None, reg=None):
+    def __init__(self, title=None, cont=None, bmt=None, ints=None, nhs=None, nsc=None, nzh=None, nrh=None, nem=None, ncv=None, sec=None, name=None, metadata=None):
         self.title=title
         self.cont=cont
         self.bmt=bmt
@@ -50,15 +62,34 @@ class ICoolInput():
         self.nrh=nrh
         self.nem=nem
         self.ncv=ncv
-        self.reg=reg
+        self.sec=sec
+        
+    
 
 class Cont():
-    def __init__(self, cont_dict):
-        #Insert dictionary parsing code here        
+    def __init__(self, betaperp=None, bgen=None, bunchcut=None, bzfldprd=None, dectrk=None, diagref=None,
+                diagref=None, epsf=None, epsreq=None, epsstep=None, ffcr=None, forcerp=None, fsav=None, 
+                fsavset=None, f9dp=None, goodtrack=None, izfile=None, magconf=None, mapdef=None, neighbor=None,
+                neutrino=None, nnudk=None, npart=None, nprnt=None, npskip=None, nsections=None, ntuple=None,
+                nthmin=None, nuthmax=None, outpu1=None, phantom=None, phasemodel=None, prlevel=None, prnmax=None,
+                pzmintrk=None, rfdiag=None, rfphase=None, rnseed=None, rtuple=None, rtuplen=None, run_env=None,
+                scalestep=None, spin=None, spinmatter=None, spintrk=None, stepmax=None, stepmin=None, steprk=None,
+                summary=None, termout=none, timelim=None, varstep=None, kwargs**):
+ 
+     def __str__(self):
+         return '[Control variables: ]' 
+         
+     def __repr__(self):
+         return '[Control variables: ]'
         
 class Title():
     def __init__(self, title):
         self.title=title
+    def __str__(self):
+        return '[Problem Title: %]' %self.title
+    def __repr__(self):
+        return '[Problem Title: %]' %self.title
+
     
     def gen(f):
         f.write(self.title)
@@ -253,20 +284,36 @@ class Sregion(RegularRegion):
     7) GPARM (R) 10 Parameters describing material geometry.
     These 10 parameters must be on one input line (see specific material type below)
     """
-    def __init__(self,name, slen, nrreg, zstep, r_subregion_list):
+    def __init__(self, name, slen, nrreg, zstep, r_subregion_list=None):
         self.slen=slen
         self.nrreg=nrreg
         self.zstep=zstep
         self.subregions=[]
         region.__init(self, name)
     
-    def add_subregion(subr):
+    def add_subregion(irreg, rlow, rhigh, field, material):
+        subr=[]
+        subr.append(irreg)
+        subr.append(rlow)
+        subr.append(rhigh)
+        subr.append(field)
+        subr.append(material)
         self.subregions.append(subr)
            
-    def gen(f):
-        ig=self.icool_gen
+    def gen(file):
+        file.write('\n')
         f.write('SREGION')
-        ig.cr()
+        file.write('\n')
+        file.write(slen)
+        file.write(' ')
+        file.write(nrreg)
+        file.write(' ')
+        file.write(zstep)
+        file.write('\n')
+        for rsubr in subregions:
+            
+    
+
         
 class Field:
     """
@@ -277,12 +324,17 @@ class Field:
     
     FPARM - 15 parameters describing the field.
     """
-    def __init__(self, ftag, field_parameters):
+    def __init__(self, ftag, fparm):
         self.ftag = ftag
-        self.fparm=field_parameters
+        self.fparm=fparm
 
-    def gen(string):
-        print
+    def gen(file):
+        file.write('\n')
+        file.write(ftag)
+        file.write('\n')
+        for s in fparm:
+            file.write(s)
+            file.write(" ") 
         
 class Material:
     """
@@ -311,15 +363,23 @@ class Material:
     
     CBLOCK cylindrical block
     10*0.
-    
+    ...
    
     """
-    def __init__(self, mtag, material_parameters):
+    def __init__(self, mtag, mgeom, gparm):
         self.mtag = mtag
-        self.mparm=material_parameters
+        self.mgeom=mgeom
+        self.mparm=gparm
 
-    def gen(string):
-        print
+    def gen(file):
+        file.write('\n')
+        file.write(mtag)
+        file.write('\n')
+        file.write(mgeom)
+        file.write('\n')
+        for s in mparm:
+            file.write(s)
+            file.write(" ")
             
 class Accel(Field):
     """ACCE(L) linear accelerator fields
@@ -553,16 +613,17 @@ class Accel(Field):
     3 gradient on-axis at center of gap [MV/m]
     4 phase shift [deg] {0-360}.
     5 flag for hard edge focusing
-    0: both entrance and exit focusing
-    1: exit focusing only
-    2: entrance focusing only
-    3: no edge focusing
+        0: both entrance and exit focusing
+        1: exit focusing only
+        2: entrance focusing only
+        3: no edge focusing
     
 """
     def __init__(self, model, field_parameters):
-        field.__init__(self, 'ACCEL', field_parameters)
-        self.model=model        
-    def gen(string):
+        self.model=model 
+        field.__init__(self, 'ACCEL', model, field_parameters)
+               
+    def gen(file):
         print
          
          
@@ -665,4 +726,30 @@ class Sheet(Field):
          
      def gen(string):
          print
+         
+         
+class Error(Exception):
+    """Base class for ICOOL input exceptions."""
+    pass
+
+class InputError(Error):
+    """Exception raised for errors in the input.
+
+    Attributes:
+        expr -- input expression in which the error occurred
+        msg  -- explanation of the error
+    """
+
+    def __init__(self, expr, msg):
+        self.expr = expr
+        self.msg = msg
+
+class IncorrectType(InputError):
+    """Exception raised for incorrect type in the input."""
+    def __init__(self, expr, expected_type, actual_type):
+        msg="Expected "+expected_type+" but instead got "+actual_type
+        InputError.__init__(expr, msg)
+    
+    
+class FieldError(InputError):
         
