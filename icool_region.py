@@ -1,16 +1,15 @@
 
-class icool_gen:
-    """Generate ICOOL for001.dat"""
-    def __init__(self, title, section, path):
-        self.title=title
-        self.section=section
+class ICoolGen:
+    """Generate ICOOL for001.dat
+    Takes an ICoolInput object and generates an ICOOL for001.dat file.
+    """
+    def __init__(self, icool_input, path='.'):
         self.file=path+'/'+'for001.dat'
-
+        self.icool_input=icool_input
+      
     def gen():
         f=open(file, 'w')
-        self.title.gen(f)
-        self.cr(f)
-        self.section.gen(f)
+        self.icool_input.gen()
         f.close()
 
     def cr(f):
@@ -65,7 +64,99 @@ class ICoolInput():
         self.ncv=ncv
         self.sec=sec
 
+class Region():
+    def __init__(self, name=None, metadata=None):
+        self.name = name
+        self.metadata=metadata
+        
+    def __str__(self):
+        return '[A Region can be either a RegularRegion or PseudoRegion.]'
 
+    def __repr__(self):
+        return '[A Region can be either a RegularRegion or PseudoRegion.]'
+
+class RegularRegion(Region):
+    """
+    RegularRegion commands include: SECTION, BEGS, REPEAT, CELL, SREGION, ENDREPEAT, ENDCELL,
+    and ENDCELL.
+    """
+    def __init__(self, name=None, metadata=None):
+        Region.__init__(self, name, metadata)
+
+    def __str__(self):
+        return '[A RegularRegion can be either a SECTION, BEGS, REPEAT, CELL, SREGION, ENDREPEAT, ENDCELL,\
+                or ENDCELL.]'
+
+    def __repr__(self):
+        return '[A RegularRegion can be either a SECTION, BEGS, REPEAT, CELL, SREGION, ENDREPEAT, ENDCELL,\
+                or ENDCELL.]'
+
+
+class PseudoRegion(Region):
+    """
+    PseudoRegion commands include: APERTURE, CUTV, DENP, DENS, DISP, DUMMY, DVAR, EDGE, GRID
+    OUTPUT, REFP, REF2, RESET, RKICK, ROTATE, TAPER, TILT, TRANSPORT, BACKGROUND, BFIELD, ENDB, ! or &
+    """
+    def __init__(self, name=None, metadata=None):
+        Region.__init__(self, name, metadata)
+        
+    def __str__(self):
+        return '[A PseudoRegion can be either a APERTURE, CUTV, DENP, DENS, DISP, DUMMY, DVAR, EDGE, GRID\
+                OUTPUT, REFP, REF2, RESET, RKICK, ROTATE, TAPER, TILT, TRANSPORT, BACKGROUND, BFIELD, ENDB, ! or &]'
+
+    def __repr__(self):
+        return '[A PseudoRegion can be either a APERTURE, CUTV, DENP, DENS, DISP, DUMMY, DVAR, EDGE, GRID\
+                OUTPUT, REFP, REF2, RESET, RKICK, ROTATE, TAPER, TILT, TRANSPORT, BACKGROUND, BFIELD, ENDB, ! or &]'
+
+
+class Section(RegularRegion):
+    """
+    SECTION Start of cooling section region definition.
+    The data must end with an ENDSECTION.   It can enclose any number of other commands. 
+    If it is desired to repeat the section definitions, the control variable NSECTIONS should be
+    set >1 and a BEGS command is used to define where to start repeating.
+    """
+    def __init__(self, nsections, command_list=None, name=None, metadata=None):
+        RegularRegion.__init__(self, name, metadadta)
+        self.nsections=nsections
+        for command in command_list:
+            pass
+
+    def add_command(command):
+        print
+
+    def gen(file):
+        file.write('\n')
+        file.write('SECTION')
+        for command in self.commands:
+            command.gen(f)
+        file.write('\n')
+        file.write('ENDSECTION')
+
+class Begs(RegularRegion):
+    def __init__(self):
+        RegularRegion.__init(self, None, None)
+
+    def gen():
+        region.gen('BEGS')
+
+class Repeat(RegularRegion):
+    def __init__(self, num_repeats, region_command_list):
+        self.region_commands=region_commands
+        self.num_repeats=num_repeats
+        RegularRegion.__init__(self, None, None)
+
+    def add_region_command(command):
+        print
+
+    def add_region_command_at(command, insert_point):
+        print
+
+    def remove_region_command_at(delete_point):
+        print
+
+    def gen():
+        region.gen('REPEAT')
 
 class Cont():
     def __init__(self, betaperp=None, bgen=None, bunchcut=None, bzfldprd=None, dectrk=None, 
@@ -99,23 +190,6 @@ class Title():
     def gen(file):
         file.write(self.title)
 
-
-class Region():
-    def __init__(self, name=None, metadata=None):
-        self.name = name
-        self.metadata=metadata
-
-    def gen(string_data):
-        print
-
-class RegularRegion(Region):
-    def __init__(self, name=None, metadata=None):
-        Region.__init__(self, name, metadata)
-
-
-class PseudoRegion(Region):
-    def __init__(self, name=None, metadata=None):
-        Region.__init__(self, name, metadata)
 
 class Background(PseudoRegion):
     def __init__(self, name=None, metadata=None):
@@ -178,58 +252,6 @@ class Edge(PseudoRegion):
         self.model=model
         self.model_parameters=model_parameters
 
-
-class Comment(PseudoRegion):
-    def __init__(self, comment):
-        PseudoRegion.__init__(self, None, None)
-        self.comment = comment
-
-
-class Section(RegularRegion):
-    """SECTION Start of cooling section region definition.
-
-    The data must end with an ENDSECTION.   It can enclose any number of other commands. If it is desired to repeat the section definitions, the
-    control variable NSECTIONS should be set >1 and a BEGS command is used to define where to start repeating.
-    """
-    def __init__(self, command_dict, nsections):
-        PseudoRegion.__init__(self, None, None)
-        self.nsections=nsections
-        #parse command_dict
-
-    def add_command(command):
-        print
-
-    def gen(f):
-        region.gen('SECTION')
-        for command in self.commands:
-            command.gen(f)
-        region.gen('ENDSECTION')
-
-class Begs(RegularRegion):
-    def __init__(self):
-        RegularRegion.__init(self, None, None)
-
-    def gen():
-        region.gen('BEGS')
-
-class Repeat(RegularRegion):
-    def __init__(self, num_repeats, region_command_list):
-        self.region_commands=region_commands
-        self.num_repeats=num_repeats
-        RegularRegion.__init__(self, None, None)
-
-    def add_region_command(command):
-        print
-
-    def add_region_command_at(command, insert_point):
-        print
-
-    def remove_region_command_at(delete_point):
-        print
-
-    def gen():
-        region.gen('REPEAT')
-
 class Cell(RegularRegion):
     """CELL Start of a repeating group of region commands; the data must end with an ENDCELL command.
     The cell loop can enclose any number of commands under REPEAT plus REPEAT and ENDREPEAT commands.
@@ -258,7 +280,7 @@ class Cell(RegularRegion):
     def gen():
         region.gen('CELL')
 
-class Sregion(RegularRegion):
+class SRegion(RegularRegion):
     """
     SREGION - Start of new s-region. Describes field and material properties.
 
@@ -733,7 +755,11 @@ class Sheet(Field):
 
     def gen(string):
         print
-
+        
+class Comment(PseudoRegion):
+    def __init__(self, comment):
+        PseudoRegion.__init__(self, None, None)
+        self.comment = comment
 
 class Error(Exception):
     """Base class for ICOOL input exceptions."""
