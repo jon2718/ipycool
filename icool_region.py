@@ -52,6 +52,7 @@ class ICoolInput():
 
     """
     def __init__(self, title=None, cont=None, bmt=None, ints=None, nhs=None, nsc=None, nzh=None, nrh=None, nem=None, ncv=None, sec=None, name=None, metadata=None):
+        check_input_args(title, cont, bmt, ints, nhs, nsc, nzh, nrh, nem, ncv, sec, name, metadata)
         self.title=title
         self.cont=cont
         self.bmt=bmt
@@ -63,6 +64,60 @@ class ICoolInput():
         self.nem=nem
         self.ncv=ncv
         self.sec=sec
+        self.name=name
+        self.metadata=metadata
+        #What is the minimum required set of commands?
+    
+    def add_title(title):
+        self.title=title
+    
+    def add_cont(cont):
+        self.cont=cont
+    
+    def add_sec(sec):
+        self.sec=sec
+        
+    def gen(file):
+        self.title.gen()
+        self.cont.gen()
+        self.sec.gen()
+
+
+class Title():
+    def __init__(self, title):
+        self.title=title
+    def __str__(self):
+        return '[Problem Title: %]' %self.title
+    def __repr__(self):
+        return '[Problem Title: %]' %self.title
+
+    def gen(file):
+        file.write(self.title)
+
+class Cont(object):
+    def __init__(self, betaperp=None, bgen=None, bunchcut=None, bzfldprd=None, dectrk=None, 
+                diagref=None, epsf=None, epsreq=None, epsstep=None, ffcr=None, forcerp=None, fsav=None,
+                fsavset=None, f9dp=None, goodtrack=None, izfile=None, magconf=None, mapdef=None, neighbor=None,
+                neutrino=None, nnudk=None, npart=None, nprnt=None, npskip=None, nsections=None, ntuple=None,
+                nthmin=None, nuthmax=None, outpu1=None, phantom=None, phasemodel=None, prlevel=None, prnmax=None,
+                pzmintrk=None, rfdiag=None, rfphase=None, rnseed=None, rtuple=None, rtuplen=None, run_env=None,
+                scalestep=None, spin=None, spinmatter=None, spintrk=None, stepmax=None, stepmin=None, steprk=None,
+                summary=None, termout=None, timelim=None, varstep=None, **kwargs):
+        for command in kwargs:
+            if valid_command(cont_dict, command, 'CONT')==-1:
+                pass
+                #raise ValueError
+            
+
+        def __str__(self):
+            return '[Control variables: ]'
+
+        def __repr__(self):
+            return '[Control variables: ]'
+
+        def gen(file):
+            file.write("\n")
+            file.write("&cont")
 
 class Region():
     def __init__(self, name=None, metadata=None):
@@ -157,39 +212,6 @@ class Repeat(RegularRegion):
 
     def gen():
         region.gen('REPEAT')
-
-class Cont():
-    def __init__(self, betaperp=None, bgen=None, bunchcut=None, bzfldprd=None, dectrk=None, 
-                diagref=None, epsf=None, epsreq=None, epsstep=None, ffcr=None, forcerp=None, fsav=None,
-                fsavset=None, f9dp=None, goodtrack=None, izfile=None, magconf=None, mapdef=None, neighbor=None,
-                neutrino=None, nnudk=None, npart=None, nprnt=None, npskip=None, nsections=None, ntuple=None,
-                nthmin=None, nuthmax=None, outpu1=None, phantom=None, phasemodel=None, prlevel=None, prnmax=None,
-                pzmintrk=None, rfdiag=None, rfphase=None, rnseed=None, rtuple=None, rtuplen=None, run_env=None,
-                scalestep=None, spin=None, spinmatter=None, spintrk=None, stepmax=None, stepmin=None, steprk=None,
-                summary=None, termout=None, timelim=None, varstep=None, **kwargs):
-
-        def __str__(self):
-            return '[Control variables: ]'
-
-        def __repr__(self):
-            return '[Control variables: ]'
-
-        def gen(file):
-            file.write("\n")
-            file.write("&cont")
-
-class Title():
-    def __init__(self, title):
-        self.title=title
-    def __str__(self):
-        return '[Problem Title: %]' %self.title
-    def __repr__(self):
-        return '[Problem Title: %]' %self.title
-
-
-    def gen(file):
-        file.write(self.title)
-
 
 class Background(PseudoRegion):
     def __init__(self, name=None, metadata=None):
@@ -772,18 +794,43 @@ class InputError(Error):
         expr -- input expression in which the error occurred
         msg  -- explanation of the error
     """
-
     def __init__(self, expr, msg):
         self.expr = expr
         self.msg = msg
+    def __str__(self):
+        string=msg+' '+expr
+        return repr(self.string)
 
 class IncorrectType(InputError):
     """Exception raised for incorrect type in the input."""
     def __init__(self, expr, expected_type, actual_type):
+        InputError.__init__(expr, 'Incorrect type.')
+    def _str__(self):
         msg="Expected "+expected_type+" but instead got "+actual_type
-        InputError.__init__(expr, msg)
+        return repr(self.msg)
 
-
+class UnknownCommand(InputError):   
+      """Exception raised for unknown type in the input."""
+      def __init__(self, expr, command, namelist):
+          InputError.__init__(self, expr, 'Unknown command.')
+          self.command=command
+          self.namelist=namelist
+          
+      def __str__(self):
+          msg='Unknown command: '+self.command+' in namelist: '+self.namelist
+          return repr(msg)
+          
+class IncorrectNamelistObject(InputError):   
+      """Exception raised for unknown type in the input."""
+      def __init__(self, expr, namelist, type):
+          InputError.__init__(self, expr, 'Incorrect Namelist object.')
+          self.namelist=namelist
+          self.type=type
+          
+      def __str__(self):
+          msg='Incorrect Namelist object. Expected type: '+self.type+' but got:' +str(type(self.namelist))
+          return repr(msg)
+      
 class FieldError(InputError):
     pass
 
@@ -812,3 +859,29 @@ cont_dict =\
                                               possible to get the initial distribution of particles that successfully make it to the\
                                               end of the simulation by setting the plane= -1.'}
                 }
+
+def valid_command(command_dict, command, namelist):
+    try:
+        if command in command_dict.keys():
+            return 0
+        else:
+            raise UnknownCommand('Unknown command', command, namelist)
+    except UnknownCommand as e:
+        print e
+        print 'Valid commands are:\n'
+        for key in command_dict:
+            print key
+        return -1
+        
+def check_input_args(title, cont, bmt, ints, nhs, nsc, nzh, nrh, nem, ncv, sec, name, metadata):
+    try:
+        cl=str(cont.__class__)
+        dot=cl.find('.')
+        if cl[dot+1:dot+5]=='Cont':
+            return 0
+        else:
+            raise IncorrectNamelistObject('Incorrect Namelist Object', cont, 'Cont')
+    except IncorrectNamelistObject as e:
+        print e
+        return -1
+       
