@@ -1,5 +1,5 @@
-
-class ICoolGen:
+import sys
+class ICoolGen(object):
     """Generate ICOOL for001.dat
     Takes an ICoolInput object and generates an ICOOL for001.dat file.
     """
@@ -7,9 +7,9 @@ class ICoolGen:
         self.file=path+'/'+'for001.dat'
         self.icool_input=icool_input
       
-    def gen():
-        f=open(file, 'w')
-        self.icool_input.gen()
+    def gen(self):
+        f=open(self.file, 'w')
+        self.icool_input.gen(f)
         f.close()
 
     def cr(f):
@@ -23,7 +23,7 @@ class ICoolGen:
             f.write(item)
             self.sp()
 
-class ICoolInput():
+class ICoolInput(object):
     """This is the actual generated ICoolInput from command objects
     Command objects include:
     Title, Cont, Bmt, Ints, Nhs, Nsc, Nzh, Nrh, Nem, Ncv and region command objects.
@@ -77,13 +77,33 @@ class ICoolInput():
     def add_sec(sec):
         self.sec=sec
         
-    def gen(file):
-        self.title.gen()
-        self.cont.gen()
-        self.sec.gen()
+    def gen(self, file):
+        if self.title!=None:
+            self.title.gen(file)
+        if self.cont!=None:   
+            self.cont.gen(file)
+        if self.bmt!=None:
+            self.bmt.gen(file)
+        if self.ints!=None:   
+            self.ints.gen(file)
+        if self.nhs!=None: 
+            self.nhs.gen(file)
+        if self.nsc!=None:
+            self.nsc.gen(file)
+        if self.nzh!=None:   
+            self.nzh.gen(file)
+        if self.nrh!=None: 
+            self.nrh.gen(file)
+        if self.nem!=None:
+            self.nem.gen(file)
+        if self.ncv!=None:   
+            self.ncv.gen(file)
+        if self.sec!=None: 
+            self.sec.gen(file)
+        
 
 
-class Title():
+class Title(object):
     def __init__(self, title):
         self.title=title
     def __str__(self):
@@ -91,35 +111,44 @@ class Title():
     def __repr__(self):
         return '[Problem Title: %]' %self.title
 
-    def gen(file):
+    def gen(self, file):
         file.write(self.title)
 
 class Cont(object):
-    def __init__(self, betaperp=None, bgen=None, bunchcut=None, bzfldprd=None, dectrk=None, 
-                diagref=None, epsf=None, epsreq=None, epsstep=None, ffcr=None, forcerp=None, fsav=None,
-                fsavset=None, f9dp=None, goodtrack=None, izfile=None, magconf=None, mapdef=None, neighbor=None,
-                neutrino=None, nnudk=None, npart=None, nprnt=None, npskip=None, nsections=None, ntuple=None,
-                nthmin=None, nuthmax=None, outpu1=None, phantom=None, phasemodel=None, prlevel=None, prnmax=None,
-                pzmintrk=None, rfdiag=None, rfphase=None, rnseed=None, rtuple=None, rtuplen=None, run_env=None,
-                scalestep=None, spin=None, spinmatter=None, spintrk=None, stepmax=None, stepmin=None, steprk=None,
-                summary=None, termout=None, timelim=None, varstep=None, **kwargs):
-        for command in kwargs:
-            if valid_command(cont_dict, command, 'CONT')==-1:
-                pass
+    betaperp={'default': None,  'desc': '(R) beta value to use in calculating amplitude variable A^2', 'type':'Real'}
+    bgen={'default': True,  'desc': '(L) if .true. => generate initial beam particles, otherwise read input from FOR003.DAT (true)', 'type': 'Logical'}
+    
+    def __init__(self, **kwargs):
+        for command, value in kwargs.items():
+            if valid_command(cont_dict, command, value, 'CONT')==-1:
+                print 'Valid commands are:\n'
+                for key in cont_dict:
+                    print key,',', 
+                print
+                sys.exit(0)
                 #raise ValueError
+        self.cont_commands=kwargs
+                      
+
+    def __str__(self):
+         return '[Control variables: ]'
+
+    def __repr__(self):
+        return '[Control variables: ]'
+
+    def gen(self, file):
+        file.write("\n")
+        file.write("&cont")
+        file.write("\n")
+        for key, value in self.cont_commands.items():
+            file.write(key)
+            file.write('=')
+            file.write(str(value))
+            file.write("\n")
+        file.write("/")
             
 
-        def __str__(self):
-            return '[Control variables: ]'
-
-        def __repr__(self):
-            return '[Control variables: ]'
-
-        def gen(file):
-            file.write("\n")
-            file.write("&cont")
-
-class Region():
+class Region(object):
     def __init__(self, name=None, metadata=None):
         self.name = name
         self.metadata=metadata
@@ -180,7 +209,7 @@ class Section(RegularRegion):
     def add_command(command):
         print
 
-    def gen(file):
+    def gen(self, file):
         file.write('\n')
         file.write('SECTION')
         for command in self.commands:
@@ -192,7 +221,7 @@ class Begs(RegularRegion):
     def __init__(self):
         RegularRegion.__init(self, None, None)
 
-    def gen():
+    def gen(self, file):
         region.gen('BEGS')
 
 class Repeat(RegularRegion):
@@ -210,7 +239,7 @@ class Repeat(RegularRegion):
     def remove_region_command_at(delete_point):
         print
 
-    def gen():
+    def gen(self, file):
         region.gen('REPEAT')
 
 class Background(PseudoRegion):
@@ -299,7 +328,7 @@ class Cell(RegularRegion):
         print
 
 
-    def gen():
+    def gen(self, file):
         region.gen('CELL')
 
 class SRegion(RegularRegion):
@@ -352,7 +381,7 @@ class SRegion(RegularRegion):
         subr.append(material)
         self.subregions.append(subr)
 
-    def gen(file):
+    def gen(self, file):
         file.write('\n')
         f.write('SREGION')
         file.write('\n')
@@ -379,7 +408,7 @@ class Field:
         self.ftag = ftag
         self.fparm=fparm
 
-    def gen(file):
+    def gen(self, file):
         file.write('\n')
         file.write(ftag)
         file.write('\n')
@@ -422,7 +451,7 @@ class Material:
         self.mgeom=mgeom
         self.mparm=gparm
 
-    def gen(file):
+    def gen(self, file):
         file.write('\n')
         file.write(mtag)
         file.write('\n')
@@ -674,7 +703,7 @@ class Accel(Field):
         self.model=model
         field.__init__(self, 'ACCEL', model, field_parameters)
 
-    def gen(file):
+    def gen(self, file):
         print
 
 
@@ -767,7 +796,7 @@ class Sol(Field):
         self.model=model
         field.__init__(self, 'SOL', model, field_parameters)
 
-    def gen(file):
+    def gen(self, file):
         print
 
 class Sheet(Field):
@@ -775,7 +804,7 @@ class Sheet(Field):
         self.model=model
         field.__init__(self, 'SHEET', field_parameters)
 
-    def gen(string):
+    def gen(self, file):
         print
         
 class Comment(PseudoRegion):
@@ -837,40 +866,101 @@ class FieldError(InputError):
 
 cont_dict =\
             {
-                'betaperp'      : {None,  '(R) beta value to use in calculating amplitude variable A^2'},
-                'bgen'          : {True,  '(L) if .true. => generate initial beam particles, otherwise read input from FOR003.DAT (true)'},
-                'bunchcut'      : {1E6,   '(R) maximum time difference allowed between a particle and the reference particle [s]'},
+                'betaperp'      : {'default': None,  'desc': '(R) beta value to use in calculating amplitude variable A^2', 'type':'Real'},
+                
+                'bgen'          : {'default': True,  'desc': '(L) if .true. => generate initial beam particles, otherwise read input from FOR003.DAT (true)', 
+                                'type': 'Logical'},
+                
+                'bunchcut'      : {1E6,   '(R) maximum time difference allowed between a particle and the reference particle [s]', 'Real'},
                 'bzfldprd'      : {None,  '(R) Bz for solenoid at location of production plane (0.) This is used for output to file\
-                                               for009.dat and for canonical angular momentum correction.'},
-                'dectrk'        : {False, '(L) if .true. => continue tracking daughter particle following decay'},
+                                               for009.dat and for canonical angular momentum correction.', 'Real'},
+                'dectrk'        : {False, '(L) if .true. => continue tracking daughter particle following decay', 'Logical'},
                 'diagref'       : {False, '(L) if .true. => continue tracking daughter particle following decay'},
                 'epsf'          : {0.05,  '(R) desired tolerance on fractional field variation, energy loss, and\
-                                               multiple scattering per step'},
+                                               multiple scattering per step', 'Real'},
                 'epsreq'        : {None,  '(R) required tolerance on error in tracking parameters (1E-3) This parameter is only\
-                                               used if varstep = true' },
-                'epsstep'       : {1E-6,  '(R) desired tolerance in spatial stepping to reach each destination plane [m]'},
+                                               used if varstep = true', 'Real' },
+                'epsstep'       : {1E-6,  '(R) desired tolerance in spatial stepping to reach each destination plane [m]', 'Real'},
                 'ffcr'          : {False, '(L) if .true. => inserts form feed and carriage returns in the output log file\
-                                               so there are two plots per page starting at the top of a page'},
+                                               so there are two plots per page starting at the top of a page', 'Logical'},
                 'forcerp'       : {True,  '(L) if .true. => set x, y, Px, and Py for reference particle to 0 for each\
-                                               new REFP command and for each ACCEL region with phasemodel=4.'},
+                                               new REFP command and for each ACCEL region with phasemodel=4.', 'Logical'},
                 'fsav'          : {None,  '(L) if .true. => store particle info at plane IZFILE into file\
                                               FOR004.DAT. (false).  It is possible to get the initial distribution\
                                               of particles that get a given error flag be setting the plane=IFAIL #. It is\
                                               possible to get the initial distribution of particles that successfully make it to the\
-                                              end of the simulation by setting the plane= -1.'}
+                                              end of the simulation by setting the plane= -1.', 'Logical'},                                             
+                'fsavset'       : {False, '(L) if .true. => modify data stored using FSAV in FOR004.DAT to have z=0 and times relative\
+                                            to reference particle at plane IZFILE.', 'Logical' },
+                'f9dp'          : {None, '(I) number of digits after the decimal point for floating point variables in FOR009.DAT {4,6,8,10,12,14,16,17}\
+                                          (4) F9DP=17 gives 16 digits after the decimal point and 3 digits in the exponent', 'Integer'},
+                'goodtrack'     : {True, '(L) if .true. and BGEN=.false. => only accepts input data from file FOR003.DAT if IPFLG=0.;\
+                                          if .false. => resets IPFLG of bad input tracks to 0 (this allows processing a file of bad tracks for diagnostic purposes)', 'Logical'},
+                'izfile'        : {None, '(I) z-plane where particle info is desired when using FSAV. Use 1 to\
+                                          store beam at production. Saves initial particle properties for bad tracks if IZFILE=IFAIL #.\
+                                          Saves initial particle properties for tracks that get to the end of the simulation if IZFILE=-1.\
+                                          IZFILE should point to the end of a REGION or to an APERTURE , ROTATE or TRANSPORT pseudoregion command.', 'Integer'},
+                'magconf'       : {0,    '(I) if 19 < MAGCONF=mn < 100 => reads in file FOR0mn.DAT, which contains data on solenoidal magnets. Used with SHEET,\
+                                          model 4.', 'Integer'},
+                'mapdef'        : {0,     '(I) if 19 < MAPDEF=mn < 100 => reads in file FOR0mn.DAT, which contains data on how to set up field grid. Used with \
+                                           SHEET, model 4.', 'Integer'},
+                'neighbor'      : {False, "(L) if .true. => include fields from previous and following regions when calculating field.  This parameter can be used\
+                                           with soft-edge fields when the magnitude of the field doesn't fall to 0 at the region boundary. A maximum of 100 regions\
+                                           can be used with this feature.", 'Logical'},
+                'neutrino'      : {0,      '(I) if 19 < NEUTRINO=mn < 100 => writes out file FOR0mn.DAT, which contains neutrino production data. See\
+                                            section 5.2 for the format.', 'Integer'},
+                'nnudk'         : {1,      '(I) # of neutrinos to produce at each muon, pion and kaon decay.', 'Integer'},
+                'npart'         : {None,   '(I) # of particles in simulation. The first 300,000 particles are stored in memory. Larger numbers\
+                                            are allowed in principle since ICOOL writes the excess particle information to disc. However, there\
+                                            can be a large space and speed penalty in doing so.', 'Integer'},
+                'nprnt'         : {},
+                'npskip'        : {},
+                'nsections'     : {},
+                'ntuple'        : {},
+                'nthmin'        : {},
+                'nuthmax'       : {},
+                'output1'       : {},
+                'phantom'       : {},
+                'phasemodel'    : {},
+                'prlevel'       : {},
+                'prnmax'        : {},
+                'pzmintrk'      : {},
+                'rfdiag'        : {},
+                'rfphase'       : {},
+                'rnseed'        : {},
+                'rtuple'        : {},
+                'rtuplen'       : {},
+                'run_env'       : {},
+                'scalestep'     : {},
+                'spin'          : {},
+                'spinmatter'    : {},
+                'spintrk'       : {},
+                'stepmax'       : {},
+                'stepmin'       : {},
+                'steprk'        : {}, 
+                'summary'       : {},
+                'termout'       : {},
+                'timelim'       : {},
+                'varstep'       : {}
                 }
 
-def valid_command(command_dict, command, namelist):
+def valid_command(command_dict, command, value, namelist):
     try:
         if command in command_dict.keys():
-            return 0
+            dictionary_entry=command_dict[command]
+            command_type=dictionary_entry['type']
+            try:
+                if type(value)==command_type:
+                    return 0
+                else:
+                    raise IncorrectType('Incorrect type')
+            except IncorrectType as e:
+                 print e
+                 return -1   
         else:
             raise UnknownCommand('Unknown command', command, namelist)
     except UnknownCommand as e:
         print e
-        print 'Valid commands are:\n'
-        for key in command_dict:
-            print key
         return -1
         
 def check_input_args(title, cont, bmt, ints, nhs, nsc, nzh, nrh, nem, ncv, sec, name, metadata):
@@ -884,4 +974,23 @@ def check_input_args(title, cont, bmt, ints, nhs, nsc, nzh, nrh, nem, ncv, sec, 
     except IncorrectNamelistObject as e:
         print e
         return -1
-       
+        
+def check_type(icool_type, provided_type):
+    if icool_type=='Real':      
+        if provided_type=='int' or provided_type=='long' or provided_type=='float':
+            return True
+        else:
+            return False
+    
+    if icool_type=='Integer':
+        if provided_type=='int' or provided_type=='long':
+            return True
+        else:
+            return False
+    
+    if icool_type=='Logical':
+        if provided_type=='bool':
+            return True
+        else:
+            return False
+    
