@@ -51,8 +51,9 @@ class ICoolInput(object):
     sec is a region definition variables object, which contains all region definitions.
 
     """
-    def __init__(self, title=None, cont=None, bmt=None, ints=None, nhs=None, nsc=None, nzh=None, nrh=None, nem=None, ncv=None, sec=None, name=None, metadata=None):
-        check_input_args(title, cont, bmt, ints, nhs, nsc, nzh, nrh, nem, ncv, sec, name, metadata)
+    def __init__(self, title=None, cont=None, bmt=None, ints=None, nhs=None, nsc=None, nzh=None, nrh=None, nem=None, ncv=None, section=None, name=None, metadata=None):
+        if check_input_args(title, cont, bmt, ints, nhs, nsc, nzh, nrh, nem, ncv, section, name, metadata)==-1:
+            sys.exit(0)
         self.title=title
         self.cont=cont
         self.bmt=bmt
@@ -63,11 +64,15 @@ class ICoolInput(object):
         self.nrh=nrh
         self.nem=nem
         self.ncv=ncv
-        self.sec=sec
+        self.section=section
         self.name=name
         self.metadata=metadata
         #What is the minimum required set of commands?
     
+    def __str__(self):
+        return self.title.__str__()+self.section.__str__()
+        
+        
     def add_title(title):
         self.title=title
     
@@ -107,9 +112,9 @@ class Title(object):
     def __init__(self, title):
         self.title=title
     def __str__(self):
-        return '[Problem Title: %]' %self.title
+        return 'Problem Title: ' +self.title+'\n'
     def __repr__(self):
-        return '[Problem Title: %]' %self.title
+        return 'Problem Title: '+ self.title+'\n'
 
     def gen(self, file):
         file.write(self.title)
@@ -131,7 +136,8 @@ class Cont(object):
                       
 
     def __str__(self):
-         return '[Control variables: ]'
+         defined_cont=display_commands(cont_commands)
+         return 'Control variables: \n'
 
     def __repr__(self):
         return '[Control variables: ]'
@@ -169,7 +175,7 @@ class RegularRegion(Region):
 
     def __str__(self):
         return '[A RegularRegion can be either a SECTION, BEGS, REPEAT, CELL, SREGION, ENDREPEAT, ENDCELL,\
-                or ENDCELL.]'
+or ENDCELL.]'
 
     def __repr__(self):
         return '[A RegularRegion can be either a SECTION, BEGS, REPEAT, CELL, SREGION, ENDREPEAT, ENDCELL,\
@@ -213,6 +219,12 @@ class Section(RegularRegion):
         #    for command in command_list:
          #       pass
 
+    def __str__(self):
+        output='Section\n'
+        for command in self.command_list:
+            output=output+command.__str__()
+        return output
+        
     def add_command(self, command):
         try:
             if self.check_command(command)==True:
@@ -347,6 +359,12 @@ class Cell(RegularRegion):
         self.allowed={'SRegion':{}, 'Aperture': {}, 'Dens': {}, 'Disp': {}, 'Dummy': {}, 'DVar':{}, 'Edge': {}, 'Output': {}, 'Refp': {}, 'Ref2':{}, 'Reset':{}, 
         'RKick': {}, 'Rotate': {}, 'Tilt': {}, 'Transport': {}, 'Repeat': {}}
 
+    def __str__(self):
+        return 'Cell\n'
+        
+    def __repr__(self):
+        return 'Cell\n'
+        
     def add_region_command(command):
         print
 
@@ -403,6 +421,10 @@ class SRegion(RegularRegion):
 
     def __str__(self):
         return 'SRegion:\n '+'slen='+str(self.slen)+','+'nrreg='+str(self.nrreg)+','+'zstep='+str(self.zstep)
+        
+    def __repr__(self):
+        return 'SRegion:\n '+'slen='+str(self.slen)+','+'nrreg='+str(self.nrreg)+','+'zstep='+str(self.zstep)
+    
         
     def add_subregion(irreg, rlow, rhigh, field, material):
         subr=[]
@@ -892,7 +914,7 @@ class IncorrectNamelistObject(InputError):
           self.type=type
           
       def __str__(self):
-          msg='Incorrect Namelist object. Expected type: '+self.type+' but got:' +str(type(self.namelist))
+          msg='Incorrect Namelist object. Expected: '+self.type+' but received: ' +self.namelist.__class__.__name__
           return repr(msg)
 
 class IncorrectObjectCommand(InputError):
@@ -1012,12 +1034,10 @@ def valid_command(command_dict, command, value, namelist):
         
 def check_input_args(title, cont, bmt, ints, nhs, nsc, nzh, nrh, nem, ncv, sec, name, metadata):
     try:
-        cl=str(cont.__class__)
-        dot=cl.find('.')
-        if cl[dot+1:dot+5]=='Cont':
-            return 0
-        else:
+        if cont!=None and cont.__class__.__name__!='Cont':
             raise IncorrectNamelistObject('Incorrect Namelist Object', cont, 'Cont')
+        if sec!=None and sec.__class__.__name__!='Section':
+             raise IncorrectNamelistObject('Incorrect Namelist Object', sec, 'Section')   
     except IncorrectNamelistObject as e:
         print e
         return -1
