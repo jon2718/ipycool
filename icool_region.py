@@ -200,14 +200,34 @@ class Section(RegularRegion):
     If it is desired to repeat the section definitions, the control variable NSECTIONS should be
     set >1 and a BEGS command is used to define where to start repeating.
     """
-    def __init__(self, nsections, command_list=None, name=None, metadata=None):
-        RegularRegion.__init__(self, name, metadadta)
+    def __init__(self, nsections=1, command_list=None, name=None, metadata=None):
+        RegularRegion.__init__(self, name, metadata)
         self.nsections=nsections
-        for command in command_list:
-            pass
+        self.allowed={'Cell': {}, 'Background': {}, 'SRegion':{}, 'Aperture': {}, 'Dens': {}, 'Disp': {}, 'Dummy': {}, 'DVar':{}, 'Edge': {}, 'Output': {}, 'Refp': {}, 'Ref2':{}, 'Reset':{}, 
+        'RKick': {}, 'Rotate': {}, 'Tilt': {}, 'Transport': {}, 'Repeat': {}}
+        if command_list!=None:
+            self.command_list=command_list
+        else:
+            self.command_list=[]
+        #if self.command_list!=None: 
+        #    for command in command_list:
+         #       pass
 
-    def add_command(command):
-        print
+    def add_command(self, command):
+        try:
+            if self.check_command(command)==True:
+                self.command_list.append(command)
+            else:
+                raise IncorrectObjectCommand('Incorrect Object Command.', 'Section', command.__class__.__name__)
+        except IncorrectObjectCommand as e:
+            print e
+            sys.exit(0)
+
+    def check_command(self, command):
+        if command.__class__.__name__ in self.allowed.keys():
+            return True
+        else:
+            return False
 
     def gen(self, file):
         file.write('\n')
@@ -225,11 +245,19 @@ class Begs(RegularRegion):
         region.gen('BEGS')
 
 class Repeat(RegularRegion):
+    """
+    Start of a repeating group of region commands; the data must end with an ENDREPEAT
+    command. This can be used to repeat regions inside a cell. The repeat loop can enclose any
+    number of {SREGION, APERTURE, DENS, DISP, DUMMY, DVAR, EDGE, OUTPUT, REFP, REF2, RESET, RKICK, ROTATE, TILT, TRANSPORT} commands. 
+    Repeat sections cannot be nested in other repeat sections. (see parameters below)
+    """
     def __init__(self, num_repeats, region_command_list):
+        RegularRegion.__init__(self, None, None)
         self.region_commands=region_commands
         self.num_repeats=num_repeats
-        RegularRegion.__init__(self, None, None)
-
+        self.allowed={'SRegion': {}, 'Aperture': {}, 'Dens': {}, 'Disp': {}, 'Dummy': {}, 'Dvar': {}, 'Edge': {}, 'Output': {}, 'Refp': {},
+         'Ref2': {}, 'Reset': {}, 'Rkick': {}, 'Rotate': {}, 'Tilt': {}, 'Transport': {}}
+       
     def add_region_command(command):
         print
 
@@ -316,7 +344,8 @@ class Cell(RegularRegion):
         self.cellflip=cellflip
         self.cftag=field.ftag
         self.cfparm=field.fparm
-        region.__init(self, name)
+        self.allowed={'SRegion':{}, 'Aperture': {}, 'Dens': {}, 'Disp': {}, 'Dummy': {}, 'DVar':{}, 'Edge': {}, 'Output': {}, 'Refp': {}, 'Ref2':{}, 'Reset':{}, 
+        'RKick': {}, 'Rotate': {}, 'Tilt': {}, 'Transport': {}, 'Repeat': {}}
 
     def add_region_command(command):
         print
@@ -365,13 +394,16 @@ class SRegion(RegularRegion):
     7) GPARM (R) 10 Parameters describing material geometry.
     These 10 parameters must be on one input line (see specific material type below)
     """
-    def __init__(self, name, slen, nrreg, zstep, r_subregion_list=None):
+    def __init__(self, slen, nrreg, zstep, r_subregion_list=None, name=None):
         self.slen=slen
         self.nrreg=nrreg
         self.zstep=zstep
         self.subregions=[]
-        region.__init(self, name)
+        RegularRegion.__init__(self, name)
 
+    def __str__(self):
+        return 'SRegion:\n '+'slen='+str(self.slen)+','+'nrreg='+str(self.nrreg)+','+'zstep='+str(self.zstep)
+        
     def add_subregion(irreg, rlow, rhigh, field, material):
         subr=[]
         subr.append(irreg)
@@ -827,16 +859,19 @@ class InputError(Error):
         self.expr = expr
         self.msg = msg
     def __str__(self):
-        string=msg+' '+expr
-        return repr(self.string)
+        string=self.msg+' '+self.expr
+        return repr(string)
 
 class IncorrectType(InputError):
     """Exception raised for incorrect type in the input."""
     def __init__(self, expr, expected_type, actual_type):
-        InputError.__init__(expr, 'Incorrect type.')
-    def _str__(self):
-        msg="Expected "+expected_type+" but instead got "+actual_type
-        return repr(self.msg)
+        InputError.__init__(self, expr, 'Incorrect type.')
+        self.expected_type=expected_type
+        self.actual_type=actual_type
+        
+    def __str__(self):
+        msg="Incorrect type.  Expected "+self.expected_type+" but instead got "+self.actual_type
+        return repr(msg)
 
 class UnknownCommand(InputError):   
       """Exception raised for unknown type in the input."""
@@ -859,7 +894,17 @@ class IncorrectNamelistObject(InputError):
       def __str__(self):
           msg='Incorrect Namelist object. Expected type: '+self.type+' but got:' +str(type(self.namelist))
           return repr(msg)
-      
+
+class IncorrectObjectCommand(InputError):
+    """Exception raised for attempt to add incorrect command to an object."""
+    def __init__(self, expr, object, command):
+        self.object=object
+        self.command=command
+        
+    def __str__(self):
+        msg='Command: '+self.command+' is not supported in object: '+self.object
+        return repr(msg)
+    
 class FieldError(InputError):
     pass
 
@@ -910,9 +955,9 @@ cont_dict =\
                 'neutrino'      : {0,      '(I) if 19 < NEUTRINO=mn < 100 => writes out file FOR0mn.DAT, which contains neutrino production data. See\
                                             section 5.2 for the format.', 'Integer'},
                 'nnudk'         : {1,      '(I) # of neutrinos to produce at each muon, pion and kaon decay.', 'Integer'},
-                'npart'         : {None,   '(I) # of particles in simulation. The first 300,000 particles are stored in memory. Larger numbers\
-                                            are allowed in principle since ICOOL writes the excess particle information to disc. However, there\
-                                            can be a large space and speed penalty in doing so.', 'Integer'},
+                'npart'         : {'default': None,   'desc': "(I) # of particles in simulation. The first 300,000 particles are stored in memory. Larger numbers\
+                                    are allowed in principle since ICOOL writes the excess particle information to disc. However, there\
+                                            can be a large space and speed penalty in doing so.", 'type': 'Integer'},
                 'nprnt'         : {},
                 'npskip'        : {},
                 'nsections'     : {},
@@ -943,6 +988,8 @@ cont_dict =\
                 'timelim'       : {},
                 'varstep'       : {}
                 }
+                
+               
 
 def valid_command(command_dict, command, value, namelist):
     try:
@@ -950,10 +997,10 @@ def valid_command(command_dict, command, value, namelist):
             dictionary_entry=command_dict[command]
             command_type=dictionary_entry['type']
             try:
-                if type(value)==command_type:
+                if check_type(command_type, value.__class__.__name__):
                     return 0
                 else:
-                    raise IncorrectType('Incorrect type')
+                    raise IncorrectType('Incorrect type', command_type, value.__class__.__name__)
             except IncorrectType as e:
                  print e
                  return -1   
