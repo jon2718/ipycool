@@ -449,7 +449,7 @@ class SRegion(RegularRegion):
             pass
 
 
-class Field:
+class Field(object):
     """
     A Field is a:
     FTAG - A tag identifying the field.  Valid FTAGS are:
@@ -470,7 +470,7 @@ class Field:
             file.write(s)
             file.write(" ")
 
-class Material:
+class Material(object):
     """
     A Material is a:
     MTAG (A) material composition tag
@@ -515,6 +515,21 @@ class Material:
             file.write(s)
             file.write(" ")
 
+class MetaAccel(type):
+    model1={'freq': 'Real', 'grad': 'Real', 'phase': 'Real', 'rect_cyn': 'Real', 'mode': 'Logical'}
+    def __new__(meta, classname, supers, classdict):
+        print('In MetaAccel: ', classname, supers, classdict) 
+        return type.__new__( meta, classname, supers, classdict)
+
+    def __call__(meta, **kwargs):
+        print kwargs
+        dict={'model': kwargs['model']}
+        setattr(meta, 'model', kwargs['model'])
+        return type.__call__(meta)
+     
+    def check(args):
+        pass
+        
 class Accel(Field):
     """ACCE(L) linear accelerator fields
     1 Model
@@ -753,10 +768,13 @@ class Accel(Field):
         3: no edge focusing
 
 """
-    def __init__(self, model, field_parameters):
-        self.model=model
-        field.__init__(self, 'ACCEL', model, field_parameters)
+    __metaclass__ = MetaAccel
 
+    def __init__(self, **kwargs):
+        pass
+        #field.__init__(self, 'ACCEL', model, field_parameters)
+        #self.model=model
+        
     def gen(self, file):
         print
 
