@@ -516,19 +516,32 @@ class Material(object):
             file.write(" ")
 
 class MetaAccel(type):
-    model1={'freq': 'Real', 'grad': 'Real', 'phase': 'Real', 'rect_cyn': 'Real', 'mode': 'Logical'}
+    models={'1': ['Ez only with no transverse variation', {'freq': 2, 'grad': 3, 'phase': 4, 'rect_cyn': 5, 'mode': 8}],
+            '2': ['Cylindrical TM01p pillbox', {'freq': 2, 'grad': 3, 'phase': 4, 'rect_cyn': 5, 'longitudinal_mode': 8}],
+            '3': ['Traveling wave cavity', {'freq': 2, 'grad': 3, 'phase': 4, 'rect_cyn': 5, 'x_offset': 6, 'y_offset': 7, 'phase_velocity': 8}],
+            '4': ['Approximate fields for symmetric circular-nosed cavity', {'freq': 2, 'grad': 3, 'phase': 4, 'length': 8, 'gap': 9, 'drift_tube_radius': 10, 'nose_radius': 11}],
+            '5': ['User-supplied azimuthally-symmetric TM mode (SuperFish)', {'freq': 2, 'phase': 4, 'file_no': 8, 'field_strength_norm': 9, 'rad_cut': 10, 'axial_dist': 11, 'axial_sym': 12}],
+            '6': ['Induction linac model - waveform from user-supplied polynomial coefficients', {'time_offset': 2, 'gap': 3, 'time_reset': 4, 'V0': 5, 'V1': 6, 'V2': 7, 'V3': 8, 'V4': 9, 'V5': 10, 'V6': 11, 'V7': 12, 'V8': 13}],
+            '7': ['Induction linac model - waveform from internally generated waveform', {'num_gaps': 2, 'start_volt': 3, 'volt_swing': 4, 'time_offset': 5, 'kin_en': 6, 'pulse_dur': 7, 'slope': 8, 'bins': 9, 'gap_len': 10, 'file_num': 11, 'kill_flag': 12, 'restart_flag': 13}],
+            '8': ['Induction linac model - Waveform from user-supplied file', {'time_offset': 2, 'gap': 3, 'time_reset': 4, 'file_num_wav': 5, 'poly_order': 6, 'file_num_out': 7, 'time_inc': 8}],
+            '9': ['Sector-shaped pillbox cavity (circular cross section)', {'freq': 2, 'grad': 3, 'phase': 4}],
+            '10': ['Variable {frequency gradient} pillbox cavity', {'phase': 4, 'num_wavelengths': 5, 'reset_parm': 6, 'buncher_length': 7, 'g0': 8, 'g1': 9, 'g2': 10, 'phase_model': 12}],
+            '11': ['Straight pillbox or SuperFish cavity in dipole region', {'freq': 2, 'grad': 3, 'phase': 4, 'radial_offset': 5, 'axial_length': 6, 'cavity_type': 7, 'file_num': 8, 'sf_field_norm': 9, 'sf_rad_cutoff': 10, 'sf_ axial_disp': 11, 'sf_axial_sym': 12}],
+            '12': ['Sector-shaped pillbox cavity (rectangular cross section)', {'freq': 2, 'grad': 3, 'phase': 4, 'rad_offset': 5, 'cav_width': 6, 'cav_height': 7}],
+            '13': ['Open cell standing wave cavity', {'freq': 2, 'grad': 3, 'phase': 4, 'focus_flag': 5}]
+            }
     def __new__(meta, classname, supers, classdict):
         print('In MetaAccel: ', classname, supers, classdict) 
         return type.__new__( meta, classname, supers, classdict)
 
     def __call__(meta, **kwargs):
-        print kwargs
-        dict={'model': kwargs['model']}
-        setattr(meta, 'model', kwargs['model'])
-        return type.__call__(meta)
-     
-    def check(args):
-        pass
+        model=kwargs['model']
+        selected_model_args=MetaAccel.models[str(model)][1]
+        check_keyword_args(kwargs, selected_model_args)
+        #dict={'model': kwargs['model']}
+        #setattr(meta, 'model', kwargs['model'])
+        #return type.__call__(meta)
+
         
 class Accel(Field):
     """ACCE(L) linear accelerator fields
@@ -778,6 +791,18 @@ class Accel(Field):
     def gen(self, file):
         print
 
+class MetaSol(type):
+    models={'1': ['Ez only with no transverse variation', {'freq': 2, 'grad': 3, 'phase': 4, 'rect_cyn': 5, 'mode': 8}],
+            '2': ['Cylindrical TM01p pillbox', {'freq': 2, 'grad': 3, 'phase': 4, 'rect_cyn': 5, 'longitudinal_mode': 8}],
+            '3': ['Traveling wave cavity', {'freq': 2, 'grad': 3, 'phase': 4, 'rect_cyn': 5, 'x_offset': 6, 'y_offset': 7, 'phase_velocity': 8}],
+            '4': ['Approximate fields for symmetric circular-nosed cavity', {'freq': 2, 'grad': 3, 'phase': 4, 'length': 8, 'gap': 9, 'drift_tube_radius': 10, 'nose_radius': 11}],
+            '5': ['User-supplied azimuthally-symmetric TM mode (SuperFish)', {'freq': 2, 'phase': 4, 'file_no': 8, 'field_strength_norm': 9, 'rad_cut': 10, 'axial_dist': 11, 'axial_sym': 12}],
+            '6': ['Induction linac model - waveform from user-supplied polynomial coefficients', {'time_offset': 2, 'gap': 3, 'time_reset': 4, 'V0': 5, 'V1': 6, 'V2': 7, 'V3': 8, 'V4': 9, 'V5': 10, 'V6': 11, 'V7': 12, 'V8': 13}],
+            '7': ['Induction linac model - waveform from internally generated waveform', {'num_gaps': 2, 'start_volt': 3, 'volt_swing': 4, 'time_offset': 5, 'kin_en': 6, 'pulse_dur': 7, 'slope': 8, 'bins': 9, 'gap_len': 10, 'file_num': 11, 'kill_flag': 12, 'restart_flag': 13}],
+            '8': ['Induction linac model - Waveform from user-supplied file', {'time_offset': 2, 'gap': 3, 'time_reset': 4, 'file_num_wav': 5, 'poly_order': 6, 'file_num_out': 7, 'time_inc': 8}],
+            '9': ['Sector-shaped pillbox cavity (circular cross section)', {'freq': 2, 'grad': 3, 'phase': 4}],
+            '10': ['Variable {frequency gradient} pillbox cavity', {'phase': 4, 'num_wavelengths': 5, 'reset_parm': 6, 'buncher_length': 7, 'g0': 8, 'g1': 9, 'g2': 10, 'phase_model': 12}]
+            }
 
 class Sol(Field):
     """
@@ -864,6 +889,8 @@ class Sol(Field):
     This model applies a geometry cut on particles whose radius exceeds the specified radial taper.
 
     """
+     __metaclass__ = MetaSol
+     
     def __init__(self, model, field_parameters):
         self.model=model
         field.__init__(self, 'SOL', model, field_parameters)
@@ -943,6 +970,20 @@ class IncorrectObjectCommand(InputError):
         
     def __str__(self):
         msg='Command: '+self.command+' is not supported in object: '+self.object
+        return repr(msg)
+ 
+class InputArgumentsError(InputError):
+    """Exception raised for incorrect type in the input."""
+    def __init__(self, expr, input_dict, actual_dict):
+        InputError.__init__(self, expr, 'Input arguments error.')
+        self.input_dict=input_dict
+        self.actual_dict=actual_dict
+        
+    def __str__(self):
+        msg="Input arguments error.  Received"+self.input_dict+" Expected the following keyword arguments: "
+        for key in actual_dict:
+            msg+=" "
+            msg+=key
         return repr(msg)
     
 class FieldError(InputError):
@@ -1078,4 +1119,16 @@ def check_type(icool_type, provided_type):
             return True
         else:
             return False
-    
+ 
+ 
+def check_keyword_args(input_dict, actual_dict):
+    try:
+        if len(input_dict)!=len(actual_dict):
+            raise InputArgumentsError('Input Arguments Error', 'Incorrect number of input arguments.', actual_dict)
+        for key in input_dict:
+            if key in input_dict:
+                pass
+                #raise InputArgumentsError('Input Arguments Error', input_dict, actual_dict)
+    except UnknownCommand as e:
+        print e
+        return -1
