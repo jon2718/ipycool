@@ -470,6 +470,7 @@ class Field(object):
             file.write(s)
             file.write(" ")
 
+  
 class Material(object):
     """
     A Material is a:
@@ -538,9 +539,10 @@ class MetaAccel(type):
         model=kwargs['model']
         selected_model_args=MetaAccel.models[str(model)][1]
         check_keyword_args(kwargs, selected_model_args)
-        #dict={'model': kwargs['model']}
-        #setattr(meta, 'model', kwargs['model'])
-        #return type.__call__(meta)
+        for key in kwargs:
+            print key
+            setattr(meta, key, kwargs[key])
+        return type.__call__(meta)
 
         
 class Accel(Field):
@@ -784,9 +786,19 @@ class Accel(Field):
     __metaclass__ = MetaAccel
 
     def __init__(self, **kwargs):
-        pass
+        self.gen_fparm()
         #field.__init__(self, 'ACCEL', model, field_parameters)
         #self.model=model
+    
+    def gen_fparm(self):
+        self._fparm=[0]*15
+        members = [attr for attr in dir(self) if not callable(attr) and not attr.startswith("__") and not attr.startswith("_")]   
+        model=MetaAccel.models[str(self.model)][1]
+        print model
+        for key in model:
+            pos=model[key]
+            self._fparm[pos-1]=getattr(self, key)
+        print self._fparm
         
     def gen(self, file):
         print
