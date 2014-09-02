@@ -535,16 +535,23 @@ class MetaAccel(type):
         print('In MetaAccel: ', classname, supers, classdict) 
         return type.__new__( meta, classname, supers, classdict)
 
-    def __call__(meta, **kwargs):
+    def __call__(meta, *args, **kwargs):
+    	print 'Type of meta is: ', type(meta)
+        #print "In MetaAccel call"
+        print('MetaAccel: {m},{a},{k}'.format(m=meta,a=args,k=kwargs))
         model=kwargs['model']
         selected_model_args=MetaAccel.models[str(model)][1]
         check_keyword_args(kwargs, selected_model_args)
+        setattr(meta, 'model', kwargs['model'])
         for key in kwargs:
             print key
             setattr(meta, key, kwargs[key])
         return type.__call__(meta)
 
-        
+ 
+def Accel_Decorator(cls):
+	pass 
+
 class Accel(Field):
     """ACCE(L) linear accelerator fields
     1 Model
@@ -783,16 +790,44 @@ class Accel(Field):
         3: no edge focusing
 
 """
-    __metaclass__ = MetaAccel
+   # __metaclass__ = MetaAccel
+   
+    models={'1': ['Ez only with no transverse variation', {'model': 1, 'freq': 2, 'grad': 3, 'phase': 4, 'rect_cyn': 5, 'mode': 8}],
+            '2': ['Cylindrical TM01p pillbox', {'model': 1, 'freq': 2, 'grad': 3, 'phase': 4, 'rect_cyn': 5, 'longitudinal_mode': 8}],
+            '3': ['Traveling wave cavity', {'model': 1, 'freq': 2, 'grad': 3, 'phase': 4, 'rect_cyn': 5, 'x_offset': 6, 'y_offset': 7, 'phase_velocity': 8}],
+            '4': ['Approximate fields for symmetric circular-nosed cavity', {'model': 1, 'freq': 2, 'grad': 3, 'phase': 4, 'length': 8, 'gap': 9, 'drift_tube_radius': 10, 'nose_radius': 11}],
+            '5': ['User-supplied azimuthally-symmetric TM mode (SuperFish)', {'model': 1, 'freq': 2, 'phase': 4, 'file_no': 8, 'field_strength_norm': 9, 'rad_cut': 10, 'axial_dist': 11, 'axial_sym': 12}],
+            '6': ['Induction linac model - waveform from user-supplied polynomial coefficients', {'model':1, 'time_offset': 2, 'gap': 3, 'time_reset': 4, 'V0': 5, 'V1': 6, 'V2': 7, 'V3': 8, 'V4': 9, 'V5': 10, 'V6': 11, 'V7': 12, 'V8': 13}],
+            '7': ['Induction linac model - waveform from internally generated waveform', {'model': 1, 'num_gaps': 2, 'start_volt': 3, 'volt_swing': 4, 'time_offset': 5, 'kin_en': 6, 'pulse_dur': 7, 'slope': 8, 'bins': 9, 'gap_len': 10, 'file_num': 11, 'kill_flag': 12, 'restart_flag': 13}],
+            '8': ['Induction linac model - Waveform from user-supplied file', {'model': 1, 'time_offset': 2, 'gap': 3, 'time_reset': 4, 'file_num_wav': 5, 'poly_order': 6, 'file_num_out': 7, 'time_inc': 8}],
+            '9': ['Sector-shaped pillbox cavity (circular cross section)', {'model':1, 'freq': 2, 'grad': 3, 'phase': 4}],
+            '10': ['Variable {frequency gradient} pillbox cavity', {'model':1, 'phase': 4, 'num_wavelengths': 5, 'reset_parm': 6, 'buncher_length': 7, 'g0': 8, 'g1': 9, 'g2': 10, 'phase_model': 12}],
+            '11': ['Straight pillbox or SuperFish cavity in dipole region', {'model':1, 'freq': 2, 'grad': 3, 'phase': 4, 'radial_offset': 5, 'axial_length': 6, 'cavity_type': 7, 'file_num': 8, 'sf_field_norm': 9, 'sf_rad_cutoff': 10, 'sf_ axial_disp': 11, 'sf_axial_sym': 12}],
+            '12': ['Sector-shaped pillbox cavity (rectangular cross section)', {'model': 1, 'freq': 2, 'grad': 3, 'phase': 4, 'rad_offset': 5, 'cav_width': 6, 'cav_height': 7}],
+            '13': ['Open cell standing wave cavity', {'model': 1, 'freq': 2, 'grad': 3, 'phase': 4, 'focus_flag': 5}]
+            }
 
     def __init__(self, **kwargs):
-        self.gen_fparm()
+    	model=kwargs['model']
+        selected_model_args=self.models[str(model)][1]
+        check_keyword_args(kwargs, selected_model_args)
+        setattr(self, 'model', kwargs['model'])
+        for key in kwargs:
+            print key
+            setattr(meta, key, kwargs[key])
+    	#pass
+    	 #model=kwargs['model']
+         #selected_model_args=MetaAccel.models[str(model)][1]
+         #check_keyword_args(kwargs, selected_model_args)
+    	 #self._fparm=[]
+         #self.gen_fparm()
         #field.__init__(self, 'ACCEL', model, field_parameters)
         #self.model=model
     
     def gen_fparm(self):
         self._fparm=[0]*15
-        members = [attr for attr in dir(self) if not callable(attr) and not attr.startswith("__") and not attr.startswith("_")]   
+        #members = [attr for attr in dir(self) if not callable(attr) and not attr.startswith("__") and not attr.startswith("_")]  
+        #print "members is: ", members 
         model=MetaAccel.models[str(self.model)][1]
         print model
         for key in model:
@@ -802,6 +837,27 @@ class Accel(Field):
         
     def gen(self, file):
         print
+    
+    def __setattr__(self, name, value):
+    	print 'In setattr for: ', name
+    	if not hasattr(self, name):
+    		print 'Setting: ', name
+    		setattr(self, name)
+   	 	#if 
+    	#model=MetaAccel.models[str(self.model)][1]
+    	#if name =='model':
+    	#	 new_model=MetaAccel.models[str(value)][1]
+    	#	 for key in model:
+    	#		 delattr(self, key)
+    	#	 for key in new_model:
+    	#			 setattr(meta, key, 0)
+
+
+
+        #if name=='_fparm' or name in model:
+        # 	 self.__dict__[name]=value
+        #if name in self.__dict__:
+         #	 print "Found it"
 
 class MetaSol(type):
     models={'1': ['Ez only with no transverse variation', {'freq': 2, 'grad': 3, 'phase': 4, 'rect_cyn': 5, 'mode': 8}],
