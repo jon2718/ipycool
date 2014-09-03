@@ -120,8 +120,85 @@ class Title(object):
         file.write(self.title)
 
 class Cont(object):
-    betaperp={'default': None,  'desc': '(R) beta value to use in calculating amplitude variable A^2', 'type':'Real'}
-    bgen={'default': True,  'desc': '(L) if .true. => generate initial beam particles, otherwise read input from FOR003.DAT (true)', 'type': 'Logical'}
+    cont_dict =\
+            {
+                'betaperp'      : {'default': None,  'desc': '(R) beta value to use in calculating amplitude variable A^2', 'type':'Real'},
+                
+                'bgen'          : {'default': True,  'desc': '(L) if .true. => generate initial beam particles, otherwise read input from FOR003.DAT (true)', 
+                                'type': 'Logical'},
+                
+                'bunchcut'      : {1E6,   '(R) maximum time difference allowed between a particle and the reference particle [s]', 'Real'},
+                'bzfldprd'      : {None,  '(R) Bz for solenoid at location of production plane (0.) This is used for output to file\
+                                               for009.dat and for canonical angular momentum correction.', 'Real'},
+                'dectrk'        : {False, '(L) if .true. => continue tracking daughter particle following decay', 'Logical'},
+                'diagref'       : {False, '(L) if .true. => continue tracking daughter particle following decay'},
+                'epsf'          : {0.05,  '(R) desired tolerance on fractional field variation, energy loss, and\
+                                               multiple scattering per step', 'Real'},
+                'epsreq'        : {None,  '(R) required tolerance on error in tracking parameters (1E-3) This parameter is only\
+                                               used if varstep = true', 'Real' },
+                'epsstep'       : {1E-6,  '(R) desired tolerance in spatial stepping to reach each destination plane [m]', 'Real'},
+                'ffcr'          : {False, '(L) if .true. => inserts form feed and carriage returns in the output log file\
+                                               so there are two plots per page starting at the top of a page', 'Logical'},
+                'forcerp'       : {True,  '(L) if .true. => set x, y, Px, and Py for reference particle to 0 for each\
+                                               new REFP command and for each ACCEL region with phasemodel=4.', 'Logical'},
+                'fsav'          : {None,  '(L) if .true. => store particle info at plane IZFILE into file\
+                                              FOR004.DAT. (false).  It is possible to get the initial distribution\
+                                              of particles that get a given error flag be setting the plane=IFAIL #. It is\
+                                              possible to get the initial distribution of particles that successfully make it to the\
+                                              end of the simulation by setting the plane= -1.', 'Logical'},                                             
+                'fsavset'       : {False, '(L) if .true. => modify data stored using FSAV in FOR004.DAT to have z=0 and times relative\
+                                            to reference particle at plane IZFILE.', 'Logical' },
+                'f9dp'          : {None, '(I) number of digits after the decimal point for floating point variables in FOR009.DAT {4,6,8,10,12,14,16,17}\
+                                          (4) F9DP=17 gives 16 digits after the decimal point and 3 digits in the exponent', 'Integer'},
+                'goodtrack'     : {True, '(L) if .true. and BGEN=.false. => only accepts input data from file FOR003.DAT if IPFLG=0.;\
+                                          if .false. => resets IPFLG of bad input tracks to 0 (this allows processing a file of bad tracks for diagnostic purposes)', 'Logical'},
+                'izfile'        : {None, '(I) z-plane where particle info is desired when using FSAV. Use 1 to\
+                                          store beam at production. Saves initial particle properties for bad tracks if IZFILE=IFAIL #.\
+                                          Saves initial particle properties for tracks that get to the end of the simulation if IZFILE=-1.\
+                                          IZFILE should point to the end of a REGION or to an APERTURE , ROTATE or TRANSPORT pseudoregion command.', 'Integer'},
+                'magconf'       : {0,    '(I) if 19 < MAGCONF=mn < 100 => reads in file FOR0mn.DAT, which contains data on solenoidal magnets. Used with SHEET,\
+                                          model 4.', 'Integer'},
+                'mapdef'        : {0,     '(I) if 19 < MAPDEF=mn < 100 => reads in file FOR0mn.DAT, which contains data on how to set up field grid. Used with \
+                                           SHEET, model 4.', 'Integer'},
+                'neighbor'      : {False, "(L) if .true. => include fields from previous and following regions when calculating field.  This parameter can be used\
+                                           with soft-edge fields when the magnitude of the field doesn't fall to 0 at the region boundary. A maximum of 100 regions\
+                                           can be used with this feature.", 'Logical'},
+                'neutrino'      : {0,      '(I) if 19 < NEUTRINO=mn < 100 => writes out file FOR0mn.DAT, which contains neutrino production data. See\
+                                            section 5.2 for the format.', 'Integer'},
+                'nnudk'         : {1,      '(I) # of neutrinos to produce at each muon, pion and kaon decay.', 'Integer'},
+                'npart'         : {'default': None,   'desc': "(I) # of particles in simulation. The first 300,000 particles are stored in memory. Larger numbers\
+                                    are allowed in principle since ICOOL writes the excess particle information to disc. However, there\
+                                            can be a large space and speed penalty in doing so.", 'type': 'Integer'},
+                'nprnt'         : {},
+                'npskip'        : {},
+                'nsections'     : {},
+                'ntuple'        : {},
+                'nthmin'        : {},
+                'nuthmax'       : {},
+                'output1'       : {},
+                'phantom'       : {},
+                'phasemodel'    : {},
+                'prlevel'       : {},
+                'prnmax'        : {},
+                'pzmintrk'      : {},
+                'rfdiag'        : {},
+                'rfphase'       : {},
+                'rnseed'        : {},
+                'rtuple'        : {},
+                'rtuplen'       : {},
+                'run_env'       : {},
+                'scalestep'     : {},
+                'spin'          : {},
+                'spinmatter'    : {},
+                'spintrk'       : {},
+                'stepmax'       : {},
+                'stepmin'       : {},
+                'steprk'        : {}, 
+                'summary'       : {},
+                'termout'       : {},
+                'timelim'       : {},
+                'varstep'       : {}
+                }
     
     def __init__(self, **kwargs):
         for command, value in kwargs.items():
@@ -541,7 +618,7 @@ class MetaAccel(type):
         print('MetaAccel: {m},{a},{k}'.format(m=meta,a=args,k=kwargs))
         model=kwargs['model']
         selected_model_args=MetaAccel.models[str(model)][1]
-        check_keyword_args(kwargs, selected_model_args)
+        #check_keyword_args(kwargs, selected_model_args)
         setattr(meta, 'model', kwargs['model'])
         for key in kwargs:
             print key
@@ -808,56 +885,62 @@ class Accel(Field):
             }
 
     def __init__(self, **kwargs):
-    	model=kwargs['model']
-        selected_model_args=self.models[str(model)][1]
-        check_keyword_args(kwargs, selected_model_args)
+        check_keyword_args(kwargs, self)
+        #If we got here do model first
+        self.selected_model=self.models[str(kwargs['model'])][1]
         setattr(self, 'model', kwargs['model'])
+        
         for key in kwargs:
             print key
-            setattr(meta, key, kwargs[key])
-    	#pass
-    	 #model=kwargs['model']
-         #selected_model_args=MetaAccel.models[str(model)][1]
-         #check_keyword_args(kwargs, selected_model_args)
-    	 #self._fparm=[]
-         #self.gen_fparm()
-        #field.__init__(self, 'ACCEL', model, field_parameters)
-        #self.model=model
+            if not key=='model':
+            	setattr(self, key, kwargs[key])
+    	
     
+    def __call__(self, **kwargs):
+    	check_keyword_args(kwargs, self)
+    	for key in kwargs:
+            print key
+            if not key=='model':
+            	setattr(self, key, kwargs[key])
+    	self.selected_model=self.models[str(self.model)][1]
+
     def gen_fparm(self):
-        self._fparm=[0]*15
+        self.fparm=[0]*15
         #members = [attr for attr in dir(self) if not callable(attr) and not attr.startswith("__") and not attr.startswith("_")]  
         #print "members is: ", members 
-        model=MetaAccel.models[str(self.model)][1]
-        print model
-        for key in model:
-            pos=model[key]
-            self._fparm[pos-1]=getattr(self, key)
-        print self._fparm
+        #model=MetaAccel.models[str(self.model)][1]
+        #print model
+        for key in self.selected_model:
+            pos=self.selected_model[key]
+            self.fparm[pos-1]=getattr(self, key)
+        print self.fparm
         
     def gen(self, file):
         print
     
     def __setattr__(self, name, value):
+    	if name=='selected_model':
+    		if not hasattr(self, 'selected_model'):
+    			super(Accel, self).__setattr__(name, value)
+    	if name=='model':
+    		if hasattr(self, 'model'):
+    			print 'Trying to reset model, which is already set'
+    			for key in self.selected_model:
+    				if hasattr(self, key):
+    				     delattr(self, key)
+    				super(Accel, self).__setattr__(name, value)
+    			super(Accel, self).__setattr__('selected_model', self.models[str(self.model)][1])
+    			for key in self.selected_model:
+    				super(Accel, self).__setattr__(key, 0)
+    			#self.selected_model=self.models[str(self.model)][1]
+
     	print 'In setattr for: ', name
-    	if not hasattr(self, name):
-    		print 'Setting: ', name
-    		setattr(self, name)
-   	 	#if 
-    	#model=MetaAccel.models[str(self.model)][1]
-    	#if name =='model':
-    	#	 new_model=MetaAccel.models[str(value)][1]
-    	#	 for key in model:
-    	#		 delattr(self, key)
-    	#	 for key in new_model:
-    	#			 setattr(meta, key, 0)
-
-
-
-        #if name=='_fparm' or name in model:
-        # 	 self.__dict__[name]=value
-        #if name in self.__dict__:
-         #	 print "Found it"
+    	print 'Has attribute', name, hasattr(self, name)
+    	#if not hasattr(self, name):
+    	print 'Setting: ', name
+    	if name in self.selected_model.keys():
+    		super(Accel, self).__setattr__(name, value)
+   	 	
 
 class MetaSol(type):
     models={'1': ['Ez only with no transverse variation', {'freq': 2, 'grad': 3, 'phase': 4, 'rect_cyn': 5, 'mode': 8}],
@@ -1064,85 +1147,7 @@ class FieldError(InputError):
     pass
 
 
-cont_dict =\
-            {
-                'betaperp'      : {'default': None,  'desc': '(R) beta value to use in calculating amplitude variable A^2', 'type':'Real'},
-                
-                'bgen'          : {'default': True,  'desc': '(L) if .true. => generate initial beam particles, otherwise read input from FOR003.DAT (true)', 
-                                'type': 'Logical'},
-                
-                'bunchcut'      : {1E6,   '(R) maximum time difference allowed between a particle and the reference particle [s]', 'Real'},
-                'bzfldprd'      : {None,  '(R) Bz for solenoid at location of production plane (0.) This is used for output to file\
-                                               for009.dat and for canonical angular momentum correction.', 'Real'},
-                'dectrk'        : {False, '(L) if .true. => continue tracking daughter particle following decay', 'Logical'},
-                'diagref'       : {False, '(L) if .true. => continue tracking daughter particle following decay'},
-                'epsf'          : {0.05,  '(R) desired tolerance on fractional field variation, energy loss, and\
-                                               multiple scattering per step', 'Real'},
-                'epsreq'        : {None,  '(R) required tolerance on error in tracking parameters (1E-3) This parameter is only\
-                                               used if varstep = true', 'Real' },
-                'epsstep'       : {1E-6,  '(R) desired tolerance in spatial stepping to reach each destination plane [m]', 'Real'},
-                'ffcr'          : {False, '(L) if .true. => inserts form feed and carriage returns in the output log file\
-                                               so there are two plots per page starting at the top of a page', 'Logical'},
-                'forcerp'       : {True,  '(L) if .true. => set x, y, Px, and Py for reference particle to 0 for each\
-                                               new REFP command and for each ACCEL region with phasemodel=4.', 'Logical'},
-                'fsav'          : {None,  '(L) if .true. => store particle info at plane IZFILE into file\
-                                              FOR004.DAT. (false).  It is possible to get the initial distribution\
-                                              of particles that get a given error flag be setting the plane=IFAIL #. It is\
-                                              possible to get the initial distribution of particles that successfully make it to the\
-                                              end of the simulation by setting the plane= -1.', 'Logical'},                                             
-                'fsavset'       : {False, '(L) if .true. => modify data stored using FSAV in FOR004.DAT to have z=0 and times relative\
-                                            to reference particle at plane IZFILE.', 'Logical' },
-                'f9dp'          : {None, '(I) number of digits after the decimal point for floating point variables in FOR009.DAT {4,6,8,10,12,14,16,17}\
-                                          (4) F9DP=17 gives 16 digits after the decimal point and 3 digits in the exponent', 'Integer'},
-                'goodtrack'     : {True, '(L) if .true. and BGEN=.false. => only accepts input data from file FOR003.DAT if IPFLG=0.;\
-                                          if .false. => resets IPFLG of bad input tracks to 0 (this allows processing a file of bad tracks for diagnostic purposes)', 'Logical'},
-                'izfile'        : {None, '(I) z-plane where particle info is desired when using FSAV. Use 1 to\
-                                          store beam at production. Saves initial particle properties for bad tracks if IZFILE=IFAIL #.\
-                                          Saves initial particle properties for tracks that get to the end of the simulation if IZFILE=-1.\
-                                          IZFILE should point to the end of a REGION or to an APERTURE , ROTATE or TRANSPORT pseudoregion command.', 'Integer'},
-                'magconf'       : {0,    '(I) if 19 < MAGCONF=mn < 100 => reads in file FOR0mn.DAT, which contains data on solenoidal magnets. Used with SHEET,\
-                                          model 4.', 'Integer'},
-                'mapdef'        : {0,     '(I) if 19 < MAPDEF=mn < 100 => reads in file FOR0mn.DAT, which contains data on how to set up field grid. Used with \
-                                           SHEET, model 4.', 'Integer'},
-                'neighbor'      : {False, "(L) if .true. => include fields from previous and following regions when calculating field.  This parameter can be used\
-                                           with soft-edge fields when the magnitude of the field doesn't fall to 0 at the region boundary. A maximum of 100 regions\
-                                           can be used with this feature.", 'Logical'},
-                'neutrino'      : {0,      '(I) if 19 < NEUTRINO=mn < 100 => writes out file FOR0mn.DAT, which contains neutrino production data. See\
-                                            section 5.2 for the format.', 'Integer'},
-                'nnudk'         : {1,      '(I) # of neutrinos to produce at each muon, pion and kaon decay.', 'Integer'},
-                'npart'         : {'default': None,   'desc': "(I) # of particles in simulation. The first 300,000 particles are stored in memory. Larger numbers\
-                                    are allowed in principle since ICOOL writes the excess particle information to disc. However, there\
-                                            can be a large space and speed penalty in doing so.", 'type': 'Integer'},
-                'nprnt'         : {},
-                'npskip'        : {},
-                'nsections'     : {},
-                'ntuple'        : {},
-                'nthmin'        : {},
-                'nuthmax'       : {},
-                'output1'       : {},
-                'phantom'       : {},
-                'phasemodel'    : {},
-                'prlevel'       : {},
-                'prnmax'        : {},
-                'pzmintrk'      : {},
-                'rfdiag'        : {},
-                'rfphase'       : {},
-                'rnseed'        : {},
-                'rtuple'        : {},
-                'rtuplen'       : {},
-                'run_env'       : {},
-                'scalestep'     : {},
-                'spin'          : {},
-                'spinmatter'    : {},
-                'spintrk'       : {},
-                'stepmax'       : {},
-                'stepmin'       : {},
-                'steprk'        : {}, 
-                'summary'       : {},
-                'termout'       : {},
-                'timelim'       : {},
-                'varstep'       : {}
-                }
+
                 
                
 
@@ -1195,13 +1200,24 @@ def check_type(icool_type, provided_type):
             return False
  
  
-def check_keyword_args(input_dict, actual_dict):
+def check_keyword_args(input_dict, cls):
+    models=cls.models
     try:
-       print sorted(input_dict.keys())
-       print sorted(actual_dict.keys())
-       
+       #print sorted(input_dict.keys())
+       #print sorted(actual_dict.keys())
+       if not check_model_specified(input_dict):
+       		actual_dict={'Unknown':0}
+       		raise InputArgumentsError('Input Arguments Error', input_dict, actual_dict)
+       model=input_dict['model']
+       actual_dict=cls.models[str(model)][1]
        if sorted(input_dict.keys())!=sorted(actual_dict.keys()):
            raise InputArgumentsError('Input Arguments Error', input_dict, actual_dict)
     except UnknownCommand as e:
         print e
         return -1
+
+def check_model_specified(input_dict):
+	if 'model' in input_dict.keys():
+		return True
+	else:
+		return False
