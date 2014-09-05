@@ -122,14 +122,16 @@ class Title(object):
 class Cont(object):
     cont_dict =\
             {
-                'betaperp'      : {'default': None,  'desc': '(R) beta value to use in calculating amplitude variable A^2', 'type':'Real'},
+                'betaperp'      : {'default': None, 'desc': '(R) beta value to use in calculating amplitude variable A^2', 'type':'Real'},
                 
-                'bgen'          : {'default': True,  'desc': '(L) if .true. => generate initial beam particles, otherwise read input from FOR003.DAT (true)', 
-                                'type': 'Logical'},
+                'bgen'          : {'default': True, 'desc': '''(L) if
+                 .true.=>generate initial beam particles, otherwise read input
+                 from FOR003.DAT (true)''', 'type': 'Logical'},
                 
-                'bunchcut'      : {1E6,   '(R) maximum time difference allowed between a particle and the reference particle [s]', 'Real'},
-                'bzfldprd'      : {None,  '(R) Bz for solenoid at location of production plane (0.) This is used for output to file\
-                                               for009.dat and for canonical angular momentum correction.', 'Real'},
+                'bunchcut'      : {'default': 1E6, 'desc': '(R) maximum time difference allowed between a particle and the reference particle [s] (1E6)', 'type': 'Real'},
+
+                'bzfldprd'      : {'default': None,  'desc': '(R) Bz for solenoid at location of production plane (0.) This is used for output to file\
+                                               for009.dat and for canonical angular momentum correction.', 'type': 'Real'},
                 'dectrk'        : {False, '(L) if .true. => continue tracking daughter particle following decay', 'Logical'},
                 'diagref'       : {False, '(L) if .true. => continue tracking daughter particle following decay'},
                 'epsf'          : {0.05,  '(R) desired tolerance on fractional field variation, energy loss, and\
@@ -230,6 +232,27 @@ class Cont(object):
             file.write("\n")
         file.write("/")
             
+
+class Bmt(object):
+	bmt_dict =\
+	{
+
+
+	}
+	def __init__(self, **kwargs):
+		pass
+
+	def add_bmtype(bmtype):
+		pass
+
+class BmType(object):
+		pass
+
+
+class Ints(object):
+	def __init__(self, **kwargs):
+		pass
+
 
 class Region(object):
     def __init__(self, name=None, metadata=None):
@@ -1199,7 +1222,8 @@ def check_type(icool_type, provided_type):
         else:
             return False
  
- 
+ #Checks if ALL keywords for a model are specified.  If not, raises InputArgumentsError
+ #If model is not specified, raises ModelNotSpecifiedError
 def check_keyword_args(input_dict, cls):
     models=cls.models
     try:
@@ -1216,8 +1240,30 @@ def check_keyword_args(input_dict, cls):
         print e
         return -1
 
+#Checks whether the keywords specified for a current model correspond to that model.
+def check_partial_keywords_for_current_model(input_dict, cls):
+	actual_dict=(cls, cls.model)
+	for key in input_dict:
+		if not key in cls.actual:
+			raise InputArgumentsError('Input Arguments Error', input_dict, actual_dict)
+	return True
+
+#Checks whether the keywords specified for a new model correspond to that model.
+def check_partial_keywords_for_new_model(input_dict, cls):
+	model=input_dict['model']
+	actual_dict=get_model_dict(cls, model)
+	for key in input_dict:
+		if not key in cls.actual:
+			raise InputArgumentsError('Input Arguments Error', input_dict, actual_dict)
+	return True
+
+
 def check_model_specified(input_dict):
 	if 'model' in input_dict.keys():
 		return True
 	else:
 		return False
+
+def get_model_dict(cls, model):
+	models=cls.models
+	return models[str(model)][1]
