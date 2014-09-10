@@ -1,14 +1,19 @@
 import sys
+import icool_exceptions
+
+
 class ICoolGen(object):
+
     """Generate ICOOL for001.dat
     Takes an ICoolInput object and generates an ICOOL for001.dat file.
     """
+
     def __init__(self, icool_input, path='.'):
-        self.file=path+'/'+'for001.dat'
-        self.icool_input=icool_input
-      
+        self.file = path + '/' + 'for001.dat'
+        self.icool_input = icool_input
+
     def gen(self):
-        f=open(self.file, 'w')
+        f = open(self.file, 'w')
         self.icool_input.gen(f)
         f.close()
 
@@ -23,7 +28,9 @@ class ICoolGen(object):
             f.write(item)
             self.sp()
 
+
 class ICoolInput(object):
+
     """This is the actual generated ICoolInput from command objects
     Command objects include:
     Title, Cont, Bmt, Ints, Nhs, Nsc, Nzh, Nrh, Nem, Ncv and region command objects.
@@ -48,112 +55,185 @@ class ICoolInput(object):
     nrh is a r-history defintion variables object.
     nem is an emittance plane definition variables object.
     ncv is a covariance plane definition variables object.
-    sec is a region definition variables object, which contains all region definitions.
+    sec is a region definition variables object, which contains all region
+    definitions.
 
     """
-    def __init__(self, title=None, cont=None, bmt=None, ints=None, nhs=None, nsc=None, nzh=None, nrh=None, nem=None, ncv=None, section=None, name=None, metadata=None):
-        if check_input_args(title, cont, bmt, ints, nhs, nsc, nzh, nrh, nem, ncv, section, name, metadata)==-1:
+
+    def __init__(
+        self, title=None, cont=None, bmt=None, ints=None,
+        nhs=None, nsc=None, nzh=None, nrh=None, nem=None, ncv=None,
+        section=None, name=None, metadata=None
+    ):
+
+        if check_input_args(
+            title, cont, bmt, ints, nhs, nsc, nzh, nrh, nem,
+            ncv, section, name, metadata
+        ) == -1:
             sys.exit(0)
-        self.title=title
-        self.cont=cont
-        self.bmt=bmt
-        self.ints=ints
-        self.nhs=nhs
-        self.nsc=nsc
-        self.nzh=nzh
-        self.nrh=nrh
-        self.nem=nem
-        self.ncv=ncv
-        self.section=section
-        self.name=name
-        self.metadata=metadata
-        #What is the minimum required set of commands?
-    
+        self.title = title
+        self.cont = cont
+        self.bmt = bmt
+        self.ints = ints
+        self.nhs = nhs
+        self.nsc = nsc
+        self.nzh = nzh
+        self.nrh = nrh
+        self.nem = nem
+        self.ncv = ncv
+        self.section = section
+        self.name = name
+        self.metadata = metadata
+# What is the minimum required set of commands?
+
     def __str__(self):
         return self.title.__str__()+self.section.__str__()
-        
-        
+
     def add_title(title):
-        self.title=title
-    
+        self.title = title
+
     def add_cont(cont):
-        self.cont=cont
-    
+        self.cont = cont
+
     def add_sec(sec):
-        self.sec=sec
-        
+        self.sec = sec
+
     def gen(self, file):
-        if self.title!=None:
+        if self.title is not None:
             self.title.gen(file)
-        if self.cont!=None:   
+        if self.cont is not None:
             self.cont.gen(file)
-        if self.bmt!=None:
+        if self.bmt is not None:
             self.bmt.gen(file)
-        if self.ints!=None:   
+        if self.ints is not None:
             self.ints.gen(file)
-        if self.nhs!=None: 
+        if self.nhs is not None:
             self.nhs.gen(file)
-        if self.nsc!=None:
+        if self.nsc is not None:
             self.nsc.gen(file)
-        if self.nzh!=None:   
+        if self.nzh is not None:
             self.nzh.gen(file)
-        if self.nrh!=None: 
+        if self.nrh is not None:
             self.nrh.gen(file)
-        if self.nem!=None:
+        if self.nem is not None:
             self.nem.gen(file)
-        if self.ncv!=None:   
+        if self.ncv is not None:
             self.ncv.gen(file)
-        if self.sec!=None: 
+        if self.sec is not None:
             self.sec.gen(file)
-        
 
 
 class Title(object):
+
     def __init__(self, title):
-        self.title=title
+        self.title = title
+
     def __str__(self):
-        return 'Problem Title: ' +self.title+'\n'
+        return 'Problem Title: ' + self.title + '\n'
+
     def __repr__(self):
-        return 'Problem Title: '+ self.title+'\n'
+        return 'Problem Title: ' + self.title + '\n'
 
     def gen(self, file):
         file.write(self.title)
 
-class Cont(object):
-    cont_dict =\
-            {
-                'betaperp'      : {'default': None, 'desc': '(R) beta value to use in calculating amplitude variable A^2', 'type':'Real'},
-                
-                'bgen'          : {'default': True, 'desc': '''(L) if
-                 .true.=>generate initial beam particles, otherwise read input
-                 from FOR003.DAT (true)''', 'type': 'Logical'},
-                
-                'bunchcut'      : {'default': 1E6, 'desc': '(R) maximum time difference allowed between a particle and the reference particle [s] (1E6)', 'type': 'Real'},
 
-                'bzfldprd'      : {'default': None,  'desc': '(R) Bz for solenoid at location of production plane (0.) This is used for output to file\
-                                               for009.dat and for canonical angular momentum correction.', 'type': 'Real'},
-                'dectrk'        : {False, '(L) if .true. => continue tracking daughter particle following decay', 'Logical'},
-                'diagref'       : {False, '(L) if .true. => continue tracking daughter particle following decay'},
-                'epsf'          : {0.05,  '(R) desired tolerance on fractional field variation, energy loss, and\
-                                               multiple scattering per step', 'Real'},
-                'epsreq'        : {None,  '(R) required tolerance on error in tracking parameters (1E-3) This parameter is only\
-                                               used if varstep = true', 'Real' },
-                'epsstep'       : {1E-6,  '(R) desired tolerance in spatial stepping to reach each destination plane [m]', 'Real'},
-                'ffcr'          : {False, '(L) if .true. => inserts form feed and carriage returns in the output log file\
-                                               so there are two plots per page starting at the top of a page', 'Logical'},
-                'forcerp'       : {True,  '(L) if .true. => set x, y, Px, and Py for reference particle to 0 for each\
-                                               new REFP command and for each ACCEL region with phasemodel=4.', 'Logical'},
-                'fsav'          : {None,  '(L) if .true. => store particle info at plane IZFILE into file\
-                                              FOR004.DAT. (false).  It is possible to get the initial distribution\
-                                              of particles that get a given error flag be setting the plane=IFAIL #. It is\
-                                              possible to get the initial distribution of particles that successfully make it to the\
-                                              end of the simulation by setting the plane= -1.', 'Logical'},                                             
-                'fsavset'       : {False, '(L) if .true. => modify data stored using FSAV in FOR004.DAT to have z=0 and times relative\
-                                            to reference particle at plane IZFILE.', 'Logical' },
-                'f9dp'          : {None, '(I) number of digits after the decimal point for floating point variables in FOR009.DAT {4,6,8,10,12,14,16,17}\
-                                          (4) F9DP=17 gives 16 digits after the decimal point and 3 digits in the exponent', 'Integer'},
-                'goodtrack'     : {True, '(L) if .true. and BGEN=.false. => only accepts input data from file FOR003.DAT if IPFLG=0.;\
-                                          if .false. => resets IPFLG of bad input tracks to 0 (this allows processing a file of bad tracks for diagnostic purposes)', 'Logical'},
+class Cont(object):
+    cont_dict = {
+        'betaperp':  {'default': None,
+                      'desc': '(R) beta value to use in calculating amplitude variable A^2',
+                      'type': 'Real'},
+
+        'bgen':     {'default': True,
+                     'desc': '(L) if .true.=>generate initial beam particles, otherwise read input from FOR003.DAT '
+                     '(true)',
+                     'type': 'Logical'},
+
+        'bunchcut': {'default': 1E6,
+                     'desc': '(R) maximum time difference allowed between a particle and the reference particle [s] '
+                     '(1E6)',
+                     'type': 'Real'},
+
+        'bzfldprd': {'default': None,
+                     'desc': '(R) Bz for solenoid at location of production plane (0.) This is used for output to '
+                     'file for009.dat and for canonical angular momentum correction.',
+                     'type': 'Real'},
+
+        'dectrk':   {'default': False,
+                     'desc': '(L) if .true. => continue tracking daughter particle following decay.',
+                     'type': 'Logical'},
+
+        'diagref':  {'default': False,
+                     'desc': '(L) if .true. => continue tracking daughter particle following decay.',
+                     'type': 'Logical'},
+
+        'epsf':     {'default': 0.05,
+                     'desc': '(R) desired tolerance on fractional field variation, energy loss, and multiple '
+                     'scattering per step',
+                     'type': 'Real'},
+
+        'bzfldprd': {'default': None,
+                     'desc': '(R) Bz for solenoid at location of production plane (0.) This is used for output to '
+                     'file for009.dat and for canonical angular '
+                     'momentum correction.',
+                     'type': 'Real'},
+
+        'dectrk':   {'default': False,
+                     'desc': '(L) if .true. => continue tracking daughter particle following decay',
+                     'type': 'Logical'},
+
+        'diagref':  {'default': False,
+                     'desc': '(L) if .true. => continue tracking daughter particle following decay',
+                     'type': 'Logical'},
+
+        'epsf':     {'default': 0.05,
+                     'desc': '(R) desired tolerance on fractional field variation, energy loss, and multiple '
+                     'scattering per step',
+                     'type': 'Real'},
+
+        'epsreq':   {'default': None,
+                     'desc': '(R) required tolerance on error in tracking parameters (1E-3) This parameter is '
+                     'only used if varstep = true',
+                     'type': 'Real'},
+
+        'epsstep':  {'default': 1E-6,
+                     'desc': '(R) desired tolerance in spatial stepping to reach each destination plane [m]',
+                     'type': 'Real'},
+
+        'ffcr':     {'default': False,
+                     'desc': '(L) if .true. => inserts form feed and carriage returns in the output log file so there '
+                     'are two plots per page starting at the top of a page',
+                     'type': 'Logical'},
+
+        'forcerp':  {'default': True,
+                     'desc': '(L) if .true. => set x, y, Px, and Py for reference particle to 0 for each new REFP '
+                     'command and for each ACCEL region with phasemodel=4.',
+                     'type': 'Logical'},
+
+        'fsav':     {'default': None,
+                     'desc': '(L) if .true. => store particle info at plane IZFILE into file FOR004.DAT. (false). '
+                     'It is possible to get the initial distribution of particles that get a given error flag be '
+                     'setting the plane=IFAIL . It is possible to get the initial distribution of particles that '
+                     'successfully make it to the end of the simulation by setting the plane= -1.',
+                     'type': 'Logical'},
+
+        'fsavset':  {'default': False,
+                     'type': '(L) if .true. => modify data stored using FSAV in FOR004.DAT to have z=0 and '
+                     'times relative to reference particle at plane IZFILE.',
+                     'type': 'Logical'},
+
+        'f9dp':     {'default': None,
+                     'desc': '(I) number of digits after the decimal point for floating point variables in FOR009.DAT '
+                     '{4,6,8,10,12,14,16,17} (4) F9DP=17 gives 16 digits after the decimal point and 3 digits in the '
+                     'exponent',
+                     'type': 'Integer'},
+
+        'goodtrack': {'default': True,
+                      'desc': '(L) if .true. and BGEN=.false. => only accepts input data from file FOR003.DAT if '
+                      'IPFLG=0.; if .false. => resets IPFLG of bad input tracks to 0 (this allows processing a '
+                      'file of bad tracks for diagnostic purposes)',
+                      'type': 'Logical'},
+
                 'izfile'        : {None, '(I) z-plane where particle info is desired when using FSAV. Use 1 to\
                                           store beam at production. Saves initial particle properties for bad tracks if IZFILE=IFAIL #.\
                                           Saves initial particle properties for tracks that get to the end of the simulation if IZFILE=-1.\
@@ -171,6 +251,15 @@ class Cont(object):
                 'npart'         : {'default': None,   'desc': "(I) # of particles in simulation. The first 300,000 particles are stored in memory. Larger numbers\
                                     are allowed in principle since ICOOL writes the excess particle information to disc. However, there\
                                             can be a large space and speed penalty in doing so.", 'type': 'Integer'},
+
+
+
+
+    }
+
+
+        
+              
                 'nprnt'         : {},
                 'npskip'        : {},
                 'nsections'     : {},
@@ -210,7 +299,7 @@ class Cont(object):
                     print key,',', 
                 print
                 sys.exit(0)
-                #raise ValueError
+                # raise ValueError
         self.cont_commands=kwargs
                       
 
@@ -315,7 +404,7 @@ class Section(RegularRegion):
             self.command_list=command_list
         else:
             self.command_list=[]
-        #if self.command_list!=None: 
+        # if self.command_list!=None: 
         #    for command in command_list:
          #       pass
 
@@ -560,7 +649,7 @@ class Field(object):
     """
     def __init__(self, ftag, fparm):
         self.ftag = ftag
-        self.fparm=fparm
+        self.fparm = fparm
 
     def gen(self, file):
         file.write('\n')
@@ -570,7 +659,7 @@ class Field(object):
             file.write(s)
             file.write(" ")
 
-  
+
 class Material(object):
     """
     A Material is a:
@@ -637,11 +726,11 @@ class MetaAccel(type):
 
     def __call__(meta, *args, **kwargs):
     	print 'Type of meta is: ', type(meta)
-        #print "In MetaAccel call"
+        # print "In MetaAccel call"
         print('MetaAccel: {m},{a},{k}'.format(m=meta,a=args,k=kwargs))
         model=kwargs['model']
         selected_model_args=MetaAccel.models[str(model)][1]
-        #check_keyword_args(kwargs, selected_model_args)
+        # check_keyword_args(kwargs, selected_model_args)
         setattr(meta, 'model', kwargs['model'])
         for key in kwargs:
             print key
@@ -892,24 +981,51 @@ class Accel(Field):
 """
    # __metaclass__ = MetaAccel
    
-    models={'1': ['Ez only with no transverse variation', {'model': 1, 'freq': 2, 'grad': 3, 'phase': 4, 'rect_cyn': 5, 'mode': 8}],
-            '2': ['Cylindrical TM01p pillbox', {'model': 1, 'freq': 2, 'grad': 3, 'phase': 4, 'rect_cyn': 5, 'longitudinal_mode': 8}],
-            '3': ['Traveling wave cavity', {'model': 1, 'freq': 2, 'grad': 3, 'phase': 4, 'rect_cyn': 5, 'x_offset': 6, 'y_offset': 7, 'phase_velocity': 8}],
-            '4': ['Approximate fields for symmetric circular-nosed cavity', {'model': 1, 'freq': 2, 'grad': 3, 'phase': 4, 'length': 8, 'gap': 9, 'drift_tube_radius': 10, 'nose_radius': 11}],
-            '5': ['User-supplied azimuthally-symmetric TM mode (SuperFish)', {'model': 1, 'freq': 2, 'phase': 4, 'file_no': 8, 'field_strength_norm': 9, 'rad_cut': 10, 'axial_dist': 11, 'axial_sym': 12}],
-            '6': ['Induction linac model - waveform from user-supplied polynomial coefficients', {'model':1, 'time_offset': 2, 'gap': 3, 'time_reset': 4, 'V0': 5, 'V1': 6, 'V2': 7, 'V3': 8, 'V4': 9, 'V5': 10, 'V6': 11, 'V7': 12, 'V8': 13}],
-            '7': ['Induction linac model - waveform from internally generated waveform', {'model': 1, 'num_gaps': 2, 'start_volt': 3, 'volt_swing': 4, 'time_offset': 5, 'kin_en': 6, 'pulse_dur': 7, 'slope': 8, 'bins': 9, 'gap_len': 10, 'file_num': 11, 'kill_flag': 12, 'restart_flag': 13}],
-            '8': ['Induction linac model - Waveform from user-supplied file', {'model': 1, 'time_offset': 2, 'gap': 3, 'time_reset': 4, 'file_num_wav': 5, 'poly_order': 6, 'file_num_out': 7, 'time_inc': 8}],
-            '9': ['Sector-shaped pillbox cavity (circular cross section)', {'model':1, 'freq': 2, 'grad': 3, 'phase': 4}],
-            '10': ['Variable {frequency gradient} pillbox cavity', {'model':1, 'phase': 4, 'num_wavelengths': 5, 'reset_parm': 6, 'buncher_length': 7, 'g0': 8, 'g1': 9, 'g2': 10, 'phase_model': 12}],
-            '11': ['Straight pillbox or SuperFish cavity in dipole region', {'model':1, 'freq': 2, 'grad': 3, 'phase': 4, 'radial_offset': 5, 'axial_length': 6, 'cavity_type': 7, 'file_num': 8, 'sf_field_norm': 9, 'sf_rad_cutoff': 10, 'sf_ axial_disp': 11, 'sf_axial_sym': 12}],
-            '12': ['Sector-shaped pillbox cavity (rectangular cross section)', {'model': 1, 'freq': 2, 'grad': 3, 'phase': 4, 'rad_offset': 5, 'cav_width': 6, 'cav_height': 7}],
+    models={'1': ['Ez only with no transverse variation', 
+           {'model': 1, 'freq': 2, 'grad': 3, 'phase': 4, 'rect_cyn': 5, 'mode': 8}],
+
+           '2': ['Cylindrical TM01p pillbox', 
+           {'model': 1, 'freq': 2, 'grad': 3, 'phase': 4, 'rect_cyn': 5, 'longitudinal_mode': 8}],
+
+           '3': ['Traveling wave cavity', 
+           {'model': 1, 'freq': 2, 'grad': 3, 'phase': 4, 'rect_cyn': 5, 'x_offset': 6, 'y_offset': 7, 'phase_velocity': 8}],
+
+           '4': ['Approximate fields for symmetric circular-nosed cavity', 
+           {'model': 1, 'freq': 2, 'grad': 3, 'phase': 4, 'length': 8, 'gap': 9, 'drift_tube_radius': 10, 'nose_radius': 11}],
+
+           '5': ['User-supplied azimuthally-symmetric TM mode (SuperFish)', 
+           {'model': 1, 'freq': 2, 'phase': 4, 'file_no': 8, 'field_strength_norm': 9, 'rad_cut': 10, 'axial_dist': 11, 'axial_sym': 12}],
+
+           '6': ['Induction linac model - waveform from user-supplied polynomial coefficients', 
+           {'model':1, 'time_offset': 2, 'gap': 3, 'time_reset': 4, 'V0': 5, 'V1': 6, 'V2': 7, 'V3': 8, 'V4': 9, 
+           'V5': 10, 'V6': 11, 'V7': 12, 'V8': 13}],
+
+           '7': ['Induction linac model - waveform from internally generated waveform', 
+           {'model': 1, 'num_gaps': 2, 'start_volt': 3, 'volt_swing': 4, 'time_offset': 5, 'kin_en': 6, 
+           'pulse_dur': 7, 'slope': 8, 'bins': 9, 'gap_len': 10, 'file_num': 11, 'kill_flag': 12, 'restart_flag': 13}],
+
+           '8': ['Induction linac model - Waveform from user-supplied file', {'model': 1, 'time_offset': 2, 'gap': 3, 
+           'time_reset': 4, 'file_num_wav': 5, 'poly_order': 6, 'file_num_out': 7, 'time_inc': 8}],
+
+           '9': ['Sector-shaped pillbox cavity (circular cross section)', 
+           {'model':1, 'freq': 2, 'grad': 3, 'phase': 4}],
+
+           '10': ['Variable {frequency gradient} pillbox cavity', 
+           {'model':1, 'phase': 4, 'num_wavelengths': 5, 'reset_parm': 6, 'buncher_length': 7, 'g0': 8, 'g1': 9, 
+           'g2': 10, 'phase_model': 12}],
+
+           '11': ['Straight pillbox or SuperFish cavity in dipole region', 
+           {'model':1, 'freq': 2, 'grad': 3, 'phase': 4, 'radial_offset': 5, 'axial_length': 6, 'cavity_type': 7, 
+           'file_num': 8, 'sf_field_norm': 9, 'sf_rad_cutoff': 10, 'sf_ axial_disp': 11, 'sf_axial_sym': 12}],
+
+           '12': ['Sector-shaped pillbox cavity (rectangular cross section)', 
+           {'model': 1, 'freq': 2, 'grad': 3, 'phase': 4, 'rad_offset': 5, 'cav_width': 6, 'cav_height': 7}],
             '13': ['Open cell standing wave cavity', {'model': 1, 'freq': 2, 'grad': 3, 'phase': 4, 'focus_flag': 5}]
             }
 
     def __init__(self, **kwargs):
         check_keyword_args(kwargs, self)
-        #If we got here do model first
+        # If we got here do model first
         self.selected_model=self.models[str(kwargs['model'])][1]
         setattr(self, 'model', kwargs['model'])
         
@@ -929,10 +1045,10 @@ class Accel(Field):
 
     def gen_fparm(self):
         self.fparm=[0]*15
-        #members = [attr for attr in dir(self) if not callable(attr) and not attr.startswith("__") and not attr.startswith("_")]  
-        #print "members is: ", members 
-        #model=MetaAccel.models[str(self.model)][1]
-        #print model
+        # members = [attr for attr in dir(self) if not callable(attr) and not attr.startswith("__") and not attr.startswith("_")]  
+        # print "members is: ", members 
+        # model=MetaAccel.models[str(self.model)][1]
+        # print model
         for key in self.selected_model:
             pos=self.selected_model[key]
             self.fparm[pos-1]=getattr(self, key)
@@ -955,27 +1071,49 @@ class Accel(Field):
     			super(Accel, self).__setattr__('selected_model', self.models[str(self.model)][1])
     			for key in self.selected_model:
     				super(Accel, self).__setattr__(key, 0)
-    			#self.selected_model=self.models[str(self.model)][1]
+    			# self.selected_model=self.models[str(self.model)][1]
 
     	print 'In setattr for: ', name
     	print 'Has attribute', name, hasattr(self, name)
-    	#if not hasattr(self, name):
+    	# if not hasattr(self, name):
     	print 'Setting: ', name
     	if name in self.selected_model.keys():
     		super(Accel, self).__setattr__(name, value)
    	 	
 
 class MetaSol(type):
-    models={'1': ['Ez only with no transverse variation', {'freq': 2, 'grad': 3, 'phase': 4, 'rect_cyn': 5, 'mode': 8}],
-            '2': ['Cylindrical TM01p pillbox', {'freq': 2, 'grad': 3, 'phase': 4, 'rect_cyn': 5, 'longitudinal_mode': 8}],
-            '3': ['Traveling wave cavity', {'freq': 2, 'grad': 3, 'phase': 4, 'rect_cyn': 5, 'x_offset': 6, 'y_offset': 7, 'phase_velocity': 8}],
-            '4': ['Approximate fields for symmetric circular-nosed cavity', {'freq': 2, 'grad': 3, 'phase': 4, 'length': 8, 'gap': 9, 'drift_tube_radius': 10, 'nose_radius': 11}],
-            '5': ['User-supplied azimuthally-symmetric TM mode (SuperFish)', {'freq': 2, 'phase': 4, 'file_no': 8, 'field_strength_norm': 9, 'rad_cut': 10, 'axial_dist': 11, 'axial_sym': 12}],
-            '6': ['Induction linac model - waveform from user-supplied polynomial coefficients', {'time_offset': 2, 'gap': 3, 'time_reset': 4, 'V0': 5, 'V1': 6, 'V2': 7, 'V3': 8, 'V4': 9, 'V5': 10, 'V6': 11, 'V7': 12, 'V8': 13}],
-            '7': ['Induction linac model - waveform from internally generated waveform', {'num_gaps': 2, 'start_volt': 3, 'volt_swing': 4, 'time_offset': 5, 'kin_en': 6, 'pulse_dur': 7, 'slope': 8, 'bins': 9, 'gap_len': 10, 'file_num': 11, 'kill_flag': 12, 'restart_flag': 13}],
-            '8': ['Induction linac model - Waveform from user-supplied file', {'time_offset': 2, 'gap': 3, 'time_reset': 4, 'file_num_wav': 5, 'poly_order': 6, 'file_num_out': 7, 'time_inc': 8}],
-            '9': ['Sector-shaped pillbox cavity (circular cross section)', {'freq': 2, 'grad': 3, 'phase': 4}],
-            '10': ['Variable {frequency gradient} pillbox cavity', {'phase': 4, 'num_wavelengths': 5, 'reset_parm': 6, 'buncher_length': 7, 'g0': 8, 'g1': 9, 'g2': 10, 'phase_model': 12}]
+    models={'1': ['Ez only with no transverse variation', 
+           {'freq': 2, 'grad': 3, 'phase': 4, 'rect_cyn': 5, 'mode': 8}],
+
+            '2': ['Cylindrical TM01p pillbox',
+            {'freq': 2, 'grad': 3, 'phase': 4, 'rect_cyn': 5, 'longitudinal_mode': 8}],
+
+            '3': ['Traveling wave cavity',
+            {'freq': 2, 'grad': 3, 'phase': 4, 'rect_cyn': 5, 'x_offset': 6, 'y_offset': 7, 'phase_velocity': 8}],
+
+            '4': ['Approximate fields for symmetric circular-nosed cavity',
+            {'freq': 2, 'grad': 3, 'phase': 4, 'length': 8, 'gap': 9, 'drift_tube_radius': 10, 'nose_radius': 11}],
+
+            '5': ['User-supplied azimuthally-symmetric TM mode (SuperFish)', 
+            {'freq': 2, 'phase': 4, 'file_no': 8, 'field_strength_norm': 9, 'rad_cut': 10, 'axial_dist': 11,
+             'axial_sym': 12}],
+
+            '6': ['Induction linac model - waveform from user-supplied polynomial coefficients', 
+            {'time_offset': 2, 'gap': 3, 'time_reset': 4, 'V0': 5, 'V1': 6, 'V2': 7, 'V3': 8, 'V4': 9, 'V5': 10, 
+            'V6': 11, 'V7': 12, 'V8': 13}],
+
+            '7': ['Induction linac model - waveform from internally generated waveform', 
+            {'num_gaps': 2, 'start_volt': 3, 'volt_swing': 4, 'time_offset': 5, 'kin_en': 6, 'pulse_dur': 7, 
+             'slope': 8, 'bins': 9, 'gap_len': 10, 'file_num': 11, 'kill_flag': 12, 'restart_flag': 13}],
+
+            '8': ['Induction linac model - Waveform from user-supplied file', 
+            {'time_offset': 2, 'gap': 3, 'time_reset': 4, 'file_num_wav': 5, 'poly_order': 6, 'file_num_out': 7, 
+            'time_inc': 8}],
+
+            '9': ['Sector-shaped pillbox cavity (circular cross section)', 
+            {'freq': 2, 'grad': 3, 'phase': 4}], '10': ['Variable {frequency gradient} pillbox cavity', 
+            {'phase': 4, 'num_wavelengths': 5, 'reset_parm': 6, 'buncher_length': 7, 'g0': 8, 'g1': 9, 'g2': 10, 
+             'phase_model': 12}]
             }
 
 class Sol(Field):
@@ -1063,7 +1201,42 @@ class Sol(Field):
     This model applies a geometry cut on particles whose radius exceeds the specified radial taper.
 
     """
-    __metaclass__ = MetaSol
+    #__metaclass__ = MetaSol
+
+     models={'1': ['Ez only with no transverse variation', 
+           {'freq': 2, 'grad': 3, 'phase': 4, 'rect_cyn': 5, 'mode': 8}],
+
+            '2': ['Cylindrical TM01p pillbox',
+            {'freq': 2, 'grad': 3, 'phase': 4, 'rect_cyn': 5, 'longitudinal_mode': 8}],
+
+            '3': ['Traveling wave cavity',
+            {'freq': 2, 'grad': 3, 'phase': 4, 'rect_cyn': 5, 'x_offset': 6, 'y_offset': 7, 'phase_velocity': 8}],
+
+            '4': ['Approximate fields for symmetric circular-nosed cavity',
+            {'freq': 2, 'grad': 3, 'phase': 4, 'length': 8, 'gap': 9, 'drift_tube_radius': 10, 'nose_radius': 11}],
+
+            '5': ['User-supplied azimuthally-symmetric TM mode (SuperFish)', 
+            {'freq': 2, 'phase': 4, 'file_no': 8, 'field_strength_norm': 9, 'rad_cut': 10, 'axial_dist': 11,
+             'axial_sym': 12}],
+
+            '6': ['Induction linac model - waveform from user-supplied polynomial coefficients', 
+            {'time_offset': 2, 'gap': 3, 'time_reset': 4, 'V0': 5, 'V1': 6, 'V2': 7, 'V3': 8, 'V4': 9, 'V5': 10, 
+            'V6': 11, 'V7': 12, 'V8': 13}],
+
+            '7': ['Induction linac model - waveform from internally generated waveform', 
+            {'num_gaps': 2, 'start_volt': 3, 'volt_swing': 4, 'time_offset': 5, 'kin_en': 6, 'pulse_dur': 7, 
+             'slope': 8, 'bins': 9, 'gap_len': 10, 'file_num': 11, 'kill_flag': 12, 'restart_flag': 13}],
+
+            '8': ['Induction linac model - Waveform from user-supplied file', 
+            {'time_offset': 2, 'gap': 3, 'time_reset': 4, 'file_num_wav': 5, 'poly_order': 6, 'file_num_out': 7, 
+            'time_inc': 8}],
+
+            '9': ['Sector-shaped pillbox cavity (circular cross section)', 
+            {'freq': 2, 'grad': 3, 'phase': 4}], '10': ['Variable {frequency gradient} pillbox cavity', 
+            {'phase': 4, 'num_wavelengths': 5, 'reset_parm': 6, 'buncher_length': 7, 'g0': 8, 'g1': 9, 'g2': 10, 
+             'phase_model': 12}]
+            }
+
      
     def __init__(self, model, field_parameters):
         self.model=model
@@ -1168,11 +1341,7 @@ class InputArgumentsError(InputError):
         
 class FieldError(InputError):
     pass
-
-
-
-                
-               
+  
 
 def valid_command(command_dict, command, value, namelist):
     try:
@@ -1222,13 +1391,13 @@ def check_type(icool_type, provided_type):
         else:
             return False
  
- #Checks if ALL keywords for a model are specified.  If not, raises InputArgumentsError
- #If model is not specified, raises ModelNotSpecifiedError
+ # Checks if ALL keywords for a model are specified.  If not, raises InputArgumentsError
+ # If model is not specified, raises ModelNotSpecifiedError
 def check_keyword_args(input_dict, cls):
     models=cls.models
     try:
-       #print sorted(input_dict.keys())
-       #print sorted(actual_dict.keys())
+       # print sorted(input_dict.keys())
+       # print sorted(actual_dict.keys())
        if not check_model_specified(input_dict):
        		actual_dict={'Unknown':0}
        		raise InputArgumentsError('Input Arguments Error', input_dict, actual_dict)
@@ -1240,7 +1409,7 @@ def check_keyword_args(input_dict, cls):
         print e
         return -1
 
-#Checks whether the keywords specified for a current model correspond to that model.
+# Checks whether the keywords specified for a current model correspond to that model.
 def check_partial_keywords_for_current_model(input_dict, cls):
 	actual_dict=(cls, cls.model)
 	for key in input_dict:
@@ -1248,7 +1417,7 @@ def check_partial_keywords_for_current_model(input_dict, cls):
 			raise InputArgumentsError('Input Arguments Error', input_dict, actual_dict)
 	return True
 
-#Checks whether the keywords specified for a new model correspond to that model.
+# Checks whether the keywords specified for a new model correspond to that model.
 def check_partial_keywords_for_new_model(input_dict, cls):
 	model=input_dict['model']
 	actual_dict=get_model_dict(cls, model)
