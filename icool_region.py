@@ -1,5 +1,5 @@
 import sys
-import icool_exceptions
+import icool_exceptions as ie
 
 
 class ICoolGen(object):
@@ -23,7 +23,7 @@ class ICoolGen(object):
     def sp(f):
         f.write(" ")
 
-    def list_line(f, list):
+    def list_line(self, f, list):
         for item in list:
             f.write(item)
             self.sp()
@@ -89,13 +89,13 @@ class ICoolInput(object):
     def __str__(self):
         return self.title.__str__()+self.section.__str__()
 
-    def add_title(title):
+    def add_title(self, title):
         self.title = title
 
-    def add_cont(cont):
+    def add_cont(self, cont):
         self.cont = cont
 
-    def add_sec(sec):
+    def add_sec(self, sec):
         self.sec = sec
 
     def gen(self, file):
@@ -234,12 +234,19 @@ class Cont(object):
                       'file of bad tracks for diagnostic purposes)',
                       'type': 'Logical'},
 
-                'izfile'        : {None, '(I) z-plane where particle info is desired when using FSAV. Use 1 to\
-                                          store beam at production. Saves initial particle properties for bad tracks if IZFILE=IFAIL #.\
-                                          Saves initial particle properties for tracks that get to the end of the simulation if IZFILE=-1.\
-                                          IZFILE should point to the end of a REGION or to an APERTURE , ROTATE or TRANSPORT pseudoregion command.', 'Integer'},
-                'magconf'       : {0,    '(I) if 19 < MAGCONF=mn < 100 => reads in file FOR0mn.DAT, which contains data on solenoidal magnets. Used with SHEET,\
-                                          model 4.', 'Integer'},
+        'izfile':    {'default': None,
+                      'desc': '(I) z-plane where particle info is desired when using FSAV. Use 1 to store beam at '
+                      'production. Saves initial particle properties for bad tracks if IZFILE=IFAIL #.  Saves initial '
+                      'particle properties for tracks that get to the end of the simulation if IZFILE=-1.  IZFILE '
+                      'should point to the end of a REGION or to an APERTURE , ROTATE or TRANSPORT pseudoregion '
+                      'command.',
+                      'type': 'Integer'},
+
+        'magconf':    {'default': 0,
+                       'desc': '(I) if 19 < MAGCONF=mn < 100 => reads in file FOR0mn.DAT, which contains data on '
+                       'solenoidal magnets. Used with SHEET, model 4.',
+                       'type': 'Integer'},
+
                 'mapdef'        : {0,     '(I) if 19 < MAPDEF=mn < 100 => reads in file FOR0mn.DAT, which contains data on how to set up field grid. Used with \
                                            SHEET, model 4.', 'Integer'},
                 'neighbor'      : {False, "(L) if .true. => include fields from previous and following regions when calculating field.  This parameter can be used\
@@ -252,15 +259,7 @@ class Cont(object):
                                     are allowed in principle since ICOOL writes the excess particle information to disc. However, there\
                                             can be a large space and speed penalty in doing so.", 'type': 'Integer'},
 
-
-
-
-    }
-
-
-        
-              
-                'nprnt'         : {},
+                                                 'nprnt'         : {},
                 'npskip'        : {},
                 'nsections'     : {},
                 'ntuple'        : {},
@@ -286,26 +285,29 @@ class Cont(object):
                 'stepmin'       : {},
                 'steprk'        : {}, 
                 'summary'       : {},
-                'termout'       : {},
+                'termout'      :{},
                 'timelim'       : {},
                 'varstep'       : {}
-                }
-    
+
+
+
+
+    }
+
     def __init__(self, **kwargs):
         for command, value in kwargs.items():
-            if valid_command(cont_dict, command, value, 'CONT')==-1:
+            if valid_command(self.cont_dict, command, value, 'CONT') == -1:
                 print 'Valid commands are:\n'
-                for key in cont_dict:
-                    print key,',', 
+                for key in self.cont_dict:
+                    print key, ',',
                 print
                 sys.exit(0)
                 # raise ValueError
-        self.cont_commands=kwargs
-                      
+        self.cont_commands = kwargs
 
     def __str__(self):
-         defined_cont=display_commands(cont_commands)
-         return 'Control variables: \n'
+        defined_cont = display_commands(cont_commands)
+        return 'Control variables: \n'
 
     def __repr__(self):
         return '[Control variables: ]'
@@ -419,8 +421,8 @@ class Section(RegularRegion):
             if self.check_command(command)==True:
                 self.command_list.append(command)
             else:
-                raise IncorrectObjectCommand('Incorrect Object Command.', 'Section', command.__class__.__name__)
-        except IncorrectObjectCommand as e:
+                raise ie.IncorrectObjectCommand('Incorrect Object Command.', 'Section', command.__class__.__name__)
+        except ie.IncorrectObjectCommand as e:
             print e
             sys.exit(0)
 
@@ -567,6 +569,7 @@ class Cell(RegularRegion):
     def gen(self, file):
         region.gen('CELL')
 
+
 class SRegion(RegularRegion):
     """
     SREGION - Start of new s-region. Describes field and material properties.
@@ -602,14 +605,15 @@ class SRegion(RegularRegion):
     These 10 parameters must be on one input line (see specific material type below)
     """
     def __init__(self, slen, nrreg, zstep, r_subregion_list=None, name=None):
-        self.slen=slen
-        self.nrreg=nrreg
-        self.zstep=zstep
-        self.subregions=[]
+        self.slen = slen
+        self.nrreg = nrreg
+        self.zstep = zstep
+        self.subregions = []
         RegularRegion.__init__(self, name)
 
     def __str__(self):
-        return 'SRegion:\n '+'slen='+str(self.slen)+','+'nrreg='+str(self.nrreg)+','+'zstep='+str(self.zstep)
+        return 'SRegion:\n '+'slen='+str(self.slen) + ',' + 'nrreg=' + str(self.nrreg) + ',' + \
+               'zstep=' + str(self.zstep)
         
     def __repr__(self):
         return 'SRegion:\n '+'slen='+str(self.slen)+','+'nrreg='+str(self.nrreg)+','+'zstep='+str(self.zstep)
@@ -653,9 +657,9 @@ class Field(object):
 
     def gen(self, file):
         file.write('\n')
-        file.write(ftag)
+        file.write(self.ftag)
         file.write('\n')
-        for s in fparm:
+        for s in self.fparm:
             file.write(s)
             file.write(" ")
 
@@ -692,54 +696,19 @@ class Material(object):
     """
     def __init__(self, mtag, mgeom, gparm):
         self.mtag = mtag
-        self.mgeom=mgeom
-        self.mparm=gparm
+        self.mgeom = mgeom
+        self.mparm = gparm
 
     def gen(self, file):
         file.write('\n')
-        file.write(mtag)
+        file.write(self.mtag)
         file.write('\n')
-        file.write(mgeom)
+        file.write(self.mgeom)
         file.write('\n')
         for s in mparm:
             file.write(s)
             file.write(" ")
 
-class MetaAccel(type):
-    models={'1': ['Ez only with no transverse variation', {'model': 1, 'freq': 2, 'grad': 3, 'phase': 4, 'rect_cyn': 5, 'mode': 8}],
-            '2': ['Cylindrical TM01p pillbox', {'model': 1, 'freq': 2, 'grad': 3, 'phase': 4, 'rect_cyn': 5, 'longitudinal_mode': 8}],
-            '3': ['Traveling wave cavity', {'model': 1, 'freq': 2, 'grad': 3, 'phase': 4, 'rect_cyn': 5, 'x_offset': 6, 'y_offset': 7, 'phase_velocity': 8}],
-            '4': ['Approximate fields for symmetric circular-nosed cavity', {'model': 1, 'freq': 2, 'grad': 3, 'phase': 4, 'length': 8, 'gap': 9, 'drift_tube_radius': 10, 'nose_radius': 11}],
-            '5': ['User-supplied azimuthally-symmetric TM mode (SuperFish)', {'model': 1, 'freq': 2, 'phase': 4, 'file_no': 8, 'field_strength_norm': 9, 'rad_cut': 10, 'axial_dist': 11, 'axial_sym': 12}],
-            '6': ['Induction linac model - waveform from user-supplied polynomial coefficients', {'model':1, 'time_offset': 2, 'gap': 3, 'time_reset': 4, 'V0': 5, 'V1': 6, 'V2': 7, 'V3': 8, 'V4': 9, 'V5': 10, 'V6': 11, 'V7': 12, 'V8': 13}],
-            '7': ['Induction linac model - waveform from internally generated waveform', {'model': 1, 'num_gaps': 2, 'start_volt': 3, 'volt_swing': 4, 'time_offset': 5, 'kin_en': 6, 'pulse_dur': 7, 'slope': 8, 'bins': 9, 'gap_len': 10, 'file_num': 11, 'kill_flag': 12, 'restart_flag': 13}],
-            '8': ['Induction linac model - Waveform from user-supplied file', {'model': 1, 'time_offset': 2, 'gap': 3, 'time_reset': 4, 'file_num_wav': 5, 'poly_order': 6, 'file_num_out': 7, 'time_inc': 8}],
-            '9': ['Sector-shaped pillbox cavity (circular cross section)', {'model':1, 'freq': 2, 'grad': 3, 'phase': 4}],
-            '10': ['Variable {frequency gradient} pillbox cavity', {'model':1, 'phase': 4, 'num_wavelengths': 5, 'reset_parm': 6, 'buncher_length': 7, 'g0': 8, 'g1': 9, 'g2': 10, 'phase_model': 12}],
-            '11': ['Straight pillbox or SuperFish cavity in dipole region', {'model':1, 'freq': 2, 'grad': 3, 'phase': 4, 'radial_offset': 5, 'axial_length': 6, 'cavity_type': 7, 'file_num': 8, 'sf_field_norm': 9, 'sf_rad_cutoff': 10, 'sf_ axial_disp': 11, 'sf_axial_sym': 12}],
-            '12': ['Sector-shaped pillbox cavity (rectangular cross section)', {'model': 1, 'freq': 2, 'grad': 3, 'phase': 4, 'rad_offset': 5, 'cav_width': 6, 'cav_height': 7}],
-            '13': ['Open cell standing wave cavity', {'model': 1, 'freq': 2, 'grad': 3, 'phase': 4, 'focus_flag': 5}]
-            }
-    def __new__(meta, classname, supers, classdict):
-        print('In MetaAccel: ', classname, supers, classdict) 
-        return type.__new__( meta, classname, supers, classdict)
-
-    def __call__(meta, *args, **kwargs):
-    	print 'Type of meta is: ', type(meta)
-        # print "In MetaAccel call"
-        print('MetaAccel: {m},{a},{k}'.format(m=meta,a=args,k=kwargs))
-        model=kwargs['model']
-        selected_model_args=MetaAccel.models[str(model)][1]
-        # check_keyword_args(kwargs, selected_model_args)
-        setattr(meta, 'model', kwargs['model'])
-        for key in kwargs:
-            print key
-            setattr(meta, key, kwargs[key])
-        return type.__call__(meta)
-
- 
-def Accel_Decorator(cls):
-	pass 
 
 class Accel(Field):
     """ACCE(L) linear accelerator fields
@@ -979,86 +948,94 @@ class Accel(Field):
         3: no edge focusing
 
 """
-   # __metaclass__ = MetaAccel
-   
-    models={'1': ['Ez only with no transverse variation', 
-           {'model': 1, 'freq': 2, 'grad': 3, 'phase': 4, 'rect_cyn': 5, 'mode': 8}],
+    models = {
 
-           '2': ['Cylindrical TM01p pillbox', 
-           {'model': 1, 'freq': 2, 'grad': 3, 'phase': 4, 'rect_cyn': 5, 'longitudinal_mode': 8}],
+        '1': {'desc': 'Ez only with no transverse variation',
+              'parms': {'model': 1, 'freq': 2, 'grad': 3, 'phase': 4, 'rect_cyn': 5, 'mode': 8}},
 
-           '3': ['Traveling wave cavity', 
-           {'model': 1, 'freq': 2, 'grad': 3, 'phase': 4, 'rect_cyn': 5, 'x_offset': 6, 'y_offset': 7, 'phase_velocity': 8}],
+        '2': {'desc': 'Cylindrical TM01p pillbox',
+              'parms': {'model': 1, 'freq': 2, 'grad': 3, 'phase': 4, 'rect_cyn': 5, 'longitudinal_mode': 8}},
 
-           '4': ['Approximate fields for symmetric circular-nosed cavity', 
-           {'model': 1, 'freq': 2, 'grad': 3, 'phase': 4, 'length': 8, 'gap': 9, 'drift_tube_radius': 10, 'nose_radius': 11}],
+        '3': {'desc': 'Traveling wave cavity',
+              'parms': {'model': 1, 'freq': 2, 'grad': 3, 'phase': 4, 'rect_cyn': 5, 'x_offset': 6,
+                        'y_offset': 7, 'phase_velocity': 8}},
 
-           '5': ['User-supplied azimuthally-symmetric TM mode (SuperFish)', 
-           {'model': 1, 'freq': 2, 'phase': 4, 'file_no': 8, 'field_strength_norm': 9, 'rad_cut': 10, 'axial_dist': 11, 'axial_sym': 12}],
+        '4': {'desc': 'Approximate fields for symmetric circular-nosed cavity',
+              'parms': {'model': 1, 'freq': 2, 'grad': 3, 'phase': 4, 'length': 8, 'gap': 9,
+                        'drift_tube_radius': 10, 'nose_radius': 11}},
 
-           '6': ['Induction linac model - waveform from user-supplied polynomial coefficients', 
-           {'model':1, 'time_offset': 2, 'gap': 3, 'time_reset': 4, 'V0': 5, 'V1': 6, 'V2': 7, 'V3': 8, 'V4': 9, 
-           'V5': 10, 'V6': 11, 'V7': 12, 'V8': 13}],
+        '5': {'desc': 'User-supplied azimuthally-symmetric TM mode (SuperFish)',
+              'parms': {'model': 1, 'freq': 2, 'phase': 4, 'file_no': 8, 'field_strength_norm': 9, 'rad_cut': 10,
+                        'axial_dist': 11, 'axial_sym': 12}},
 
-           '7': ['Induction linac model - waveform from internally generated waveform', 
-           {'model': 1, 'num_gaps': 2, 'start_volt': 3, 'volt_swing': 4, 'time_offset': 5, 'kin_en': 6, 
-           'pulse_dur': 7, 'slope': 8, 'bins': 9, 'gap_len': 10, 'file_num': 11, 'kill_flag': 12, 'restart_flag': 13}],
+        '6': {'desc': 'Induction linac model - waveform from user-supplied polynomial coefficients',
+              'parms': {'model': 1, 'time_offset': 2, 'gap': 3, 'time_reset': 4, 'V0': 5, 'V1': 6, 'V2': 7,
+                        'V3': 8, 'V4': 9, 'V5': 10, 'V6': 11, 'V7': 12, 'V8': 13}},
 
-           '8': ['Induction linac model - Waveform from user-supplied file', {'model': 1, 'time_offset': 2, 'gap': 3, 
-           'time_reset': 4, 'file_num_wav': 5, 'poly_order': 6, 'file_num_out': 7, 'time_inc': 8}],
+        '7': {'desc': 'Induction linac model - waveform from internally generated waveform',
+              'parms': {'model': 1, 'num_gaps': 2, 'start_volt': 3, 'volt_swing': 4, 'time_offset': 5, 'kin_en': 6,
+                        'pulse_dur': 7, 'slope': 8, 'bins': 9, 'gap_len': 10, 'file_num': 11, 'kill_flag': 12,
+                        'restart_flag': 13}},
 
-           '9': ['Sector-shaped pillbox cavity (circular cross section)', 
-           {'model':1, 'freq': 2, 'grad': 3, 'phase': 4}],
+        '8': {'desc': 'Induction linac model - Waveform from user-supplied file',
+              'parms': {'model': 1, 'time_offset': 2, 'gap': 3,
+                        'time_reset': 4, 'file_num_wav': 5, 'poly_order': 6, 'file_num_out': 7, 'time_inc': 8}},
 
-           '10': ['Variable {frequency gradient} pillbox cavity', 
-           {'model':1, 'phase': 4, 'num_wavelengths': 5, 'reset_parm': 6, 'buncher_length': 7, 'g0': 8, 'g1': 9, 
-           'g2': 10, 'phase_model': 12}],
+        '9': {'desc': 'Sector-shaped pillbox cavity (circular cross section)',
+              'parms': {'model': 1, 'freq': 2, 'grad': 3, 'phase': 4}},
 
-           '11': ['Straight pillbox or SuperFish cavity in dipole region', 
-           {'model':1, 'freq': 2, 'grad': 3, 'phase': 4, 'radial_offset': 5, 'axial_length': 6, 'cavity_type': 7, 
-           'file_num': 8, 'sf_field_norm': 9, 'sf_rad_cutoff': 10, 'sf_ axial_disp': 11, 'sf_axial_sym': 12}],
+        '10': {'desc': 'Variable {frequency gradient} pillbox cavity',
+               'parms': {'model': 1, 'phase': 4, 'num_wavelengths': 5, 'reset_parm': 6, 'buncher_length': 7,
+                         'g0': 8, 'g1': 9, 'g2': 10, 'phase_model': 12}},
 
-           '12': ['Sector-shaped pillbox cavity (rectangular cross section)', 
-           {'model': 1, 'freq': 2, 'grad': 3, 'phase': 4, 'rad_offset': 5, 'cav_width': 6, 'cav_height': 7}],
-            '13': ['Open cell standing wave cavity', {'model': 1, 'freq': 2, 'grad': 3, 'phase': 4, 'focus_flag': 5}]
-            }
+        '11': {'desc': 'Straight pillbox or SuperFish cavity in dipole region',
+               'parms': {'model': 1, 'freq': 2, 'grad': 3, 'phase': 4, 'radial_offset': 5, 'axial_length': 6,
+                         'cavity_type': 7, 'file_num': 8, 'sf_field_norm': 9, 'sf_rad_cutoff': 10,
+                         'sf_ axial_disp': 11, 'sf_axial_sym': 12}},
+
+        '12': {'desc': 'Sector-shaped pillbox cavity (rectangular cross section)',
+               'parms':  {'model': 1, 'freq': 2, 'grad': 3, 'phase': 4, 'rad_offset': 5, 'cav_width': 6,
+                          'cav_height': 7}},
+
+        '13': {'desc': 'Open cell standing wave cavity',
+               'parms': {'model': 1, 'freq': 2, 'grad': 3, 'phase': 4, 'focus_flag': 5}}
+    }
 
     def __init__(self, **kwargs):
         check_keyword_args(kwargs, self)
         # If we got here do model first
-        self.selected_model=self.models[str(kwargs['model'])][1]
+        self.selected_model = self.models[str(kwargs['model'])['parms']]
         setattr(self, 'model', kwargs['model'])
-        
         for key in kwargs:
             print key
-            if not key=='model':
-            	setattr(self, key, kwargs[key])
-    	
-    
+            if not key == 'model':
+                setattr(self, key, kwargs[key])
+
     def __call__(self, **kwargs):
-    	check_keyword_args(kwargs, self)
-    	for key in kwargs:
+        check_keyword_args(kwargs, self)
+        for key in kwargs:
             print key
-            if not key=='model':
-            	setattr(self, key, kwargs[key])
-    	self.selected_model=self.models[str(self.model)][1]
+            if not key == 'model':
+                setattr(self, key, kwargs[key])
+        self.selected_model = self.models[str(self.model)]['parms']
 
     def gen_fparm(self):
-        self.fparm=[0]*15
-        # members = [attr for attr in dir(self) if not callable(attr) and not attr.startswith("__") and not attr.startswith("_")]  
-        # print "members is: ", members 
+        self.fparm = [0]*15
+        # members = [attr for attr in dir(self) if not callable(attr) and not attr.startswith("__")
+        #and not attr.startswith("_")]
+        # print "members is: ", members
         # model=MetaAccel.models[str(self.model)][1]
         # print model
         for key in self.selected_model:
-            pos=self.selected_model[key]
-            self.fparm[pos-1]=getattr(self, key)
+            pos = self.selected_model[key]
+            self.fparm[pos-1] = getattr(self, key)
         print self.fparm
-        
+
     def gen(self, file):
         print
-    
+
     def __setattr__(self, name, value):
-    	if name=='selected_model':
+        if name == 'selected_model':
     		if not hasattr(self, 'selected_model'):
     			super(Accel, self).__setattr__(name, value)
     	if name=='model':
@@ -1080,41 +1057,6 @@ class Accel(Field):
     	if name in self.selected_model.keys():
     		super(Accel, self).__setattr__(name, value)
    	 	
-
-class MetaSol(type):
-    models={'1': ['Ez only with no transverse variation', 
-           {'freq': 2, 'grad': 3, 'phase': 4, 'rect_cyn': 5, 'mode': 8}],
-
-            '2': ['Cylindrical TM01p pillbox',
-            {'freq': 2, 'grad': 3, 'phase': 4, 'rect_cyn': 5, 'longitudinal_mode': 8}],
-
-            '3': ['Traveling wave cavity',
-            {'freq': 2, 'grad': 3, 'phase': 4, 'rect_cyn': 5, 'x_offset': 6, 'y_offset': 7, 'phase_velocity': 8}],
-
-            '4': ['Approximate fields for symmetric circular-nosed cavity',
-            {'freq': 2, 'grad': 3, 'phase': 4, 'length': 8, 'gap': 9, 'drift_tube_radius': 10, 'nose_radius': 11}],
-
-            '5': ['User-supplied azimuthally-symmetric TM mode (SuperFish)', 
-            {'freq': 2, 'phase': 4, 'file_no': 8, 'field_strength_norm': 9, 'rad_cut': 10, 'axial_dist': 11,
-             'axial_sym': 12}],
-
-            '6': ['Induction linac model - waveform from user-supplied polynomial coefficients', 
-            {'time_offset': 2, 'gap': 3, 'time_reset': 4, 'V0': 5, 'V1': 6, 'V2': 7, 'V3': 8, 'V4': 9, 'V5': 10, 
-            'V6': 11, 'V7': 12, 'V8': 13}],
-
-            '7': ['Induction linac model - waveform from internally generated waveform', 
-            {'num_gaps': 2, 'start_volt': 3, 'volt_swing': 4, 'time_offset': 5, 'kin_en': 6, 'pulse_dur': 7, 
-             'slope': 8, 'bins': 9, 'gap_len': 10, 'file_num': 11, 'kill_flag': 12, 'restart_flag': 13}],
-
-            '8': ['Induction linac model - Waveform from user-supplied file', 
-            {'time_offset': 2, 'gap': 3, 'time_reset': 4, 'file_num_wav': 5, 'poly_order': 6, 'file_num_out': 7, 
-            'time_inc': 8}],
-
-            '9': ['Sector-shaped pillbox cavity (circular cross section)', 
-            {'freq': 2, 'grad': 3, 'phase': 4}], '10': ['Variable {frequency gradient} pillbox cavity', 
-            {'phase': 4, 'num_wavelengths': 5, 'reset_parm': 6, 'buncher_length': 7, 'g0': 8, 'g1': 9, 'g2': 10, 
-             'phase_model': 12}]
-            }
 
 class Sol(Field):
     """
@@ -1203,7 +1145,7 @@ class Sol(Field):
     """
     #__metaclass__ = MetaSol
 
-     models={'1': ['Ez only with no transverse variation', 
+    models={'1': ['Ez only with no transverse variation', 
            {'freq': 2, 'grad': 3, 'phase': 4, 'rect_cyn': 5, 'mode': 8}],
 
             '2': ['Cylindrical TM01p pillbox',
@@ -1258,90 +1200,6 @@ class Comment(PseudoRegion):
         PseudoRegion.__init__(self, None, None)
         self.comment = comment
 
-class Error(Exception):
-    """Base class for ICOOL input exceptions."""
-    pass
-
-class InputError(Error):
-    """Exception raised for errors in the input.
-
-    Attributes:
-        expr -- input expression in which the error occurred
-        msg  -- explanation of the error
-    """
-    def __init__(self, expr, msg):
-        self.expr = expr
-        self.msg = msg
-    def __str__(self):
-        string=self.msg+' '+self.expr
-        return repr(string)
-
-class IncorrectType(InputError):
-    """Exception raised for incorrect type in the input."""
-    def __init__(self, expr, expected_type, actual_type):
-        InputError.__init__(self, expr, 'Incorrect type.')
-        self.expected_type=expected_type
-        self.actual_type=actual_type
-        
-    def __str__(self):
-        msg="Incorrect type.  Expected "+self.expected_type+" but instead got "+self.actual_type
-        return repr(msg)
-
-class UnknownCommand(InputError):   
-      """Exception raised for unknown type in the input."""
-      def __init__(self, expr, command, namelist):
-          InputError.__init__(self, expr, 'Unknown command.')
-          self.command=command
-          self.namelist=namelist
-          
-      def __str__(self):
-          msg='Unknown command: '+self.command+' in namelist: '+self.namelist
-          return repr(msg)
-          
-class IncorrectNamelistObject(InputError):   
-      """Exception raised for unknown type in the input."""
-      def __init__(self, expr, namelist, type):
-          InputError.__init__(self, expr, 'Incorrect Namelist object.')
-          self.namelist=namelist
-          self.type=type
-          
-      def __str__(self):
-          msg='Incorrect Namelist object. Expected: '+self.type+' but received: ' +self.namelist.__class__.__name__
-          return repr(msg)
-
-class IncorrectObjectCommand(InputError):
-    """Exception raised for attempt to add incorrect command to an object."""
-    def __init__(self, expr, object, command):
-        self.object=object
-        self.command=command
-        
-    def __str__(self):
-        msg='Command: '+self.command+' is not supported in object: '+self.object
-        return repr(msg)
- 
-class InputArgumentsError(InputError):
-    """Exception raised for incorrect type in the input."""
-    def __init__(self, expr, input_dict, actual_dict):
-        InputError.__init__(self, expr, 'Input arguments error.')
-        self.input_dict=input_dict
-        self.actual_dict=actual_dict
-        
-    def __str__(self):
-        received=""
-        for key in sorted(self.input_dict.keys()):
-            received+=str(key)
-            received+=' '
-        expected=""
-        for key in sorted(self.actual_dict.keys()):
-            expected+=str(key)
-            expected+=' '
-            
-        msg='Input arguments error.\nReceived: \n'+received+'\nExpected: \n'+expected
-        return msg
-        
-class FieldError(InputError):
-    pass
-  
 
 def valid_command(command_dict, command, value, namelist):
     try:
@@ -1352,23 +1210,23 @@ def valid_command(command_dict, command, value, namelist):
                 if check_type(command_type, value.__class__.__name__):
                     return 0
                 else:
-                    raise IncorrectType('Incorrect type', command_type, value.__class__.__name__)
-            except IncorrectType as e:
+                    raise ie.IncorrectType('Incorrect type', command_type, value.__class__.__name__)
+            except ie.IncorrectType as e:
                  print e
                  return -1   
         else:
-            raise UnknownCommand('Unknown command', command, namelist)
-    except UnknownCommand as e:
+            raise ie.UnknownVariable('Unknown variable', command, namelist)
+    except ie.UnknownVariable as e:
         print e
         return -1
         
 def check_input_args(title, cont, bmt, ints, nhs, nsc, nzh, nrh, nem, ncv, sec, name, metadata):
     try:
         if cont!=None and cont.__class__.__name__!='Cont':
-            raise IncorrectNamelistObject('Incorrect Namelist Object', cont, 'Cont')
+            raise ie.NamelistObjectTypeError('Namelist object type error', cont, 'Cont')
         if sec!=None and sec.__class__.__name__!='Section':
-             raise IncorrectNamelistObject('Incorrect Namelist Object', sec, 'Section')   
-    except IncorrectNamelistObject as e:
+             raise ie.NamelistObjectTypeError('Namelist object type error', sec, 'Section')   
+    except ie.NamelistoObjectTypeError as e:
         print e
         return -1
         
@@ -1400,12 +1258,12 @@ def check_keyword_args(input_dict, cls):
        # print sorted(actual_dict.keys())
        if not check_model_specified(input_dict):
        		actual_dict={'Unknown':0}
-       		raise InputArgumentsError('Input Arguments Error', input_dict, actual_dict)
+       		raise ie.InputArgumentsError('Input Arguments Error', input_dict, actual_dict)
        model=input_dict['model']
        actual_dict=cls.models[str(model)][1]
        if sorted(input_dict.keys())!=sorted(actual_dict.keys()):
-           raise InputArgumentsError('Input Arguments Error', input_dict, actual_dict)
-    except UnknownCommand as e:
+           raise ie.InputArgumentsError('Input Arguments Error', input_dict, actual_dict)
+    except ie.InputArgumentsError as e:
         print e
         return -1
 
@@ -1414,7 +1272,7 @@ def check_partial_keywords_for_current_model(input_dict, cls):
 	actual_dict=(cls, cls.model)
 	for key in input_dict:
 		if not key in cls.actual:
-			raise InputArgumentsError('Input Arguments Error', input_dict, actual_dict)
+			raise ie.InputArgumentsError('Input Arguments Error', input_dict, actual_dict)
 	return True
 
 # Checks whether the keywords specified for a new model correspond to that model.
@@ -1423,7 +1281,7 @@ def check_partial_keywords_for_new_model(input_dict, cls):
 	actual_dict=get_model_dict(cls, model)
 	for key in input_dict:
 		if not key in cls.actual:
-			raise InputArgumentsError('Input Arguments Error', input_dict, actual_dict)
+			raise ie.InputArgumentsError('Input Arguments Error', input_dict, actual_dict)
 	return True
 
 

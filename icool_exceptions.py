@@ -1,10 +1,112 @@
+def valid_command(command_dict, command, value, namelist):
+    """
+    Checks whether command is valid in the following respects:
+        (1) It is a valid variable for a namelist;
+        (2) The type assigned to the variable is the correct type.
+    """
+    try:
+        if command in command_dict.keys():
+            dictionary_entry = command_dict[command]
+            command_type = dictionary_entry['type']
+            try:
+                if check_type(command_type, value.__class__.__name__):
+                    return 0
+                else:
+                    raise IncorrectType('Incorrect type', command_type, value.__class__.__name__)
+            except IncorrectType as e:
+                print e
+                return -1
+        else:
+            raise UnknownVariable('Unknown variable', command, namelist)
+    except UnknownVariable as e:
+        print e
+        return -1
+
+
+def check_namelists(title, cont, bmt, ints, nhs, nsc, nzh, nrh, nem, ncv, sec, name, metadata):
+    try:
+        if cont is not None and cont.__class__.__name__ is not 'Cont':
+            raise NamelistObjectTypeError('Namelist object type error', cont, 'Cont')
+        if sec is not None and sec.__class__.__name__ is not 'Section':
+            raise NamelistObjectTypeError('Namelist object type error', sec, 'Section')
+    except NamelistoObjectTypeError as e:
+        print e
+        return -1
+        
+def check_type(icool_type, provided_type):
+    if icool_type=='Real':      
+        if provided_type=='int' or provided_type=='long' or provided_type=='float':
+            return True
+        else:
+            return False
+    
+    if icool_type=='Integer':
+        if provided_type=='int' or provided_type=='long':
+            return True
+        else:
+            return False
+    
+    if icool_type=='Logical':
+        if provided_type=='bool':
+            return True
+        else:
+            return False
+ 
+ # Checks if ALL keywords for a model are specified.  If not, raises InputArgumentsError
+ # If model is not specified, raises ModelNotSpecifiedError
+def check_keyword_args(input_dict, cls):
+    models=cls.models
+    try:
+       # print sorted(input_dict.keys())
+       # print sorted(actual_dict.keys())
+       if not check_model_specified(input_dict):
+          actual_dict={'Unknown':0}
+          raise ie.InputArgumentsError('Input Arguments Error', input_dict, actual_dict)
+       model=input_dict['model']
+       actual_dict=cls.models[str(model)][1]
+       if sorted(input_dict.keys())!=sorted(actual_dict.keys()):
+           raise ie.InputArgumentsError('Input Arguments Error', input_dict, actual_dict)
+    except ie.InputArgumentsError as e:
+        print e
+        return -1
+
+# Checks whether the keywords specified for a current model correspond to that model.
+def check_partial_keywords_for_current_model(input_dict, cls):
+  actual_dict=(cls, cls.model)
+  for key in input_dict:
+    if not key in cls.actual:
+      raise ie.InputArgumentsError('Input Arguments Error', input_dict, actual_dict)
+  return True
+
+# Checks whether the keywords specified for a new model correspond to that model.
+def check_partial_keywords_for_new_model(input_dict, cls):
+  model=input_dict['model']
+  actual_dict=get_model_dict(cls, model)
+  for key in input_dict:
+    if not key in cls.actual:
+      raise ie.InputArgumentsError('Input Arguments Error', input_dict, actual_dict)
+  return True
+
+
+def check_model_specified(input_dict):
+  if 'model' in input_dict.keys():
+    return True
+  else:
+    return False
+
+def get_model_dict(cls, model):
+  models=cls.models
+  return models[str(model)][1]
+
+
+
 class Error(Exception):
     """Base class for ICOOL input exceptions."""
     pass
 
 
 class InputError(Error):
-    """Exception raised for errors in the input.
+    """General exception raised for errors in the input.
 
     Attributes:
         expr -- input expression in which the error occurred
@@ -20,7 +122,10 @@ class InputError(Error):
 
 
 class IncorrectType(InputError):
-    """Exception raised for incorrect type in the input."""
+    """Exception raised for attempt to assign incorrect type to a variable.  Required types for """
+    """various variables are indicated in the associated dictionary 'type' field for the """
+    """associated namelist."""
+
     def __init__(self, expr, expected_type, actual_type):
         InputError.__init__(self, expr, 'Incorrect type.')
         self.expected_type = expected_type
@@ -31,61 +136,72 @@ class IncorrectType(InputError):
         return repr(msg)
 
 
-class UnknownCommand(InputError):
-    """Exception raised for unknown type in the input."""
+class UnknownVariable(InputError):
 
-    def __init__(self, expr, command, namelist):
-        InputError.__init__(self, expr, 'Unknown command.')
-        self.command = command
+    """Exception raised for unknown variable in a given namelist."""
+
+    def __init__(self, expr, variable, namelist):
+        InputError.__init__(self, expr, 'Unknown variable.')
+        self.variable = variable
         self.namelist = namelist
 
     def __str__(self):
-        msg = 'Unknown command: ' + self.command +' in namelist: '+ self.namelist
+        msg = 'Unknown variable: ' + self.variable + ' in namelist: ' + self.namelist
         return repr(msg)
-          
 
-class IncorrectNamelistObject(InputError):   
-      """Exception raised for unknown type in the input."""
-      def __init__(self, expr, namelist, type):
-          InputError.__init__(self, expr, 'Incorrect Namelist object.')
-          self.namelist=namelist
-          self.type=type
-          
-      def __str__(self):
-          msg='Incorrect Namelist object. Expected: '+self.type+' but received: ' +self.namelist.__class__.__name__
-          return repr(msg)
+
+class NamelistObjectTypeError(InputError):
+    """Exception raised for incorrect type of namelist object.
+       This error is raised if the type of a namelist assigned to a namelist variable does not match
+       the expected type.
+    """
+
+    def __init__(self, expr, namelist, type):
+        InputError.__init__(self, expr, 'Namelist object type error.')
+        self.namelist = namelist
+        self.type = type
+
+    def __str__(self):
+        msg = 'Incorrect Namelist type object. Expected: ' + self.type + ' but received: ' + \
+            self.namelist.__class__.__name__
+        return repr(msg)
 
 
 class IncorrectObjectCommand(InputError):
-    """Exception raised for attempt to add incorrect command to an object."""
+    """Exception raised for attempt to add incorrect command to an object.
+       For example, Section, Cell and Background only allow certain commands."""
+
     def __init__(self, expr, object, command):
-        self.object=object
-        self.command=command
-        
+        self.object = object
+        self.command = command
+
     def __str__(self):
-        msg='Command: '+self.command+' is not supported in object: '+self.object
+        msg = 'Command: ' + self.command + ' is not supported in object: ' + self.object
         return repr(msg)
- 
+
 
 class InputArgumentsError(InputError):
-    """Exception raised for incorrect type in the input."""
+    """Exception raised for unsupported input arguments variable."""
+
     def __init__(self, expr, input_dict, actual_dict):
         InputError.__init__(self, expr, 'Input arguments error.')
-        self.input_dict=input_dict
-        self.actual_dict=actual_dict
-        
+        self.input_dict = input_dict
+        self.actual_dict = actual_dict
+
     def __str__(self):
-        received=""
+        received = ""
         for key in sorted(self.input_dict.keys()):
-            received+=str(key)
-            received+=' '
-        expected=""
+            received += str(key)
+            received += ' '
+        expected = ""
         for key in sorted(self.actual_dict.keys()):
-            expected+=str(key)
-            expected+=' '
-            
-        msg='Input arguments error.\nReceived: \n'+received+'\nExpected: \n'+expected
+            expected += str(key)
+            expected += ' '
+
+        msg = 'Input arguments error.\nReceived: \n' + received + '\nExpected: \n' + expected
         return msg
-        
+
+
 class FieldError(InputError):
     pass
+
