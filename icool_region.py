@@ -1,7 +1,38 @@
 import sys
 import icool_exceptions as ie
+import icool_helper as ih
 
+"""Nomenclature:
+An ICOOl input file consists of:
+1. problem title
+2. general control variables
+3. beam generation variables
+4. physics interactions control variables
+5. histogram definition variables
+6. scatterplot definition variables
+7. Z-history definition variables
+8. R-history definition variables
+9. emittance plane definition variables
+10. covariance plane definition variables
+11. region definition variables
 
+This program will use of following object definitions:
+Namelists.  Namelists in the for001.dat file are preceded by an '&' sign (e.g., &cont).  
+
+Namelists include:
+CONT: Control Variables
+BMT: Beam Generation Variables
+INTS: Phyiscs Interactions Control Variables
+NHS: Histogram Definition Variables
+NSC: Scatterplot definition variables 
+
+Namelist variables 
+Commands:
+Commands comprise both Regular Region Commands and Pseudoregion Commands
+
+Command parameters
+
+"""
 class ICoolGen(object):
 
     """Generate ICOOL for001.dat
