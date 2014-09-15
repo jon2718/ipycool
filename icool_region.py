@@ -3,34 +3,77 @@ import icool_exceptions as ie
 import icool_helper as ih
 
 """Nomenclature:
+
 An ICOOl input file consists of:
-1. problem title
-2. general control variables
-3. beam generation variables
-4. physics interactions control variables
-5. histogram definition variables
-6. scatterplot definition variables
+1. Problem title
+2. General control variables
+3. Beam generation variables
+4. Physics interactions control variables
+5. Histogram definition variables
+6. Scatterplot definition variables
 7. Z-history definition variables
 8. R-history definition variables
-9. emittance plane definition variables
-10. covariance plane definition variables
-11. region definition variables
+9. Emittance plane definition variables
+10. Covariance plane definition variables
+11. Region definition variables.
+** Note that region definition variables are referred to in the ICOOL Manual and herein as commands.
 
 This program will use of following object definitions:
-Namelists.  Namelists in the for001.dat file are preceded by an '&' sign (e.g., &cont).  
+Namelists.  Namelists in the for001.dat file are preceded by an '&' sign (e.g., &cont).
 
 Namelists include:
 CONT: Control Variables
 BMT: Beam Generation Variables
 INTS: Phyiscs Interactions Control Variables
 NHS: Histogram Definition Variables
-NSC: Scatterplot definition variables 
+NSC: Scatterplot definition Variables
+NZH: Z-History Definition Variables
+NRH: R-History Definition Variables
+NEM: Emittance Plane Definition Variables
+NCV: Covariance Plane Definition Variables
 
-Namelist variables 
+
+Namelist variables:
+Each of the above namelists is associated with a respective set of variables.
+
 Commands:
 Commands comprise both Regular Region Commands and Pseudoregion Commands
 
-Command parameters
+Regular Region Commands:
+SECTION
+BEGS
+REPEAT
+CELL
+SREGION
+ENDREPEAT
+ENDCELL
+ENDSECTION
+
+Psuedoregion Commands:
+APERTURE
+CUTV
+DENP
+DENS
+DISP
+DUMMY
+DVAR
+EDGE
+GRID
+OUTPUT
+RESET
+RKICK
+ROTATE
+TAPER
+TILT
+TRANSPORT
+BACKGROUND
+BFIELD
+ENDB
+!
+&
+
+Command parameters:
+Each regular and pseduoregion command is respectively associated with a set of command parameters.
 
 """
 class ICoolGen(object):
