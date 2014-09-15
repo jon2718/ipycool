@@ -24,80 +24,107 @@ def valid_command(command_dict, command, value, namelist):
 
 
 def check_namelists(title, cont, bmt, ints, nhs, nsc, nzh, nrh, nem, ncv, sec, name, metadata):
+    """
+    Checks namelists are correct type.
+    """
     try:
         if cont is not None and cont.__class__.__name__ is not 'Cont':
             raise NamelistObjectTypeError('Namelist object type error', cont, 'Cont')
         if sec is not None and sec.__class__.__name__ is not 'Section':
             raise NamelistObjectTypeError('Namelist object type error', sec, 'Section')
-    except NamelistoObjectTypeError as e:
+    except NamelistObjectTypeError as e:
         print e
         return -1
-        
+
+
 def check_type(icool_type, provided_type):
-    if icool_type=='Real':      
-        if provided_type=='int' or provided_type=='long' or provided_type=='float':
+    """Checks types comparing ICOOL required types with python types
+    """
+    if icool_type == 'Real':
+        if provided_type == 'int' or provided_type == 'long' or provided_type == 'float':
             return True
         else:
             return False
-    
-    if icool_type=='Integer':
-        if provided_type=='int' or provided_type=='long':
+
+    if icool_type == 'Integer':
+        if provided_type == 'int' or provided_type == 'long':
             return True
         else:
             return False
-    
-    if icool_type=='Logical':
-        if provided_type=='bool':
+
+    if icool_type == 'Logical':
+        if provided_type == 'bool':
             return True
         else:
             return False
- 
- # Checks if ALL keywords for a model are specified.  If not, raises InputArgumentsError
- # If model is not specified, raises ModelNotSpecifiedError
-def check_keyword_args(input_dict, cls):
-    models=cls.models
+
+
+def check_model_keyword_args(input_dict, cls):
+    """
+    Checks if ALL keywords for a model are specified.  If not, raises InputArgumentsError
+    If model is not specified, raises ModelNotSpecifiedError.
+    Initialization of a model (e.g., Accel, SOL, etc. requires all keywords specified)
+    """
+    #models = cls.models
     try:
-       # print sorted(input_dict.keys())
-       # print sorted(actual_dict.keys())
-       if not check_model_specified(input_dict):
-          actual_dict={'Unknown':0}
-          raise ie.InputArgumentsError('Input Arguments Error', input_dict, actual_dict)
-       model=input_dict['model']
-       actual_dict=cls.models[str(model)][1]
-       if sorted(input_dict.keys())!=sorted(actual_dict.keys()):
-           raise ie.InputArgumentsError('Input Arguments Error', input_dict, actual_dict)
-    except ie.InputArgumentsError as e:
+        if not check_model_specified(input_dict):
+            actual_dict = {'Unknown': 0}
+            raise InputArgumentsError('Model most be specified', input_dict, actual_dict)
+        model = input_dict['model']
+        actual_dict = cls.models[str(model)]['parms']
+        if sorted(input_dict.keys()) != sorted(actual_dict.keys()):
+            raise InputArgumentsError('Model parameter specification error', input_dict, actual_dict)
+    except InputArgumentsError as e:
         print e
         return -1
+    return 0
 
-# Checks whether the keywords specified for a current model correspond to that model.
+
+def check_keyword_in_model(keyword, cls):
+    """
+    Checks if ALL keywords for a model are specified.  If not, raises InputArgumentsError
+    If model is not specified, raises ModelNotSpecifiedError.
+    Initialization of a model (e.g., Accel, SOL, etc. requires all keywords specified)
+    """
+    if keyword in cls.selected_model.keys():
+        return True
+    else:
+        return False
+
+
 def check_partial_keywords_for_current_model(input_dict, cls):
-  actual_dict=(cls, cls.model)
-  for key in input_dict:
-    if not key in cls.actual:
-      raise ie.InputArgumentsError('Input Arguments Error', input_dict, actual_dict)
-  return True
+    """
+    Checks whether the keywords specified for a current model correspond to that model.
+    """
+    actual_dict = (cls, cls.model)
+    for key in input_dict:
+        if not key in cls.actual:
+            raise InputArgumentsError('Input Arguments Error', input_dict, actual_dict)
+    return True
 
-# Checks whether the keywords specified for a new model correspond to that model.
+
 def check_partial_keywords_for_new_model(input_dict, cls):
-  model=input_dict['model']
-  actual_dict=get_model_dict(cls, model)
-  for key in input_dict:
-    if not key in cls.actual:
-      raise ie.InputArgumentsError('Input Arguments Error', input_dict, actual_dict)
-  return True
+    """
+    Checks whether the keywords specified for a new model correspond to that model.
+    """
+    model = input_dict['model']
+    actual_dict = get_model_dict(cls, model)
+    for key in input_dict:
+        if not key in cls.actual:
+            raise InputArgumentsError('Input Arguments Error', input_dict, actual_dict)
+    return True
 
 
 def check_model_specified(input_dict):
-  if 'model' in input_dict.keys():
-    return True
-  else:
-    return False
+    if 'model' in input_dict.keys():
+        return True
+    else:
+        return False
+
 
 def get_model_dict(cls, model):
-  models=cls.models
-  return models[str(model)][1]
-
+    models = cls.models
+    return models[str(model)][1]
 
 
 class Error(Exception):
@@ -199,6 +226,18 @@ class InputArgumentsError(InputError):
             expected += ' '
 
         msg = 'Input arguments error.\nReceived: \n' + received + '\nExpected: \n' + expected
+        return msg
+
+
+class SetAttributeError(InputError):
+    """Exception raised for attempt to set improper or private attribute for an object."""
+    def __init__(self, expr, cls, attribute):
+        InputError.__init__(self, expr, 'Input arguments error.')
+        self.cls = cls
+        self.attribute = attribute
+
+    def __str__(self):
+        msg = 'Illegal attempt to set attribute ' + self.attribute + 'on object ' + str(type(self.cls))
         return msg
 
 

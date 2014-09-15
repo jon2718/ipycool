@@ -1,6 +1,5 @@
 import sys
 import icool_exceptions as ie
-import icool_helper as ih
 
 """Nomenclature:
 
@@ -76,6 +75,8 @@ Command parameters:
 Each regular and pseduoregion command is respectively associated with a set of command parameters.
 
 """
+
+
 class ICoolGen(object):
 
     """Generate ICOOL for001.dat
@@ -321,8 +322,12 @@ class Cont(object):
                        'solenoidal magnets. Used with SHEET, model 4.',
                        'type': 'Integer'},
 
-                'mapdef'        : {0,     '(I) if 19 < MAPDEF=mn < 100 => reads in file FOR0mn.DAT, which contains data on how to set up field grid. Used with \
-                                           SHEET, model 4.', 'Integer'},
+        'mapdef':     {'default': 0,
+                       'desc': '(I) if 19 < MAPDEF=mn < 100 => reads in file FOR0mn.DAT, which contains data on how '
+                       'to set up field grid. Used with SHEET, model 4.',
+                       'type': 'Integer'},
+
+
                 'neighbor'      : {False, "(L) if .true. => include fields from previous and following regions when calculating field.  This parameter can be used\
                                            with soft-edge fields when the magnitude of the field doesn't fall to 0 at the region boundary. A maximum of 100 regions\
                                            can be used with this feature.", 'Logical'},
@@ -601,12 +606,12 @@ class Edge(PseudoRegion):
     The DIP, HDIP, QUAD, SQUA, SEX and BSOL edge types use Scott Berg's HRDEND routine to find the change in transverse
     position and transverse momentum due to the fringe field.
     """
-    
+
     def __init__(self, edge_type, model, model_parameters_list, name=None, metadata=None):
         PseudoRegion.__init__(self, name, metadata)
-        self.edge_type=edge_type
-        self.model=model
-        self.model_parameters=model_parameters
+        self.edge_type = edge_type
+        self.model = model
+        self.model_parameters = model_parameters
 
 class Cell(RegularRegion):
     """CELL Start of a repeating group of region commands; the data must end with an ENDCELL command.
@@ -716,7 +721,52 @@ class SRegion(RegularRegion):
             pass
 
 
-class Field(object):
+class ModeledCommandParameter(object):
+    def __init__(self, kwargs):
+        ie.check_model_keyword_args(kwargs, self)
+        #If we got here do model first
+        object.__setattr__(self, 'selected_model', self.models[str(kwargs['model'])]['parms'])
+        sys.exit(0)
+        #object.selected_model = self.models[str(kwargs['model'])['parms']]
+        #setattr(self, 'model', kwargs['model'])
+        #for key in kwargs:
+        #    print key
+        #    if not key == 'model':
+        #        setattr(self, key, kwargs[key])
+        #Check that ALL keywords for model are specified.  If not, throw exception.
+        if ie.check_model_keyword_args(kwargs, self) == -1:
+            sys.exit(0)
+        self.selected_model = self.models[str(kwargs['model'])]['parms']
+        setattr(self, 'model', kwargs['model'])
+        for key in kwargs:
+            print key
+            if not key == 'model':
+                setattr(self, key, kwargs[key])
+
+    def __setattr__(self, name, value):
+        if name == 'model':
+            if hasattr(self, 'model'):
+                #Delete all attributes of the current model
+                print 'Resetting model to ', value
+                for key in self.selected_model:
+                    if hasattr(self, key):
+                        delattr(self, key)
+            object.__setattr__(self, 'model', value)
+            self.selected_model = self.get_model_dict()
+            return
+        try:
+            if ie.check_keyword_in_model(name, self):
+                object.__setattr__(self, name, value)
+            else:
+                raise ie.SetAttributeError('', self, name)
+        except ie.SetAttributeError as e:
+            print e
+
+    def get_model_dict(self, model):
+        return self.models[str(model)['parms']]
+
+
+class Field(ModeledCommandParameter):
     """
     A Field is a:
     FTAG - A tag identifying the field.  Valid FTAGS are:
@@ -725,9 +775,11 @@ class Field(object):
 
     FPARM - 15 parameters describing the field.
     """
-    def __init__(self, ftag, fparm):
-        self.ftag = ftag
-        self.fparm = fparm
+    def __init__(self, ftag, kwargs):
+        ModeledCommandParameter.__init__(self, kwargs)
+
+    def __setattr__(self, name, value):
+        ModeledCommandParameter.__setattr__(self, name, value)
 
     def gen(self, file):
         file.write('\n')
@@ -1076,16 +1128,26 @@ class Accel(Field):
     }
 
     def __init__(self, **kwargs):
-        check_keyword_args(kwargs, self)
+        Field.__init__(self, 'Accel', kwargs)
+        #check_keyword_args(kwargs, self)
         # If we got here do model first
-        self.selected_model = self.models[str(kwargs['model'])['parms']]
-        setattr(self, 'model', kwargs['model'])
-        for key in kwargs:
-            print key
-            if not key == 'model':
-                setattr(self, key, kwargs[key])
+        #self.selected_model = self.models[str(kwargs['model'])['parms']]
+        #setattr(self, 'model', kwargs['model'])
+        #for key in kwargs:
+        #    print key
+        #    if not key == 'model':
+        #        setattr(self, key, kwargs[key])
 
     def __call__(self, **kwargs):
+        if check_model_specified(kwargs):
+            if kwargs['model'] == self.model:
+                new_model = False
+            else:
+                new_model = True
+        else:
+            new_model = False
+
+        #If model not specified then it is the same model.
         check_keyword_args(kwargs, self)
         for key in kwargs:
             print key
@@ -1109,28 +1171,8 @@ class Accel(Field):
         print
 
     def __setattr__(self, name, value):
-        if name == 'selected_model':
-    		if not hasattr(self, 'selected_model'):
-    			super(Accel, self).__setattr__(name, value)
-    	if name=='model':
-    		if hasattr(self, 'model'):
-    			print 'Trying to reset model, which is already set'
-    			for key in self.selected_model:
-    				if hasattr(self, key):
-    				     delattr(self, key)
-    				super(Accel, self).__setattr__(name, value)
-    			super(Accel, self).__setattr__('selected_model', self.models[str(self.model)][1])
-    			for key in self.selected_model:
-    				super(Accel, self).__setattr__(key, 0)
-    			# self.selected_model=self.models[str(self.model)][1]
+        Field.__setattr__(self, name, value)
 
-    	print 'In setattr for: ', name
-    	print 'Has attribute', name, hasattr(self, name)
-    	# if not hasattr(self, name):
-    	print 'Setting: ', name
-    	if name in self.selected_model.keys():
-    		super(Accel, self).__setattr__(name, value)
-   	 	
 
 class Sol(Field):
     """
@@ -1268,7 +1310,10 @@ class Sheet(Field):
 
     def gen(self, file):
         print
-        
+ 
+class Cell(Region):
+    pass
+
 class Comment(PseudoRegion):
     def __init__(self, comment):
         PseudoRegion.__init__(self, None, None)
@@ -1293,7 +1338,7 @@ def valid_command(command_dict, command, value, namelist):
     except ie.UnknownVariable as e:
         print e
         return -1
-        
+      
 def check_input_args(title, cont, bmt, ints, nhs, nsc, nzh, nrh, nem, ncv, sec, name, metadata):
     try:
         if cont!=None and cont.__class__.__name__!='Cont':
