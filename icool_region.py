@@ -141,7 +141,7 @@ class ICoolInput(object):
         section=None, name=None, metadata=None
     ):
 
-        if check_input_args(
+        if ie.check_input_args(
             title, cont, bmt, ints, nhs, nsc, nzh, nrh, nem,
             ncv, section, name, metadata
         ) == -1:
@@ -327,18 +327,30 @@ class Cont(object):
                        'to set up field grid. Used with SHEET, model 4.',
                        'type': 'Integer'},
 
+        'neighbor':   {'default': False,
+                       'desc': "(L) if .true. => include fields from previous and following regions when calculating "
+                               "field.  This parameter can be used with soft-edge fields when the magnitude of the "
+                               "field doesn't fall to 0 at the region boundary. A maximum of 100 region can be used "
+                               "with this feature.",
+                       'type': 'Logical'},
 
-                'neighbor'      : {False, "(L) if .true. => include fields from previous and following regions when calculating field.  This parameter can be used\
-                                           with soft-edge fields when the magnitude of the field doesn't fall to 0 at the region boundary. A maximum of 100 regions\
-                                           can be used with this feature.", 'Logical'},
-                'neutrino'      : {0,      '(I) if 19 < NEUTRINO=mn < 100 => writes out file FOR0mn.DAT, which contains neutrino production data. See\
-                                            section 5.2 for the format.', 'Integer'},
-                'nnudk'         : {1,      '(I) # of neutrinos to produce at each muon, pion and kaon decay.', 'Integer'},
-                'npart'         : {'default': None,   'desc': "(I) # of particles in simulation. The first 300,000 particles are stored in memory. Larger numbers\
-                                    are allowed in principle since ICOOL writes the excess particle information to disc. However, there\
-                                            can be a large space and speed penalty in doing so.", 'type': 'Integer'},
+        'neutrino':    {'default': 0,
+                        'desc': '(I) if 19 < NEUTRINO=mn < 100 => writes out file FOR0mn.DAT, which contains '
+                        'neutrino production data. See section 5.2 for the format.',
+                        'type': 'Integer'},
 
-                                                 'nprnt'         : {},
+        'nnudk':       {'default': 1,
+                        'desc': '(I) # of neutrinos to produce at each muon, pion and kaon decay.',
+                        'type': 'Integer'},
+
+        'npart':       {'default': None,
+                        'desc': '(I) # of particles in simulation. The first 300,000 particles are stored in memory. '
+                                'Larger numbers are allowed in principle since ICOOL writes the excess particle '
+                                'information to disc. However, there can be a large space and speed penalty in doing '
+                                'so.',
+                        'type': 'Integer'},
+
+                'nprnt'         : {},
                 'npskip'        : {},
                 'nsections'     : {},
                 'ntuple'        : {},
@@ -434,6 +446,7 @@ class Region(object):
 
     def __repr__(self):
         return '[A Region can be either a RegularRegion or PseudoRegion.]'
+
 
 class RegularRegion(Region):
     """
@@ -621,7 +634,7 @@ class Cell(RegularRegion):
     """
     def __init__(self, name, metadata, ncells, cellflip, field):
         RegularRegion.__init__(self, None, None)
-        self.region_commands=[]
+        self.region_commands = []
         self.ncells=ncells
         self.cellflip=cellflip
         self.cftag=field.ftag
@@ -723,20 +736,9 @@ class SRegion(RegularRegion):
 
 class ModeledCommandParameter(object):
     def __init__(self, kwargs):
-        ie.check_model_keyword_args(kwargs, self)
-        #If we got here do model first
-        #object.__setattr__(self, 'selected_model', self.models[str(kwargs['model'])]['parms'])
-        #sys.exit(0)
-        #object.selected_model = self.models[str(kwargs['model'])['parms']]
-        #setattr(self, 'model', kwargs['model'])
-        #for key in kwargs:
-        #    print key
-        #    if not key == 'model':
-        #        setattr(self, key, kwargs[key])
         #Check that ALL keywords for model are specified.  If not, throw exception.
         if ie.check_model_keyword_args(kwargs, self) == -1:
             sys.exit(0)
-        #self.selected_model = self.models[str(kwargs['model'])]['parms']
         setattr(self, 'model', kwargs['model'])
         for key in kwargs:
             print key
@@ -754,12 +756,11 @@ class ModeledCommandParameter(object):
                     if hasattr(self, key):
                         delattr(self, key)
             object.__setattr__(self, 'model', value)
+            #If new model, set all attributes of new model to 0.
             if new_model is True:
                 for key in self.get_model_dict(value):
                     if key is not 'model':
                         setattr(self, key, 0)
-                
-            #self.selected_model = self.get_model_dict()
             return
         try:
             if ie.check_keyword_in_model(name, self):
@@ -1136,14 +1137,6 @@ class Accel(Field):
 
     def __init__(self, **kwargs):
         Field.__init__(self, 'Accel', kwargs)
-        #check_keyword_args(kwargs, self)
-        # If we got here do model first
-        #self.selected_model = self.models[str(kwargs['model'])['parms']]
-        #setattr(self, 'model', kwargs['model'])
-        #for key in kwargs:
-        #    print key
-        #    if not key == 'model':
-        #        setattr(self, key, kwargs[key])
 
     def __call__(self, **kwargs):
         if check_model_specified(kwargs):
@@ -1325,98 +1318,3 @@ class Comment(PseudoRegion):
     def __init__(self, comment):
         PseudoRegion.__init__(self, None, None)
         self.comment = comment
-
-
-def valid_command(command_dict, command, value, namelist):
-    try:
-        if command in command_dict.keys():
-            dictionary_entry=command_dict[command]
-            command_type=dictionary_entry['type']
-            try:
-                if check_type(command_type, value.__class__.__name__):
-                    return 0
-                else:
-                    raise ie.IncorrectType('Incorrect type', command_type, value.__class__.__name__)
-            except ie.IncorrectType as e:
-                 print e
-                 return -1   
-        else:
-            raise ie.UnknownVariable('Unknown variable', command, namelist)
-    except ie.UnknownVariable as e:
-        print e
-        return -1
-      
-def check_input_args(title, cont, bmt, ints, nhs, nsc, nzh, nrh, nem, ncv, sec, name, metadata):
-    try:
-        if cont!=None and cont.__class__.__name__!='Cont':
-            raise ie.NamelistObjectTypeError('Namelist object type error', cont, 'Cont')
-        if sec!=None and sec.__class__.__name__!='Section':
-             raise ie.NamelistObjectTypeError('Namelist object type error', sec, 'Section')   
-    except ie.NamelistoObjectTypeError as e:
-        print e
-        return -1
-        
-def check_type(icool_type, provided_type):
-    if icool_type=='Real':      
-        if provided_type=='int' or provided_type=='long' or provided_type=='float':
-            return True
-        else:
-            return False
-    
-    if icool_type=='Integer':
-        if provided_type=='int' or provided_type=='long':
-            return True
-        else:
-            return False
-    
-    if icool_type=='Logical':
-        if provided_type=='bool':
-            return True
-        else:
-            return False
- 
- # Checks if ALL keywords for a model are specified.  If not, raises InputArgumentsError
- # If model is not specified, raises ModelNotSpecifiedError
-def check_keyword_args(input_dict, cls):
-    models=cls.models
-    try:
-       # print sorted(input_dict.keys())
-       # print sorted(actual_dict.keys())
-       if not check_model_specified(input_dict):
-       		actual_dict={'Unknown':0}
-       		raise ie.InputArgumentsError('Input Arguments Error', input_dict, actual_dict)
-       model=input_dict['model']
-       actual_dict=cls.models[str(model)][1]
-       if sorted(input_dict.keys())!=sorted(actual_dict.keys()):
-           raise ie.InputArgumentsError('Input Arguments Error', input_dict, actual_dict)
-    except ie.InputArgumentsError as e:
-        print e
-        return -1
-
-# Checks whether the keywords specified for a current model correspond to that model.
-def check_partial_keywords_for_current_model(input_dict, cls):
-	actual_dict=(cls, cls.model)
-	for key in input_dict:
-		if not key in cls.actual:
-			raise ie.InputArgumentsError('Input Arguments Error', input_dict, actual_dict)
-	return True
-
-# Checks whether the keywords specified for a new model correspond to that model.
-def check_partial_keywords_for_new_model(input_dict, cls):
-	model=input_dict['model']
-	actual_dict=get_model_dict(cls, model)
-	for key in input_dict:
-		if not key in cls.actual:
-			raise ie.InputArgumentsError('Input Arguments Error', input_dict, actual_dict)
-	return True
-
-
-def check_model_specified(input_dict):
-	if 'model' in input_dict.keys():
-		return True
-	else:
-		return False
-
-def get_model_dict(cls, model):
-	models=cls.models
-	return models[str(model)][1]

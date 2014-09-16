@@ -237,7 +237,7 @@ class SetAttributeError(InputError):
         self.attribute = attribute
 
     def __str__(self):
-        msg = 'Illegal attempt to set attribute ' + self.attribute + 'on object ' + str(type(self.cls))
+        msg = 'Illegal attempt to set attribute ' + self.attribute + ' on object ' + str(type(self.cls))
         return msg
 
 
