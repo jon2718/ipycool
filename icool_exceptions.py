@@ -86,7 +86,7 @@ def check_keyword_in_model(keyword, cls):
     If model is not specified, raises ModelNotSpecifiedError.
     Initialization of a model (e.g., Accel, SOL, etc. requires all keywords specified)
     """
-    if keyword in cls.selected_model.keys():
+    if keyword in cls.get_model_dict(cls.model):
         return True
     else:
         return False

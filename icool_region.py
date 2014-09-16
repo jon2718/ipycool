@@ -725,8 +725,8 @@ class ModeledCommandParameter(object):
     def __init__(self, kwargs):
         ie.check_model_keyword_args(kwargs, self)
         #If we got here do model first
-        object.__setattr__(self, 'selected_model', self.models[str(kwargs['model'])]['parms'])
-        sys.exit(0)
+        #object.__setattr__(self, 'selected_model', self.models[str(kwargs['model'])]['parms'])
+        #sys.exit(0)
         #object.selected_model = self.models[str(kwargs['model'])['parms']]
         #setattr(self, 'model', kwargs['model'])
         #for key in kwargs:
@@ -736,7 +736,7 @@ class ModeledCommandParameter(object):
         #Check that ALL keywords for model are specified.  If not, throw exception.
         if ie.check_model_keyword_args(kwargs, self) == -1:
             sys.exit(0)
-        self.selected_model = self.models[str(kwargs['model'])]['parms']
+        #self.selected_model = self.models[str(kwargs['model'])]['parms']
         setattr(self, 'model', kwargs['model'])
         for key in kwargs:
             print key
@@ -744,15 +744,22 @@ class ModeledCommandParameter(object):
                 setattr(self, key, kwargs[key])
 
     def __setattr__(self, name, value):
+        new_model = False
         if name == 'model':
             if hasattr(self, 'model'):
+                new_model = True
                 #Delete all attributes of the current model
                 print 'Resetting model to ', value
-                for key in self.selected_model:
+                for key in self.get_model_dict(self.model):
                     if hasattr(self, key):
                         delattr(self, key)
             object.__setattr__(self, 'model', value)
-            self.selected_model = self.get_model_dict()
+            if new_model is True:
+                for key in self.get_model_dict(value):
+                    if key is not 'model':
+                        setattr(self, key, 0)
+                
+            #self.selected_model = self.get_model_dict()
             return
         try:
             if ie.check_keyword_in_model(name, self):
@@ -763,7 +770,7 @@ class ModeledCommandParameter(object):
             print e
 
     def get_model_dict(self, model):
-        return self.models[str(model)['parms']]
+        return self.models[str(model)]['parms']
 
 
 class Field(ModeledCommandParameter):
