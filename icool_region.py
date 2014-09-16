@@ -130,8 +130,7 @@ class ICoolInput(object):
     nrh is a r-history defintion variables object.
     nem is an emittance plane definition variables object.
     ncv is a covariance plane definition variables object.
-    sec is a region definition variables object, which contains all region
-    definitions.
+    sec is a region definition variables object, which contains all region definitions.
 
     """
 
@@ -350,39 +349,67 @@ class Cont(object):
                                 'so.',
                         'type': 'Integer'},
 
-                'nprnt'         : {},
-                'npskip'        : {},
-                'nsections'     : {},
-                'ntuple'        : {},
-                'nthmin'        : {},
-                'nuthmax'       : {},
-                'output1'       : {},
-                'phantom'       : {},
-                'phasemodel'    : {},
-                'prlevel'       : {},
-                'prnmax'        : {},
-                'pzmintrk'      : {},
-                'rfdiag'        : {},
-                'rfphase'       : {},
-                'rnseed'        : {},
-                'rtuple'        : {},
-                'rtuplen'       : {},
-                'run_env'       : {},
-                'scalestep'     : {},
-                'spin'          : {},
-                'spinmatter'    : {},
-                'spintrk'       : {},
-                'stepmax'       : {},
-                'stepmin'       : {},
-                'steprk'        : {}, 
-                'summary'       : {},
-                'termout'      :{},
-                'timelim'       : {},
-                'varstep'       : {}
+        'nprnt':         {'default': -1,
+                          'desc': ' Number of diagnostic events to print out to log file.',
+                          'type': 'Integer'},
 
+        'npskip':        {'default': 0,
+                          'desc': 'Number of input particles in external beam file to skip before processing starts',
+                          'type': 'Integer'},
 
+        'nsections':     {},
 
+        'ntuple': {},
 
+        'nthmin': {},
+                
+        'nuthmax': {},
+                
+        'output1': {},
+                
+        'phantom': {},
+                
+        'phasemodel': {},
+
+        'prlevel': {},
+                
+        'prnmax': {},
+                
+        'pzmintrk': {},
+                
+        'rfdiag': {},
+                
+        'rfphase': {},
+        
+        'rnseed': {},
+        
+        'rtuple': {},
+        
+        'rtuplen': {},
+        
+        'run_env': {},
+        
+        'scalestep': {},
+        
+        'spin': {},
+
+        'spinmatter': {},
+                
+        'spintrk': {},
+                
+        'stepmax': {},
+                
+        'stepmin': {},
+                
+        'steprk': {}, 
+        
+        'summary': {},
+                
+        'termout':{},
+                
+        'timelim': {},
+                
+        'varstep': {}
     }
 
     def __init__(self, **kwargs):
@@ -413,34 +440,32 @@ class Cont(object):
             file.write(str(value))
             file.write("\n")
         file.write("/")
-            
+
 
 class Bmt(object):
-	bmt_dict =\
-	{
+    bmt_dict = {}
 
+    def __init__(self, **kwargs):
+        pass
 
-	}
-	def __init__(self, **kwargs):
-		pass
+    def add_bmtype(bmtype):
+        pass
 
-	def add_bmtype(bmtype):
-		pass
 
 class BmType(object):
-		pass
+    pass
 
 
 class Ints(object):
-	def __init__(self, **kwargs):
-		pass
+    def __init__(self, **kwargs):
+        pass
 
 
 class Region(object):
     def __init__(self, name=None, metadata=None):
         self.name = name
-        self.metadata=metadata
-        
+        self.metadata = metadata
+   
     def __str__(self):
         return '[A Region can be either a RegularRegion or PseudoRegion.]'
 
@@ -489,11 +514,17 @@ class Section(RegularRegion):
     If it is desired to repeat the section definitions, the control variable NSECTIONS should be
     set >1 and a BEGS command is used to define where to start repeating.
     """
+
+    allowed_commands = 
+                     {'Cell': {}, 'Background': {}, 'SRegion':{}, 'Aperture': {}, 'Dens': {}, 'Disp': {}, 
+                     'Dummy': {}, 'DVar':{}, 'Edge': {}, 'Output': {}, 'Refp': {}, 'Ref2':{}, 'Reset':{}, 
+                     'RKick': {}, 'Rotate': {}, 'Tilt': {}, 'Transport': {}, 'Repeat': {}}
+
+
     def __init__(self, nsections=1, command_list=None, name=None, metadata=None):
         RegularRegion.__init__(self, name, metadata)
         self.nsections=nsections
-        self.allowed={'Cell': {}, 'Background': {}, 'SRegion':{}, 'Aperture': {}, 'Dens': {}, 'Disp': {}, 'Dummy': {}, 'DVar':{}, 'Edge': {}, 'Output': {}, 'Refp': {}, 'Ref2':{}, 'Reset':{}, 
-        'RKick': {}, 'Rotate': {}, 'Tilt': {}, 'Transport': {}, 'Repeat': {}}
+        
         if command_list!=None:
             self.command_list=command_list
         else:
@@ -548,9 +579,9 @@ class Repeat(RegularRegion):
     """
     def __init__(self, num_repeats, region_command_list):
         RegularRegion.__init__(self, None, None)
-        self.region_commands=region_commands
-        self.num_repeats=num_repeats
-        self.allowed={'SRegion': {}, 'Aperture': {}, 'Dens': {}, 'Disp': {}, 'Dummy': {}, 'Dvar': {}, 'Edge': {}, 'Output': {}, 'Refp': {},
+        self.region_commands = region_commands
+        self.num_repeats = num_repeats
+        self.allowed = {'SRegion': {}, 'Aperture': {}, 'Dens': {}, 'Disp': {}, 'Dummy': {}, 'Dvar': {}, 'Edge': {}, 'Output': {}, 'Refp': {},
          'Ref2': {}, 'Reset': {}, 'Rkick': {}, 'Rotate': {}, 'Tilt': {}, 'Transport': {}}
        
     def add_region_command(command):
@@ -565,18 +596,21 @@ class Repeat(RegularRegion):
     def gen(self, file):
         region.gen('REPEAT')
 
+
 class Background(PseudoRegion):
     def __init__(self, name=None, metadata=None):
         PseudoRegion.__init__(self, name, metadata)
+
 
 class Bfield(PseudoRegion):
     def __init__(self, name=None, metadata=None):
         PseudoRegion.__init__(self, name, metadata)
 
+
 class Edge(PseudoRegion):
     """EDGE Fringe field and other kicks for hard-edged field models
     1) edge type (A4) {SOL, DIP, HDIP, DIP3, QUAD, SQUA, SEX, BSOL, FACE}
-    
+
     2.1) model # (I) {1}
     2.2-5) p1, p2, p3,p4 (R) model-dependent parameters
 
@@ -626,21 +660,45 @@ class Edge(PseudoRegion):
         self.model = model
         self.model_parameters = model_parameters
 
+
 class Cell(RegularRegion):
     """CELL Start of a repeating group of region commands; the data must end with an ENDCELL command.
     The cell loop can enclose any number of commands under REPEAT plus REPEAT and ENDREPEAT commands.
     It has an associated cell field, which is superimposed on the individual region fields. Cell sections cannot
     be nested in other cell sections. (see parameters below)
     """
+    allowed_commands = {
+                      'SRegion':{}, 'Aperture': {}, 'Dens': {}, 'Disp': {}, 'Dummy': {}, 'DVar':{},
+                      'Edge': {}, 'Output': {}, 'Refp': {}, 'Ref2':{}, 'Reset':{},
+                      'RKick': {}, 'Rotate': {}, 'Tilt': {}, 'Transport': {}, 'Repeat': {}
+                    
+                  }
+
+    cell_dict = {
+        'ncells':  {'desc': 'Number of times to repeat this command in this cell block',
+                    'type': 'Integer'},
+
+        'cellflip':   {'desc': 'if .true. => flip cell field for alternate cells',
+                       'type': 'Logical'},
+
+        'rhigh':      {'desc': 'Outer radius of this r subregion',
+                       'type': 'Real'},
+
+        'field':      {'desc': 'Field object',
+                       'type': 'Field'},
+
+        'material':   {'desc': 'Material object',
+                       'type': 'Material'}
+        }
+
     def __init__(self, name, metadata, ncells, cellflip, field):
         RegularRegion.__init__(self, None, None)
         self.region_commands = []
-        self.ncells=ncells
-        self.cellflip=cellflip
-        self.cftag=field.ftag
-        self.cfparm=field.fparm
-        self.allowed={'SRegion':{}, 'Aperture': {}, 'Dens': {}, 'Disp': {}, 'Dummy': {}, 'DVar':{}, 'Edge': {}, 'Output': {}, 'Refp': {}, 'Ref2':{}, 'Reset':{}, 
-        'RKick': {}, 'Rotate': {}, 'Tilt': {}, 'Transport': {}, 'Repeat': {}}
+        self.ncells = ncells
+        self.cellflip = cellflip
+        self.field = field
+        self.material=material
+        
 
     def __str__(self):
         return 'Cell\n'
@@ -706,32 +764,62 @@ class SRegion(RegularRegion):
     def __str__(self):
         return 'SRegion:\n '+'slen='+str(self.slen) + ',' + 'nrreg=' + str(self.nrreg) + ',' + \
                'zstep=' + str(self.zstep)
-        
+
     def __repr__(self):
         return 'SRegion:\n '+'slen='+str(self.slen)+','+'nrreg='+str(self.nrreg)+','+'zstep='+str(self.zstep)
     
-        
-    def add_subregion(irreg, rlow, rhigh, field, material):
-        subr=[]
-        subr.append(irreg)
-        subr.append(rlow)
-        subr.append(rhigh)
-        subr.append(field)
-        subr.append(material)
-        self.subregions.append(subr)
+    def add_subregions(subregion_list):
+        pass
 
     def gen(self, file):
         file.write('\n')
-        f.write('SREGION')
+        file.write('SREGION')
         file.write('\n')
-        file.write(slen)
+        file.write(self.slen)
         file.write(' ')
-        file.write(nrreg)
+        file.write(self.nrreg)
         file.write(' ')
-        file.write(zstep)
+        file.write(self.zstep)
         file.write('\n')
-        for rsubr in subregions:
-            pass
+        for subregion in self.subregions:
+            subregion.gen(file)
+
+
+class SubRegion(object):
+    """
+    A SubRegion is a:
+    (1) IRREG r-region number;
+    (2) RLOW Innter radius of this r subregion;
+    (3) RHIGH Outer radius of this r subregion;
+    (4) Field object; and
+    (5) Material object.
+    """
+
+    subregion_dict = {
+        'irreg':  {'desc': 'R-Region Number',
+                   'type': 'Integer'},
+
+        'rlow':   {'desc': 'Inner radius of this r subregion',
+                   'type': 'Real'},
+
+        'rhigh':   {'desc': 'Outer radius of this r subregion',
+                    'type': 'Real'},
+
+        'field':   {'desc': 'Field object',
+                    'type': 'Field'},
+
+        'material': {'desc': 'Material object',
+                     'type': 'Material'}
+        }
+
+    def __init__(self, kwargs):
+        pass
+
+    def __setattr__(self, name, value):
+        pass
+
+    def gen(self, file):
+        pass
 
 
 class ModeledCommandParameter(object):
@@ -798,7 +886,7 @@ class Field(ModeledCommandParameter):
             file.write(" ")
 
 
-class Material(object):
+class Material(ModeledCommandParameter):
     """
     A Material is a:
     MTAG (A) material composition tag
@@ -828,6 +916,8 @@ class Material(object):
     ...
 
     """
+    geom_dict = {}
+
     def __init__(self, mtag, mgeom, gparm):
         self.mtag = mtag
         self.mgeom = mgeom
@@ -1261,8 +1351,9 @@ class Sol(Field):
     """
     #__metaclass__ = MetaSol
 
-    models={'1': ['Ez only with no transverse variation', 
-           {'freq': 2, 'grad': 3, 'phase': 4, 'rect_cyn': 5, 'mode': 8}],
+    models = {
+             '1': {'desc': 'Ez only with no transverse variation', 
+           'parm': {'freq': 2, 'grad': 3, 'phase': 4, 'rect_cyn': 5, 'mode': 8}},
 
             '2': ['Cylindrical TM01p pillbox',
             {'freq': 2, 'grad': 3, 'phase': 4, 'rect_cyn': 5, 'longitudinal_mode': 8}],

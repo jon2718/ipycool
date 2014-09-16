@@ -58,6 +58,8 @@ def check_type(icool_type, provided_type):
         else:
             return False
 
+def check_command_params(input_dict, cls):
+    pass
 
 def check_model_keyword_args(input_dict, cls):
     """
