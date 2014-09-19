@@ -58,7 +58,8 @@ def check_type(icool_type, provided_type):
         else:
             return False
 
-def check_command_params(input_dict, cls):
+
+def check_command_params(cls, input_dict):
     pass
 
 def check_model_keyword_args(input_dict, cls):
@@ -240,6 +241,26 @@ class SetAttributeError(InputError):
 
     def __str__(self):
         msg = 'Illegal attempt to set attribute ' + self.attribute + ' on object ' + str(type(self.cls))
+        return msg
+
+
+class InvalidCommandParameter(InputError):
+    def __init__(self, command_parameter, allowed_parameters):
+        self.command_parameter = command_parameter
+        self.allowed_parameters = allowed_parameters
+
+    def __str__(self):
+        msg = '\nInvalid command parameter: ' + str(self.command_parameter) + '\nAllowed command parameters are:\n' + ' '.join(self.allowed_parameters)
+        return msg
+
+
+class MissingCommandParameter(InputError):
+    def __init__(self, command_parameter, allowed_parameters):
+        self.command_parameter = command_parameter
+        self.allowed_parameters = allowed_parameters
+
+    def __str__(self):
+        msg = '\nMissing command parameter: ' + str(self.command_parameter)
         return msg
 
 

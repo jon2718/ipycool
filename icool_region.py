@@ -328,9 +328,9 @@ class Cont(object):
 
         'neighbor':   {'default': False,
                        'desc': "(L) if .true. => include fields from previous and following regions when calculating "
-                               "field.  This parameter can be used with soft-edge fields when the magnitude of the "
-                               "field doesn't fall to 0 at the region boundary. A maximum of 100 region can be used "
-                               "with this feature.",
+                       "field.  This parameter can be used with soft-edge fields when the magnitude of the "
+                       "field doesn't fall to 0 at the region boundary. A maximum of 100 region can be used "
+                       "with this feature.",
                        'type': 'Logical'},
 
         'neutrino':    {'default': 0,
@@ -344,9 +344,9 @@ class Cont(object):
 
         'npart':       {'default': None,
                         'desc': '(I) # of particles in simulation. The first 300,000 particles are stored in memory. '
-                                'Larger numbers are allowed in principle since ICOOL writes the excess particle '
-                                'information to disc. However, there can be a large space and speed penalty in doing '
-                                'so.',
+                        'Larger numbers are allowed in principle since ICOOL writes the excess particle '
+                        'information to disc. However, there can be a large space and speed penalty in doing '
+                        'so.',
                         'type': 'Integer'},
 
         'nprnt':         {'default': -1,
@@ -357,7 +357,11 @@ class Cont(object):
                           'desc': 'Number of input particles in external beam file to skip before processing starts',
                           'type': 'Integer'},
 
-        'nsections':     {},
+        'nsections':     {'default': 1,
+                          'desc': '(I) # of times to repeat basic cooling section (1).  This parameter can be used to '
+                          'repeat all the commands between the SECTION and ENDSECTION commands in the problem '
+                          'definition. If a REFP command immediately follows the SECTION command, it is not '
+                          'repeated'},
 
         'ntuple': {},
 
@@ -414,7 +418,7 @@ class Cont(object):
 
     def __init__(self, **kwargs):
         for command, value in kwargs.items():
-            if valid_command(self.cont_dict, command, value, 'CONT') == -1:
+            if ie.valid_command(self.cont_dict, command, value, 'CONT') == -1:
                 print 'Valid commands are:\n'
                 for key in self.cont_dict:
                     print key, ',',
@@ -465,12 +469,65 @@ class Region(object):
     def __init__(self, name=None, metadata=None):
         self.name = name
         self.metadata = metadata
-   
+
     def __str__(self):
         return '[A Region can be either a RegularRegion or PseudoRegion.]'
 
     def __repr__(self):
         return '[A Region can be either a RegularRegion or PseudoRegion.]'
+
+    """Checks whether all required command parameters specified in __init__ are provided are valid
+    for Region command"""
+
+    def __setattr__(self, name, value):
+        command_parameters_dict = self.command_params
+        
+        if self.check_command_param(name):
+            object.__setattr__(self, name, value)
+        else:
+            sys.exit(0)
+
+    def check_command_param(self, command_param):
+        """
+        Checks whether a parameters specified for command are valid.
+        """
+        command_parameters_dict = self.command_params
+        #Check command parameters are all valid
+        try:
+          
+                if not command_param in command_parameters_dict:
+                    raise ie.InvalidCommandParameter(command_param, command_parameters_dict.keys())
+        except ie.InvalidCommandParameter as e:
+            print e
+            return False
+        return True
+
+
+    def check_command_params_init(self, cls, command_params): 
+        """
+        Checks whether the parameters specified for command are valid and all required parameters exist.
+        """
+        command_parameters_dict = cls.command_params
+        #Check command parameters are all valid
+        try:
+            for key in command_params:
+                if not key in command_parameters_dict:
+                    raise ie.InvalidCommandParameter(key, command_parameters_dict.keys())
+        except ie.InvalidCommandParameter as e:
+            print e
+            return False
+        #Check all required command parameters are provided
+        try:
+            for key in command_parameters_dict:
+                if command_parameters_dict[key]['req'] is True:
+                    if not key in command_params:
+                        raise ie.MissingCommandParameter(key, command_parameters_dict)
+        except ie.MissingCommandParameter as e:
+            print e
+            return False
+        for key in command_params:
+            self.__setattr__(key, command_params[key])
+        return True
 
 
 class RegularRegion(Region):
@@ -497,7 +554,7 @@ class PseudoRegion(Region):
     """
     def __init__(self, name=None, metadata=None):
         Region.__init__(self, name, metadata)
-        
+
     def __str__(self):
         return '[A PseudoRegion can be either a APERTURE, CUTV, DENP, DENS, DISP, DUMMY, DVAR, EDGE, GRID\
                 OUTPUT, REFP, REF2, RESET, RKICK, ROTATE, TAPER, TILT, TRANSPORT, BACKGROUND, BFIELD, ENDB, ! or &]'
@@ -510,16 +567,18 @@ class PseudoRegion(Region):
 class Section(RegularRegion):
     """
     SECTION Start of cooling section region definition.
-    The data must end with an ENDSECTION.   It can enclose any number of other commands. 
+    The data must end with an ENDSECTION.   It can enclose any number of other commands.
     If it is desired to repeat the section definitions, the control variable NSECTIONS should be
     set >1 and a BEGS command is used to define where to start repeating.
     """
 
-    allowed_commands = 
-                     {'Cell': {}, 'Background': {}, 'SRegion':{}, 'Aperture': {}, 'Dens': {}, 'Disp': {}, 
-                     'Dummy': {}, 'DVar':{}, 'Edge': {}, 'Output': {}, 'Refp': {}, 'Ref2':{}, 'Reset':{}, 
-                     'RKick': {}, 'Rotate': {}, 'Tilt': {}, 'Transport': {}, 'Repeat': {}}
+    allowed_commands = [
+        'Cell', 'Background', 'SRegion', 'Aperture', 'Dens', 'Disp', 'Dummy', 'DVar',
+        'Edge', 'Output', 'Refp', 'Ref2', 'Reset', 'RKick', 'Rotate', 'Tilt', 'Transport'
+        'Repeat'
+        ]
 
+    command_params = None
 
     def __init__(self, nsections=1, command_list=None, name=None, metadata=None):
         RegularRegion.__init__(self, name, metadata)
@@ -559,9 +618,10 @@ class Section(RegularRegion):
         file.write('\n')
         file.write('SECTION')
         for command in self.commands:
-            command.gen(f)
+            command.gen(file)
         file.write('\n')
         file.write('ENDSECTION')
+
 
 class Begs(RegularRegion):
     def __init__(self):
@@ -570,20 +630,25 @@ class Begs(RegularRegion):
     def gen(self, file):
         region.gen('BEGS')
 
+
 class Repeat(RegularRegion):
     """
     Start of a repeating group of region commands; the data must end with an ENDREPEAT
     command. This can be used to repeat regions inside a cell. The repeat loop can enclose any
-    number of {SREGION, APERTURE, DENS, DISP, DUMMY, DVAR, EDGE, OUTPUT, REFP, REF2, RESET, RKICK, ROTATE, TILT, TRANSPORT} commands. 
-    Repeat sections cannot be nested in other repeat sections. (see parameters below)
+    number of {SREGION, APERTURE, DENS, DISP, DUMMY, DVAR, EDGE, OUTPUT, REFP, REF2, RESET, RKICK,
+    ROTATE, TILT, TRANSPORT} commands. Repeat sections cannot be nested in other repeat sections.
+    (see parameters below)
     """
+    allowed_commands = [
+        'SRegion', 'Aperture', 'Dens', 'Disp', 'Dummy', 'Dvar', 'Edge', 'Output', 'Refp',
+        'Ref2', 'Reset', 'Rkick', 'Rotate', 'Tilt', 'Transport'
+    ]
+
     def __init__(self, num_repeats, region_command_list):
         RegularRegion.__init__(self, None, None)
         self.region_commands = region_commands
         self.num_repeats = num_repeats
-        self.allowed = {'SRegion': {}, 'Aperture': {}, 'Dens': {}, 'Disp': {}, 'Dummy': {}, 'Dvar': {}, 'Edge': {}, 'Output': {}, 'Refp': {},
-         'Ref2': {}, 'Reset': {}, 'Rkick': {}, 'Rotate': {}, 'Tilt': {}, 'Transport': {}}
-       
+
     def add_region_command(command):
         print
 
@@ -667,16 +732,15 @@ class Cell(RegularRegion):
     It has an associated cell field, which is superimposed on the individual region fields. Cell sections cannot
     be nested in other cell sections. (see parameters below)
     """
-    allowed_commands = {
-                      'SRegion':{}, 'Aperture': {}, 'Dens': {}, 'Disp': {}, 'Dummy': {}, 'DVar':{},
-                      'Edge': {}, 'Output': {}, 'Refp': {}, 'Ref2':{}, 'Reset':{},
-                      'RKick': {}, 'Rotate': {}, 'Tilt': {}, 'Transport': {}, 'Repeat': {}
-                    
-                  }
+    allowed_commands = [
+        'SRegion', 'Aperture', 'Dens', 'Disp', 'Dummy', 'DVar', 'Edge', 'Output',
+        'Refp', 'Ref2', 'Reset', 'RKick', 'Rotate', 'Tilt', 'Transport', 'Repeat'
+        ]
 
-    cell_dict = {
+    command_params = {
         'ncells':  {'desc': 'Number of times to repeat this command in this cell block',
-                    'type': 'Integer'},
+                    'type': 'Integer',
+                    'req': True},
 
         'cellflip':   {'desc': 'if .true. => flip cell field for alternate cells',
                        'type': 'Logical'},
@@ -714,7 +778,6 @@ class Cell(RegularRegion):
 
     def remove_region_command_at(delete_point):
         print
-
 
     def gen(self, file):
         region.gen('CELL')
@@ -754,12 +817,37 @@ class SRegion(RegularRegion):
     7) GPARM (R) 10 Parameters describing material geometry.
     These 10 parameters must be on one input line (see specific material type below)
     """
-    def __init__(self, slen, nrreg, zstep, r_subregion_list=None, name=None):
-        self.slen = slen
-        self.nrreg = nrreg
-        self.zstep = zstep
-        self.subregions = []
-        RegularRegion.__init__(self, name)
+
+    allowed_commands = None
+
+    command_params = {
+        'slen':  {'desc': 'Length of this s region [m]',
+                  'type': 'Real',
+                  'req': True},
+
+        'nrreg':   {'desc': '# of radial subregions of this s region {1-4}',
+                    'type': 'Int',
+                    'req': False},
+
+        'zstep':   {'desc': 'Step for tracking particles [m]',
+                    'type': 'Real',
+                    'req': True},
+
+        'subregion_list': {'desc': 'List of SubRegion objects',
+                           'type': 'List[SubRegion]',
+                           'req': False},
+        }
+
+    def __init__(self, **kwargs):
+        if self.check_command_params_init(self, kwargs) is False:
+            sys.exit(0)
+
+    #def __init__(self, slen, nrreg, zstep, r_subregion_list=None, name=None):
+     #   self.slen = slen
+    #  self.nrreg = nrreg
+    #    self.zstep = zstep
+    #    self.subregions = []
+     #   RegularRegion.__init__(self, name)
 
     def __str__(self):
         return 'SRegion:\n '+'slen='+str(self.slen) + ',' + 'nrreg=' + str(self.nrreg) + ',' + \
@@ -767,7 +855,10 @@ class SRegion(RegularRegion):
 
     def __repr__(self):
         return 'SRegion:\n '+'slen='+str(self.slen)+','+'nrreg='+str(self.nrreg)+','+'zstep='+str(self.zstep)
-    
+
+    def __setattr__(self, name, value):
+        Region.__setattr__(self, name, value)
+
     def add_subregions(subregion_list):
         pass
 
@@ -1355,8 +1446,8 @@ class Sol(Field):
              '1': {'desc': 'Ez only with no transverse variation', 
            'parm': {'freq': 2, 'grad': 3, 'phase': 4, 'rect_cyn': 5, 'mode': 8}},
 
-            '2': ['Cylindrical TM01p pillbox',
-            {'freq': 2, 'grad': 3, 'phase': 4, 'rect_cyn': 5, 'longitudinal_mode': 8}],
+            '2': {'desc': 'Cylindrical TM01p pillbox', 'parms':
+            {'freq': 2, 'grad': 3, 'phase': 4, 'rect_cyn': 5, 'longitudinal_mode': 8}},
 
             '3': ['Traveling wave cavity',
             {'freq': 2, 'grad': 3, 'phase': 4, 'rect_cyn': 5, 'x_offset': 6, 'y_offset': 7, 'phase_velocity': 8}],
