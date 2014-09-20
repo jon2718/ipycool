@@ -349,23 +349,29 @@ class Cont(object):
                         'so.',
                         'type': 'Integer'},
 
-        'nprnt':         {'default': -1,
-                          'desc': ' Number of diagnostic events to print out to log file.',
-                          'type': 'Integer'},
+        'nprnt':        {'default': -1,
+                         'desc': ' Number of diagnostic events to print out to log file.',
+                         'type': 'Integer'},
 
-        'npskip':        {'default': 0,
-                          'desc': 'Number of input particles in external beam file to skip before processing starts',
-                          'type': 'Integer'},
+        'npskip':       {'default': 0,
+                         'desc': 'Number of input particles in external beam file to skip before processing starts',
+                         'type': 'Integer'},
 
-        'nsections':     {'default': 1,
-                          'desc': '(I) # of times to repeat basic cooling section (1).  This parameter can be used to '
-                          'repeat all the commands between the SECTION and ENDSECTION commands in the problem '
-                          'definition. If a REFP command immediately follows the SECTION command, it is not '
-                          'repeated'},
+        'nsections':    {'default': 1,
+                         'desc': '(I) # of times to repeat basic cooling section (1).  This parameter can be used to '
+                         'repeat all the commands between the SECTION and ENDSECTION commands in the problem '
+                         'definition. If a REFP command immediately follows the SECTION command, it is not '
+                         'repeated',
+                         'type': 'Integer'},
 
-        'ntuple': {},
+        'ntuple':        {'default': False,
+                          'desc': '(L) if .true. => store information about each particle after every region in file '
+                          'FOR009.DAT. This variable is forced to be false if RTUPLE= true.(false)}',
+                          'type': 'Logical'},
 
-        'nthmin': {},
+        'nuthmin':      {'default': 0,
+                         'desc': '(R) Minimum polar angle to write neutrino production data to file. [radians]',
+                         'type': 'Real'},
                 
         'nuthmax': {},
                 
@@ -466,9 +472,17 @@ class Ints(object):
 
 
 class Region(object):
-    def __init__(self, name=None, metadata=None):
-        self.name = name
-        self.metadata = metadata
+    def __init__(self, **kwargs):
+        if self.check_command_params_init(self, kwargs) is False:
+            sys.exit(0)
+        else:
+            self.setall(kwargs)
+
+    def __call__(self, **kwargs):
+        if self.check_command_params_call(self, kwargs) is False:
+            sys.exit(0)
+        else:
+            self.setall(kwargs)
 
     def __str__(self):
         return '[A Region can be either a RegularRegion or PseudoRegion.]'
@@ -477,7 +491,9 @@ class Region(object):
         return '[A Region can be either a RegularRegion or PseudoRegion.]'
 
     """Checks whether all required command parameters specified in __init__ are provided are valid
-    for Region command"""
+    for Region command.  
+    Valid means the parameaters are recognized for the command, all required parameters are provided
+    and the parameters are the correct type."""
 
     def __setattr__(self, name, value):
         command_parameters_dict = self.command_params
@@ -494,9 +510,8 @@ class Region(object):
         command_parameters_dict = self.command_params
         #Check command parameters are all valid
         try:
-          
-                if not command_param in command_parameters_dict:
-                    raise ie.InvalidCommandParameter(command_param, command_parameters_dict.keys())
+            if not command_param in command_parameters_dict:
+                raise ie.InvalidCommandParameter(command_param, command_parameters_dict.keys())
         except ie.InvalidCommandParameter as e:
             print e
             return False
@@ -528,6 +543,46 @@ class Region(object):
         for key in command_params:
             self.__setattr__(key, command_params[key])
         return True
+
+    def check_command_params_call(self, cls, command_params):
+        """
+        Checks whether the parameters specified for command are valid and all required parameters exist.
+        """
+        command_parameters_dict = cls.command_params
+        #Check command parameters are all valid
+        try:
+            for key in command_params:
+                if not key in command_parameters_dict:
+                    raise ie.InvalidCommandParameter(key, command_parameters_dict.keys())
+        except ie.InvalidCommandParameter as e:
+            print e
+            return False
+        return True
+
+    def setall(self, command_params):
+        for key in command_params:
+            self.__setattr__(key, command_params[key])
+
+    def check_type(icool_type, provided_type):
+        """Checks types comparing ICOOL required types with python types
+        """
+        if icool_type == 'Real':
+            if provided_type == 'int' or provided_type == 'long' or provided_type == 'float':
+                return True
+            else:
+                return False
+
+        if icool_type == 'Integer':
+            if provided_type == 'int' or provided_type == 'long':
+                return True
+            else:
+                return False
+
+        if icool_type == 'Logical':
+            if provided_type == 'bool':
+                return True
+            else:
+                return False
 
 
 class RegularRegion(Region):
@@ -563,6 +618,43 @@ class PseudoRegion(Region):
         return '[A PseudoRegion can be either a APERTURE, CUTV, DENP, DENS, DISP, DUMMY, DVAR, EDGE, GRID\
                 OUTPUT, REFP, REF2, RESET, RKICK, ROTATE, TAPER, TILT, TRANSPORT, BACKGROUND, BFIELD, ENDB, ! or &]'
 
+    def __init__(self, kwargs):
+        #Check that ALL keywords for model are specified.  If not, throw exception.
+        if ie.check_model_keyword_args(kwargs, self) == -1:
+            sys.exit(0)
+        setattr(self, 'model', kwargs['model'])
+        for key in kwargs:
+            print key
+            if not key == 'model':
+                setattr(self, key, kwargs[key])
+
+    def __setattr__(self, name, value):
+        new_model = False
+        if name == 'model':
+            if hasattr(self, 'model'):
+                new_model = True
+                #Delete all attributes of the current model
+                print 'Resetting model to ', value
+                for key in self.get_model_dict(self.model):
+                    if hasattr(self, key):
+                        delattr(self, key)
+            object.__setattr__(self, 'model', value)
+            #If new model, set all attributes of new model to 0.
+            if new_model is True:
+                for key in self.get_model_dict(value):
+                    if key is not 'model':
+                        setattr(self, key, 0)
+            return
+        try:
+            if ie.check_keyword_in_model(name, self):
+                object.__setattr__(self, name, value)
+            else:
+                raise ie.SetAttributeError('', self, name)
+        except ie.SetAttributeError as e:
+            print e
+
+    def get_model_dict(self, model):
+        return self.models[str(model)]['parms']
 
 class Section(RegularRegion):
     """
@@ -572,7 +664,7 @@ class Section(RegularRegion):
     set >1 and a BEGS command is used to define where to start repeating.
     """
 
-    allowed_commands = [
+    allowed_enclosed_commands = [
         'Cell', 'Background', 'SRegion', 'Aperture', 'Dens', 'Disp', 'Dummy', 'DVar',
         'Edge', 'Output', 'Refp', 'Ref2', 'Reset', 'RKick', 'Rotate', 'Tilt', 'Transport'
         'Repeat'
@@ -639,7 +731,7 @@ class Repeat(RegularRegion):
     ROTATE, TILT, TRANSPORT} commands. Repeat sections cannot be nested in other repeat sections.
     (see parameters below)
     """
-    allowed_commands = [
+    allowed_enclosed_commands = [
         'SRegion', 'Aperture', 'Dens', 'Disp', 'Dummy', 'Dvar', 'Edge', 'Output', 'Refp',
         'Ref2', 'Reset', 'Rkick', 'Rotate', 'Tilt', 'Transport'
     ]
@@ -732,7 +824,7 @@ class Cell(RegularRegion):
     It has an associated cell field, which is superimposed on the individual region fields. Cell sections cannot
     be nested in other cell sections. (see parameters below)
     """
-    allowed_commands = [
+    allowed_enclosed_commands = [
         'SRegion', 'Aperture', 'Dens', 'Disp', 'Dummy', 'DVar', 'Edge', 'Output',
         'Refp', 'Ref2', 'Reset', 'RKick', 'Rotate', 'Tilt', 'Transport', 'Repeat'
         ]
@@ -818,7 +910,7 @@ class SRegion(RegularRegion):
     These 10 parameters must be on one input line (see specific material type below)
     """
 
-    allowed_commands = None
+    allowed_enclosed_commands = None
 
     command_params = {
         'slen':  {'desc': 'Length of this s region [m]',
@@ -952,7 +1044,8 @@ class ModeledCommandParameter(object):
     def get_model_dict(self, model):
         return self.models[str(model)]['parms']
 
-
+#Possibly move modeledcommand parameter (already done) into pseudoregion.  Make field anad material a subclass of subregion.
+#Accel would then still be a subclass of field, etc.
 class Field(ModeledCommandParameter):
     """
     A Field is a:
@@ -1440,7 +1533,6 @@ class Sol(Field):
     This model applies a geometry cut on particles whose radius exceeds the specified radial taper.
 
     """
-    #__metaclass__ = MetaSol
 
     models = {
              '1': {'desc': 'Ez only with no transverse variation', 
