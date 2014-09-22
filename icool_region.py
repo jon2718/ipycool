@@ -212,8 +212,12 @@ class Title(object):
         file.write(self.title)
 
 
-class Cont(object):
-    cont_dict = {
+class ICoolVariablesSet(object):
+    pass
+
+
+class Cont(ICoolVariablesSet):
+    variables = {
         'betaperp':  {'default': None,
                       'desc': '(R) beta value to use in calculating amplitude variable A^2',
                       'type': 'Real'},
@@ -618,43 +622,7 @@ class PseudoRegion(Region):
         return '[A PseudoRegion can be either a APERTURE, CUTV, DENP, DENS, DISP, DUMMY, DVAR, EDGE, GRID\
                 OUTPUT, REFP, REF2, RESET, RKICK, ROTATE, TAPER, TILT, TRANSPORT, BACKGROUND, BFIELD, ENDB, ! or &]'
 
-    def __init__(self, kwargs):
-        #Check that ALL keywords for model are specified.  If not, throw exception.
-        if ie.check_model_keyword_args(kwargs, self) == -1:
-            sys.exit(0)
-        setattr(self, 'model', kwargs['model'])
-        for key in kwargs:
-            print key
-            if not key == 'model':
-                setattr(self, key, kwargs[key])
 
-    def __setattr__(self, name, value):
-        new_model = False
-        if name == 'model':
-            if hasattr(self, 'model'):
-                new_model = True
-                #Delete all attributes of the current model
-                print 'Resetting model to ', value
-                for key in self.get_model_dict(self.model):
-                    if hasattr(self, key):
-                        delattr(self, key)
-            object.__setattr__(self, 'model', value)
-            #If new model, set all attributes of new model to 0.
-            if new_model is True:
-                for key in self.get_model_dict(value):
-                    if key is not 'model':
-                        setattr(self, key, 0)
-            return
-        try:
-            if ie.check_keyword_in_model(name, self):
-                object.__setattr__(self, name, value)
-            else:
-                raise ie.SetAttributeError('', self, name)
-        except ie.SetAttributeError as e:
-            print e
-
-    def get_model_dict(self, model):
-        return self.models[str(model)]['parms']
 
 class Section(RegularRegion):
     """
@@ -1008,13 +976,16 @@ class SubRegion(object):
 class ModeledCommandParameter(object):
     def __init__(self, kwargs):
         #Check that ALL keywords for model are specified.  If not, throw exception.
-        if ie.check_model_keyword_args(kwargs, self) == -1:
+        if self.check_model_keyword_args(kwargs) == -1:
             sys.exit(0)
         setattr(self, 'model', kwargs['model'])
         for key in kwargs:
             print key
             if not key == 'model':
                 setattr(self, key, kwargs[key])
+
+    def __call__(self, kwargs):
+        pass
 
     def __setattr__(self, name, value):
         new_model = False
@@ -1034,18 +1005,74 @@ class ModeledCommandParameter(object):
                         setattr(self, key, 0)
             return
         try:
-            if ie.check_keyword_in_model(name, self):
+            if self.check_keyword_in_model(name):
                 object.__setattr__(self, name, value)
             else:
                 raise ie.SetAttributeError('', self, name)
         except ie.SetAttributeError as e:
             print e
 
+    def check_model_keyword_args(self, input_dict):
+        """
+        Checks if ALL keywords for a model are specified.  If not, raises InputArgumentsError
+        If model is not specified, raises ModelNotSpecifiedError.
+        Initialization of a model (e.g., Accel, SOL, etc. requires all keywords specified)
+        """
+        try:
+            if not self.check_model_specified(input_dict):
+                actual_dict = {'Unknown': 0}
+                raise ie.InputArgumentsError('Model most be specified', input_dict, actual_dict)
+            model = input_dict['model']
+            actual_dict = self.models[str(model)]['parms']
+            if sorted(input_dict.keys()) != sorted(actual_dict.keys()):
+                raise ie.InputArgumentsError('Model parameter specification error', input_dict, actual_dict)
+        except ie.InputArgumentsError as e:
+            print e
+            return -1
+        return 0
+
+    def check_keyword_in_model(self, keyword):
+        """
+        Checks if ALL keywords for a model are specified.  If not, raises InputArgumentsError
+        If model is not specified, raises ModelNotSpecifiedError.
+        Initialization of a model (e.g., Accel, SOL, etc. requires all keywords specified)
+        """
+        if keyword in self.get_model_dict(self.model):
+            return True
+        else:
+            return False
+
+    def check_partial_keywords_for_current_model(self, input_dict):
+        """
+        Checks whether the keywords specified for a current model correspond to that model.
+        """
+        actual_dict = self.get_model_dict(self.model)
+        for key in input_dict:
+            if not key in actual_dict:
+                raise ie.InputArgumentsError('Input Arguments Error', input_dict, actual_dict)
+        return True
+
+    def check_partial_keywords_for_new_model(self, input_dict):
+        """
+        Checks whether the keywords specified for a new model correspond to that model.
+        """
+        model = input_dict['model']
+        actual_dict = self.get_model_dict(self, model)
+        for key in input_dict:
+            if not key in self.actual:
+                raise ie.InputArgumentsError('Input Arguments Error', input_dict, actual_dict)
+        return True
+
+    def check_model_specified(self, input_dict):
+        if 'model' in input_dict.keys():
+            return True
+        else:
+            return False
+
     def get_model_dict(self, model):
         return self.models[str(model)]['parms']
 
-#Possibly move modeledcommand parameter (already done) into pseudoregion.  Make field anad material a subclass of subregion.
-#Accel would then still be a subclass of field, etc.
+
 class Field(ModeledCommandParameter):
     """
     A Field is a:
@@ -1053,9 +1080,13 @@ class Field(ModeledCommandParameter):
     ACCEL, BLOCK, BROD, BSOL, COIL, DIP, EFLD, FOFO, HDIP, HELI(X), HORN, KICK, QUAD,
     ROD, SEX, SHEE(T), SOL, SQUA, STUS, WIG
 
-    FPARM - 15 parameters describing the field.
+    FPARM - 15 parameters describing the field.  The first parameter is the model.
     """
     def __init__(self, ftag, kwargs):
+        ModeledCommandParameter.__init__(self, kwargs)
+        self.ftag = ftag
+
+    def __call__(self, kwargs):
         ModeledCommandParameter.__init__(self, kwargs)
 
     def __setattr__(self, name, value):
@@ -1070,7 +1101,7 @@ class Field(ModeledCommandParameter):
             file.write(" ")
 
 
-class Material(ModeledCommandParameter):
+class Material(object):
     """
     A Material is a:
     MTAG (A) material composition tag
