@@ -985,7 +985,15 @@ class ModeledCommandParameter(object):
                 setattr(self, key, kwargs[key])
 
     def __call__(self, kwargs):
-        pass
+        if self.check_model_specified(kwargs) is True:
+            if self.check_partial_keywords_for_new_model(kwargs) is False:
+                sys.exit(0)
+        self.reset_model()
+        self.set_model(kwargs)
+        return
+        if self.check_partial_keywords_for_current_model(kwargs) is False:
+                sys.exit(0)
+        self.set_model(kwargs)
 
     def __setattr__(self, name, value):
         new_model = False
@@ -1011,6 +1019,15 @@ class ModeledCommandParameter(object):
                 raise ie.SetAttributeError('', self, name)
         except ie.SetAttributeError as e:
             print e
+
+    def reset_model(self):
+        for key in self.get_model_dict(self.model):
+            if hasattr(self, key):
+                delattr(self, key)
+
+    def set_model(self, kwargs):
+        for key in kwargs:
+            object.__setattr__(self, key, kwargs[key])
 
     def check_model_keyword_args(self, input_dict):
         """
@@ -1057,9 +1074,9 @@ class ModeledCommandParameter(object):
         Checks whether the keywords specified for a new model correspond to that model.
         """
         model = input_dict['model']
-        actual_dict = self.get_model_dict(self, model)
+        actual_dict = self.get_model_dict(model)
         for key in input_dict:
-            if not key in self.actual:
+            if not key in actual_dict:
                 raise ie.InputArgumentsError('Input Arguments Error', input_dict, actual_dict)
         return True
 
@@ -1442,6 +1459,7 @@ class Accel(Field):
 
     def __init__(self, **kwargs):
         Field.__init__(self, 'Accel', kwargs)
+        self.ftag = 'Accel'
 
     def __call__(self, **kwargs):
         if check_model_specified(kwargs):
@@ -1476,7 +1494,13 @@ class Accel(Field):
         print
 
     def __setattr__(self, name, value):
-        Field.__setattr__(self, name, value)
+        if name == 'ftag':
+            if value == 'Accel':
+                object.__setattr__(self, name, value)
+            else:
+                print '\n Illegal attempt to set incorrect ftag.\n'  # Should raise exception here
+        else:
+            Field.__setattr__(self, name, value)
 
 
 class Sol(Field):
