@@ -988,9 +988,12 @@ class ModeledCommandParameter(object):
         if self.check_model_specified(kwargs) is True:
             if self.check_partial_keywords_for_new_model(kwargs) is False:
                 sys.exit(0)
-        self.reset_model()
-        self.set_model(kwargs)
-        return
+            setattr(self, 'model', kwargs['model'])
+            for key in kwargs:
+                print key
+                if not key == 'model':
+                    setattr(self, key, kwargs[key])
+                return
         if self.check_partial_keywords_for_current_model(kwargs) is False:
                 sys.exit(0)
         self.set_model(kwargs)
@@ -1104,7 +1107,7 @@ class Field(ModeledCommandParameter):
         self.ftag = ftag
 
     def __call__(self, kwargs):
-        ModeledCommandParameter.__init__(self, kwargs)
+        ModeledCommandParameter.__call__(self, kwargs)
 
     def __setattr__(self, name, value):
         ModeledCommandParameter.__setattr__(self, name, value)
@@ -1462,21 +1465,7 @@ class Accel(Field):
         self.ftag = 'Accel'
 
     def __call__(self, **kwargs):
-        if check_model_specified(kwargs):
-            if kwargs['model'] == self.model:
-                new_model = False
-            else:
-                new_model = True
-        else:
-            new_model = False
-
-        #If model not specified then it is the same model.
-        check_keyword_args(kwargs, self)
-        for key in kwargs:
-            print key
-            if not key == 'model':
-                setattr(self, key, kwargs[key])
-        self.selected_model = self.models[str(self.model)]['parms']
+        Field.__call__(self, kwargs)
 
     def gen_fparm(self):
         self.fparm = [0]*15
