@@ -976,27 +976,31 @@ class SubRegion(object):
 class ModeledCommandParameter(object):
     def __init__(self, kwargs):
         #Check that ALL keywords for model are specified.  If not, throw exception.
-        if self.check_model_keyword_args(kwargs) == -1:
+        if self.check_model_keyword_args(kwargs) is False:
             sys.exit(0)
-        setattr(self, 'model', kwargs['model'])
-        for key in kwargs:
-            print key
-            if not key == 'model':
-                setattr(self, key, kwargs[key])
+        self.set_keyword_args_model_specified(kwargs)
+        #setattr(self, 'model', kwargs['model'])
+        #for key in kwargs:
+        #    print key
+        #    if not key == 'model':
+        #        setattr(self, key, kwargs[key])
 
     def __call__(self, kwargs):
         if self.check_model_specified(kwargs) is True:
             if self.check_partial_keywords_for_new_model(kwargs) is False:
                 sys.exit(0)
-            setattr(self, 'model', kwargs['model'])
-            for key in kwargs:
-                print key
-                if not key == 'model':
-                    setattr(self, key, kwargs[key])
-                return
+            self.set_keyword_args_model_specified(kwargs)
+            #setattr(self, 'model', kwargs['model'])
+            #for key in kwargs:
+            #    print key
+            #    if not key == 'model':
+            #        setattr(self, key, kwargs[key])
+            #    return
+            return
+        #Model not specified
         if self.check_partial_keywords_for_current_model(kwargs) is False:
                 sys.exit(0)
-        self.set_model(kwargs)
+        self.set_keyword_args_model_not_specified(kwargs)
 
     def __setattr__(self, name, value):
         new_model = False
@@ -1023,14 +1027,20 @@ class ModeledCommandParameter(object):
         except ie.SetAttributeError as e:
             print e
 
+    def set_keyword_args_model_specified(self, kwargs):
+        setattr(self, 'model', kwargs['model'])
+        for key in kwargs:
+            if not key == 'model':
+                setattr(self, key, kwargs[key])
+
+    def set_keyword_args_model_not_specified(self, kwargs):
+        for key in kwargs:
+            object.__setattr__(self, key, kwargs[key])
+
     def reset_model(self):
         for key in self.get_model_dict(self.model):
             if hasattr(self, key):
                 delattr(self, key)
-
-    def set_model(self, kwargs):
-        for key in kwargs:
-            object.__setattr__(self, key, kwargs[key])
 
     def check_model_keyword_args(self, input_dict):
         """
@@ -1048,14 +1058,12 @@ class ModeledCommandParameter(object):
                 raise ie.InputArgumentsError('Model parameter specification error', input_dict, actual_dict)
         except ie.InputArgumentsError as e:
             print e
-            return -1
-        return 0
+            return False
+        return True
 
     def check_keyword_in_model(self, keyword):
         """
-        Checks if ALL keywords for a model are specified.  If not, raises InputArgumentsError
-        If model is not specified, raises ModelNotSpecifiedError.
-        Initialization of a model (e.g., Accel, SOL, etc. requires all keywords specified)
+        Checks if given keyword specified is in the model associated with self.  If not, raises InputArgumentsError
         """
         if keyword in self.get_model_dict(self.model):
             return True
@@ -1111,6 +1119,14 @@ class Field(ModeledCommandParameter):
 
     def __setattr__(self, name, value):
         ModeledCommandParameter.__setattr__(self, name, value)
+
+    def gen_fparm(self):
+        self.fparm = [0]*15
+        cur_model = self.get_model_dict(self.model)
+        for key in cur_model:
+            pos = self.cur_model[key]
+            self.fparm[pos-1] = getattr(self, key)
+        print self.fparm
 
     def gen(self, file):
         file.write('\n')
@@ -1462,34 +1478,25 @@ class Accel(Field):
 
     def __init__(self, **kwargs):
         Field.__init__(self, 'Accel', kwargs)
-        self.ftag = 'Accel'
+        self.ftag = 'ACCEL'
 
     def __call__(self, **kwargs):
         Field.__call__(self, kwargs)
 
-    def gen_fparm(self):
-        self.fparm = [0]*15
-        # members = [attr for attr in dir(self) if not callable(attr) and not attr.startswith("__")
-        #and not attr.startswith("_")]
-        # print "members is: ", members
-        # model=MetaAccel.models[str(self.model)][1]
-        # print model
-        for key in self.selected_model:
-            pos = self.selected_model[key]
-            self.fparm[pos-1] = getattr(self, key)
-        print self.fparm
-
-    def gen(self, file):
-        print
-
     def __setattr__(self, name, value):
         if name == 'ftag':
-            if value == 'Accel':
+            if value == 'ACCEL':
                 object.__setattr__(self, name, value)
             else:
                 print '\n Illegal attempt to set incorrect ftag.\n'  # Should raise exception here
         else:
             Field.__setattr__(self, name, value)
+
+    def gen_fparm(self):
+        Field.gen_fparm(self)
+
+    def gen(self, file):
+        Field.gen(self)
 
 
 class Sol(Field):
@@ -1579,55 +1586,62 @@ class Sol(Field):
     """
 
     models = {
-             '1': {'desc': 'Ez only with no transverse variation', 
-           'parm': {'freq': 2, 'grad': 3, 'phase': 4, 'rect_cyn': 5, 'mode': 8}},
+        '1': {'desc': 'Ez only with no transverse variation',
+              'parm': {'freq': 2, 'grad': 3, 'phase': 4, 'rect_cyn': 5, 'mode': 8}},
 
-            '2': {'desc': 'Cylindrical TM01p pillbox', 'parms':
-            {'freq': 2, 'grad': 3, 'phase': 4, 'rect_cyn': 5, 'longitudinal_mode': 8}},
+        '2': {'desc': 'Cylindrical TM01p pillbox',
+              'parms': {'freq': 2, 'grad': 3, 'phase': 4, 'rect_cyn': 5, 'longitudinal_mode': 8}},
 
-            '3': ['Traveling wave cavity',
-            {'freq': 2, 'grad': 3, 'phase': 4, 'rect_cyn': 5, 'x_offset': 6, 'y_offset': 7, 'phase_velocity': 8}],
+        '3': {'desc': 'Traveling wave cavity',
+              'parms': {'freq': 2, 'grad': 3, 'phase': 4, 'rect_cyn': 5, 'x_offset': 6, 'y_offset': 7,
+                        'phase_velocity': 8}},
 
-            '4': ['Approximate fields for symmetric circular-nosed cavity',
+        '4': ['Approximate fields for symmetric circular-nosed cavity',
             {'freq': 2, 'grad': 3, 'phase': 4, 'length': 8, 'gap': 9, 'drift_tube_radius': 10, 'nose_radius': 11}],
 
-            '5': ['User-supplied azimuthally-symmetric TM mode (SuperFish)', 
+        '5': ['User-supplied azimuthally-symmetric TM mode (SuperFish)', 
             {'freq': 2, 'phase': 4, 'file_no': 8, 'field_strength_norm': 9, 'rad_cut': 10, 'axial_dist': 11,
              'axial_sym': 12}],
 
-            '6': ['Induction linac model - waveform from user-supplied polynomial coefficients', 
+        '6': ['Induction linac model - waveform from user-supplied polynomial coefficients', 
             {'time_offset': 2, 'gap': 3, 'time_reset': 4, 'V0': 5, 'V1': 6, 'V2': 7, 'V3': 8, 'V4': 9, 'V5': 10, 
             'V6': 11, 'V7': 12, 'V8': 13}],
 
-            '7': ['Induction linac model - waveform from internally generated waveform', 
+        '7': ['Induction linac model - waveform from internally generated waveform', 
             {'num_gaps': 2, 'start_volt': 3, 'volt_swing': 4, 'time_offset': 5, 'kin_en': 6, 'pulse_dur': 7, 
              'slope': 8, 'bins': 9, 'gap_len': 10, 'file_num': 11, 'kill_flag': 12, 'restart_flag': 13}],
 
-            '8': ['Induction linac model - Waveform from user-supplied file', 
+        '8': ['Induction linac model - Waveform from user-supplied file', 
             {'time_offset': 2, 'gap': 3, 'time_reset': 4, 'file_num_wav': 5, 'poly_order': 6, 'file_num_out': 7, 
             'time_inc': 8}],
 
-            '9': ['Sector-shaped pillbox cavity (circular cross section)', 
+        '9': ['Sector-shaped pillbox cavity (circular cross section)', 
             {'freq': 2, 'grad': 3, 'phase': 4}], '10': ['Variable {frequency gradient} pillbox cavity', 
             {'phase': 4, 'num_wavelengths': 5, 'reset_parm': 6, 'buncher_length': 7, 'g0': 8, 'g1': 9, 'g2': 10, 
              'phase_model': 12}]
             }
+  
+    def __init__(self, **kwargs):
+        Field.__init__(self, 'Accel', kwargs)
+        self.ftag = 'SOL'
 
-     
-    def __init__(self, model, field_parameters):
-        self.model=model
-        field.__init__(self, 'SOL', model, field_parameters)
+    def __call__(self, **kwargs):
+        Field.__call__(self, kwargs)
+
+    def __setattr__(self, name, value):
+        if name == 'ftag':
+            if value == 'SOL':
+                object.__setattr__(self, name, value)
+            else:
+                print '\n Illegal attempt to set incorrect ftag.\n'  # Should raise exception here
+        else:
+            Field.__setattr__(self, name, value)
+
+    def gen_fparm(self):
+        Field.gen_fparm(self)
 
     def gen(self, file):
-        print
-
-class Sheet(Field):
-    def __init__(self, model, field_parameters):
-        self.model=model
-        field.__init__(self, 'SHEET', field_parameters)
-
-    def gen(self, file):
-        print
+        Field.gen(self)
  
 class Cell(Region):
     pass
