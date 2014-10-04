@@ -151,7 +151,7 @@ class InputError(Error):
         return repr(string)
 
 
-class IncorrectType(InputError):
+class InvalidType(InputError):
     """Exception raised for attempt to assign incorrect type to a variable.  Required types for """
     """various variables are indicated in the associated dictionary 'type' field for the """
     """associated namelist."""
@@ -162,7 +162,7 @@ class IncorrectType(InputError):
         self.actual_type = actual_type
 
     def __str__(self):
-        msg = "Incorrect type.  Expected " + self.expected_type + " but instead got " + self.actual_type
+        msg = "Invalid type.  Expected " + self.expected_type + " but instead got " + self.actual_type
         return repr(msg)
 
 
@@ -253,7 +253,6 @@ class InvalidCommandParameter(InputError):
         msg = '\nInvalid command parameter: ' + str(self.command_parameter) + '\nAllowed command parameters are:\n' + ' '.join(self.allowed_parameters)
         return msg
 
-
 class MissingCommandParameter(InputError):
     def __init__(self, command_parameter, allowed_parameters):
         self.command_parameter = command_parameter
@@ -261,6 +260,16 @@ class MissingCommandParameter(InputError):
 
     def __str__(self):
         msg = '\nMissing command parameter: ' + str(self.command_parameter)
+        return msg
+
+
+class ContainerCommandError(InputError):
+    def __init__(self, command, allowed_commands):
+        self.allowed_commands = allowed_commands
+        self.command = command
+
+    def __str__(self):
+        msg = '\nIllegal command: ' + str(self.command)
         return msg
 
 

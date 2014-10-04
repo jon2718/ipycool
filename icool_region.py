@@ -495,8 +495,8 @@ class Region(object):
         return '[A Region can be either a RegularRegion or PseudoRegion.]'
 
     """Checks whether all required command parameters specified in __init__ are provided are valid
-    for Region command.  
-    Valid means the parameaters are recognized for the command, all required parameters are provided
+    for Region command.
+    Valid means the parameters are recognized for the command, all required parameters are provided
     and the parameters are the correct type."""
 
     def __setattr__(self, name, value):
@@ -509,7 +509,7 @@ class Region(object):
 
     def check_command_param(self, command_param):
         """
-        Checks whether a parameters specified for command are valid.
+        Checks whether a parameter specified for command is valid.
         """
         command_parameters_dict = self.command_params
         #Check command parameters are all valid
@@ -519,23 +519,27 @@ class Region(object):
         except ie.InvalidCommandParameter as e:
             print e
             return False
+        except ie.InvalidType as e:
+            print e
+            return False
         return True
 
 
     def check_command_params_init(self, cls, command_params): 
         """
-        Checks whether the parameters specified for command are valid and all required parameters exist.
+        Checks whether the parameters specified for command are valid, all required parameters are
+        specified and all parameters are of correct type.  
+        If not, raises an exception.
         """
-        command_parameters_dict = cls.command_params
-        #Check command parameters are all valid
         try:
-            for key in command_params:
-                if not key in command_parameters_dict:
-                    raise ie.InvalidCommandParameter(key, command_parameters_dict.keys())
+            if not check_command_params_valid(command_params):
+            raise ie.InvalidCommandParameter(key, command_parameters_dict.keys())
         except ie.InvalidCommandParameter as e:
             print e
             return False
-        #Check all required command parameters are provided
+
+
+   
         try:
             for key in command_parameters_dict:
                 if command_parameters_dict[key]['req'] is True:
@@ -543,10 +547,43 @@ class Region(object):
                         raise ie.MissingCommandParameter(key, command_parameters_dict)
         except ie.MissingCommandParameter as e:
             print e
-            return False
+            return False   
+        try:
+            for key in command_params:
+                if self.check_type(command_paramaters_dict[key]['type'], command_params[key].__class__.__name__) is False:
+                    raise
+
         for key in command_params:
             self.__setattr__(key, command_params[key])
         return True
+
+    def check_command_params_valid(self, command_params):
+        """Returns True if command_params are valid (correspond to the command)
+        Otherwise returns False"""
+        command_parameters_dict = self.command_params
+        for key in command_params:
+                if not key in command_parameters_dict:
+                    return False
+        return True
+  
+    def check_all_required_command_params_specified(self, command_params):
+        """Returns True if all required command parameters were specified
+        Otherwise returns False"""
+        command_parameters_dict = self.command_params
+        for key in command_parameters_dict:
+            if command_parameters_dict[key]['req'] is True:
+                if not key in command_params:
+                    return False
+        return True 
+
+    def check_command_params_type(self, command_params):
+        """Checks to see whether all required command parameters specified were of the correct type"""
+        command_parameters_dict = self.command_params
+       for key in command_params:
+            if self.check_type(command_paramaters_dict[key]['type'], command_params[key].__class__.__name__) is False:
+                return False
+        return True 
+    
 
     def check_command_params_call(self, cls, command_params):
         """
@@ -624,7 +661,7 @@ class PseudoRegion(Region):
 
 
 
-class Section(RegularRegion):
+class Section(RegularRegion, Container):
     """
     SECTION Start of cooling section region definition.
     The data must end with an ENDSECTION.   It can enclose any number of other commands.
@@ -691,7 +728,7 @@ class Begs(RegularRegion):
         region.gen('BEGS')
 
 
-class Repeat(RegularRegion):
+class Repeat(RegularRegion, Container):
     """
     Start of a repeating group of region commands; the data must end with an ENDREPEAT
     command. This can be used to repeat regions inside a cell. The repeat loop can enclose any
@@ -786,13 +823,26 @@ class Edge(PseudoRegion):
         self.model_parameters = model_parameters
 
 
-class Cell(RegularRegion):
+class Container(object):
+    """Abstract class container for other commands.
+    """
+    def check_allowed_command(command, allowed_commands):
+        try:
+            if command.__class__.__name__ not in allowed_commands:
+                raise ie.MissingCommandParameter(command, allowed_commands)
+        except ie.ContainerCommandError as e:
+            print e
+            return False
+        return True
+
+
+class Cell(RegularRegion, Container):
     """CELL Start of a repeating group of region commands; the data must end with an ENDCELL command.
     The cell loop can enclose any number of commands under REPEAT plus REPEAT and ENDREPEAT commands.
     It has an associated cell field, which is superimposed on the individual region fields. Cell sections cannot
     be nested in other cell sections. (see parameters below)
     """
-    allowed_enclosed_commands = [
+    allowed_contained_commands = [
         'SRegion', 'Aperture', 'Dens', 'Disp', 'Dummy', 'DVar', 'Edge', 'Output',
         'Refp', 'Ref2', 'Reset', 'RKick', 'Rotate', 'Tilt', 'Transport', 'Repeat'
         ]
@@ -802,42 +852,53 @@ class Cell(RegularRegion):
                     'type': 'Integer',
                     'req': True},
 
-        'cellflip':   {'desc': 'if .true. => flip cell field for alternate cells',
-                       'type': 'Logical'},
+        'flip':      {'desc': 'if .true. => flip cell field for alternate cells',
+                      'type': 'Logical',
+                      'req': False},
 
         'rhigh':      {'desc': 'Outer radius of this r subregion',
-                       'type': 'Real'},
+                       'type': 'Real',
+                       'req': True},
 
         'field':      {'desc': 'Field object',
-                       'type': 'Field'},
+                       'type': 'Field',
+                       'req': True},
 
         'material':   {'desc': 'Material object',
-                       'type': 'Material'}
+                       'type': 'Material',
+                       'req': True}
         }
 
-    def __init__(self, name, metadata, ncells, cellflip, field):
-        RegularRegion.__init__(self, None, None)
+    def __init__(self, **kwargs):
+        if self.check_command_params_init(self, kwargs) is False:
+            sys.exit(0)
         self.region_commands = []
-        self.ncells = ncells
-        self.cellflip = cellflip
-        self.field = field
-        self.material=material
+        self.ncells = kwargs['ncells']
+        self.cellflip = kwargs['flip']
+        self.field = kwargs['field']
+        self.material = kwargs['material']
+        RegularRegion.__init__(self, None, None)
         
-
     def __str__(self):
         return 'Cell\n'
-        
+
     def __repr__(self):
         return 'Cell\n'
-        
+      
     def add_region_command(command):
-        print
+        if self.check_allowed_command(command) is False:
+            sys.exit(0)
+        else:
+            self.region_commands.append(command)
 
-    def add_region_command_at(command, insert_point):
-        print
+    def insert_region_command(command, insert_point):
+        if self.check_allowed_command(command) is False:
+            sys.exit(0)
+        else:
+            self.region_commands.insert(insert_point, command)
 
-    def remove_region_command_at(delete_point):
-        print
+    def remove_region_command(delete_point):
+        del self.region_commands[delete_point]
 
     def gen(self, file):
         region.gen('CELL')
@@ -1477,8 +1538,8 @@ class Accel(Field):
     }
 
     def __init__(self, **kwargs):
-        Field.__init__(self, 'Accel', kwargs)
-        self.ftag = 'ACCEL'
+        Field.__init__(self, 'ACCEL', kwargs)
+        #self.ftag = 'ACCEL'
 
     def __call__(self, **kwargs):
         Field.__call__(self, kwargs)
@@ -1596,8 +1657,9 @@ class Sol(Field):
               'parms': {'freq': 2, 'grad': 3, 'phase': 4, 'rect_cyn': 5, 'x_offset': 6, 'y_offset': 7,
                         'phase_velocity': 8}},
 
-        '4': ['Approximate fields for symmetric circular-nosed cavity',
-            {'freq': 2, 'grad': 3, 'phase': 4, 'length': 8, 'gap': 9, 'drift_tube_radius': 10, 'nose_radius': 11}],
+        '4': {'desc': 'Approximate fields for symmetric circular-nosed cavity',
+              'parms': {'freq': 2, 'grad': 3, 'phase': 4, 'length': 8, 'gap': 9, 'drift_tube_radius': 10,
+                        'nose_radius': 11}},
 
         '5': ['User-supplied azimuthally-symmetric TM mode (SuperFish)', 
             {'freq': 2, 'phase': 4, 'file_no': 8, 'field_strength_norm': 9, 'rad_cut': 10, 'axial_dist': 11,
@@ -1643,8 +1705,6 @@ class Sol(Field):
     def gen(self, file):
         Field.gen(self)
  
-class Cell(Region):
-    pass
 
 class Comment(PseudoRegion):
     def __init__(self, comment):
