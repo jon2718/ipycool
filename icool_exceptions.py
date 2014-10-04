@@ -156,8 +156,8 @@ class InvalidType(InputError):
     """various variables are indicated in the associated dictionary 'type' field for the """
     """associated namelist."""
 
-    def __init__(self, expr, expected_type, actual_type):
-        InputError.__init__(self, expr, 'Incorrect type.')
+    def __init__(self, expected_type, actual_type):
+        InputError.__init__(self, 'Incorrect type.', 'Incorrect type.')
         self.expected_type = expected_type
         self.actual_type = actual_type
 
@@ -252,6 +252,7 @@ class InvalidCommandParameter(InputError):
     def __str__(self):
         msg = '\nInvalid command parameter: ' + str(self.command_parameter) + '\nAllowed command parameters are:\n' + ' '.join(self.allowed_parameters)
         return msg
+
 
 class MissingCommandParameter(InputError):
     def __init__(self, command_parameter, allowed_parameters):

@@ -476,8 +476,8 @@ class Ints(object):
 
 
 class Region(object):
-    def __init__(self, **kwargs):
-        if self.check_command_params_init(self, kwargs) is False:
+    def __init__(self, kwargs):
+        if self.check_command_params_init(kwargs) is False:
             sys.exit(0)
         else:
             self.setall(kwargs)
@@ -500,8 +500,6 @@ class Region(object):
     and the parameters are the correct type."""
 
     def __setattr__(self, name, value):
-        command_parameters_dict = self.command_params
-        
         if self.check_command_param(name):
             object.__setattr__(self, name, value)
         else:
@@ -524,65 +522,59 @@ class Region(object):
             return False
         return True
 
-
-    def check_command_params_init(self, cls, command_params): 
-        """
-        Checks whether the parameters specified for command are valid, all required parameters are
-        specified and all parameters are of correct type.  
-        If not, raises an exception.
-        """
+    def check_command_params_valid(self, command_params):
+        """Returns True if command_params are valid (correspond to the command)
+        Otherwise raises an exception and returns False"""
+        command_parameters_dict = self.command_params
         try:
-            if not check_command_params_valid(command_params):
-            raise ie.InvalidCommandParameter(key, command_parameters_dict.keys())
+            for key in command_params:
+                if not key in command_parameters_dict:
+                    raise ie.InvalidCommandParameter(key, command_parameters_dict)
         except ie.InvalidCommandParameter as e:
             print e
             return False
+        return True
 
-
-   
+    def check_all_required_command_params_specified(self, command_params):
+        """Returns True if all required command parameters were specified
+        Otherwise raises an exception and returns False"""
+        command_parameters_dict = self.command_params
         try:
             for key in command_parameters_dict:
                 if command_parameters_dict[key]['req'] is True:
                     if not key in command_params:
-                        raise ie.MissingCommandParameter(key, command_parameters_dict)
+                        raise ie.MissingCommandParameter(key, command_params)
         except ie.MissingCommandParameter as e:
             print e
-            return False   
+            return False
+        return True
+
+    def check_command_params_type(self, command_params):
+        """Checks to see whether all required command parameters specified were of the correct type"""
+        command_params_dict = self.command_params
         try:
             for key in command_params:
-                if self.check_type(command_paramaters_dict[key]['type'], command_params[key].__class__.__name__) is False:
-                    raise
+                if self.check_type(command_params_dict[key]['type'], command_params[key]) is False:
+                    raise ie.InvalidType(command_params_dict[key]['type'], command_params[key].__class__.__name__)
+        except ie.InvalidType as e:
+            print e
+            return False
+        return True
+
+    def check_command_params_init(self, command_params):
+        """
+        Checks whether the parameters specified for command are valid, all required parameters are
+        specified and all parameters are of correct type.  If not, raises an exception.
+        """
+        if not self.check_command_params_valid(command_params)\
+            or not self.check_all_required_command_params_specified(command_params)\
+                or not self.check_command_params_type(command_params):
+                    return False
 
         for key in command_params:
             self.__setattr__(key, command_params[key])
         return True
 
-    def check_command_params_valid(self, command_params):
-        """Returns True if command_params are valid (correspond to the command)
-        Otherwise returns False"""
-        command_parameters_dict = self.command_params
-        for key in command_params:
-                if not key in command_parameters_dict:
-                    return False
-        return True
-  
-    def check_all_required_command_params_specified(self, command_params):
-        """Returns True if all required command parameters were specified
-        Otherwise returns False"""
-        command_parameters_dict = self.command_params
-        for key in command_parameters_dict:
-            if command_parameters_dict[key]['req'] is True:
-                if not key in command_params:
-                    return False
-        return True 
-
-    def check_command_params_type(self, command_params):
-        """Checks to see whether all required command parameters specified were of the correct type"""
-        command_parameters_dict = self.command_params
-       for key in command_params:
-            if self.check_type(command_paramaters_dict[key]['type'], command_params[key].__class__.__name__) is False:
-                return False
-        return True 
     
 
     def check_command_params_call(self, cls, command_params):
@@ -604,23 +596,39 @@ class Region(object):
         for key in command_params:
             self.__setattr__(key, command_params[key])
 
-    def check_type(icool_type, provided_type):
-        """Checks types comparing ICOOL required types with python types
+    def check_type(self, icool_type, provided_type):
+        """Takes provided python object and compares with required icool type name.
+        Returns True if the types match and False otherwise.
         """
+        provided_type_name = provided_type.__class__.__name__
+        print icool_type, provided_type_name
         if icool_type == 'Real':
-            if provided_type == 'int' or provided_type == 'long' or provided_type == 'float':
+            if provided_type_name == 'int' or provided_type_name == 'long' or provided_type_name == 'float':
                 return True
             else:
                 return False
 
         if icool_type == 'Integer':
-            if provided_type == 'int' or provided_type == 'long':
+            if provided_type_name == 'int' or provided_type_name == 'long':
                 return True
             else:
                 return False
 
         if icool_type == 'Logical':
-            if provided_type == 'bool':
+            if provided_type_name == 'bool':
+                return True
+            else:
+                return False   
+
+        if icool_type == 'Field':
+            if isinstance(provided_type, Field):
+                return True
+            else:
+                return False
+
+
+        if icool_type == 'Material':
+            if isinstance(provided_type, Material):
                 return True
             else:
                 return False
@@ -631,8 +639,8 @@ class RegularRegion(Region):
     RegularRegion commands include: SECTION, BEGS, REPEAT, CELL, SREGION, ENDREPEAT, ENDCELL,
     and ENDCELL.
     """
-    def __init__(self, name=None, metadata=None):
-        Region.__init__(self, name, metadata)
+    def __init__(self, kwargs):
+        Region.__init__(self, kwargs)
 
     def __str__(self):
         return '[A RegularRegion can be either a SECTION, BEGS, REPEAT, CELL, SREGION, ENDREPEAT, ENDCELL,\
@@ -659,7 +667,30 @@ class PseudoRegion(Region):
         return '[A PseudoRegion can be either a APERTURE, CUTV, DENP, DENS, DISP, DUMMY, DVAR, EDGE, GRID\
                 OUTPUT, REFP, REF2, RESET, RKICK, ROTATE, TAPER, TILT, TRANSPORT, BACKGROUND, BFIELD, ENDB, ! or &]'
 
+class Container(object):
+    """Abstract class container for other commands.
+    """
+    def __init__(self, enclosed_commands=None):
+        self.enclosed_commands = enclosed_commands
 
+    def __setattr__(self, name, value):
+        #command_parameters_dict = self.command_params
+        if name == 'enclosed_commands':
+            object.__setattr__(self, name, value)
+        else:
+            if self.check_command_param(name):
+                object.__setattr__(self, name, value)
+            else:
+                sys.exit(0)
+
+    def check_allowed_command(command, allowed_commands):
+        try:
+            if command.__class__.__name__ not in allowed_commands:
+                raise ie.MissingCommandParameter(command, allowed_commands)
+        except ie.ContainerCommandError as e:
+            print e
+            return False
+        return True
 
 class Section(RegularRegion, Container):
     """
@@ -823,19 +854,6 @@ class Edge(PseudoRegion):
         self.model_parameters = model_parameters
 
 
-class Container(object):
-    """Abstract class container for other commands.
-    """
-    def check_allowed_command(command, allowed_commands):
-        try:
-            if command.__class__.__name__ not in allowed_commands:
-                raise ie.MissingCommandParameter(command, allowed_commands)
-        except ie.ContainerCommandError as e:
-            print e
-            return False
-        return True
-
-
 class Cell(RegularRegion, Container):
     """CELL Start of a repeating group of region commands; the data must end with an ENDCELL command.
     The cell loop can enclose any number of commands under REPEAT plus REPEAT and ENDREPEAT commands.
@@ -870,15 +888,18 @@ class Cell(RegularRegion, Container):
         }
 
     def __init__(self, **kwargs):
-        if self.check_command_params_init(self, kwargs) is False:
-            sys.exit(0)
-        self.region_commands = []
+        RegularRegion.__init__(self, kwargs)
+        #self.enclosed_commands = []
         self.ncells = kwargs['ncells']
-        self.cellflip = kwargs['flip']
+        self.flip = kwargs['flip']
         self.field = kwargs['field']
         self.material = kwargs['material']
-        RegularRegion.__init__(self, None, None)
+        Container.__init__(self)
+        #RegularRegion.__init__(self, None, None)
         
+    def __setattr__(self, name, value):
+        Container.__setattr__(self, name, value)
+
     def __str__(self):
         return 'Cell\n'
 
@@ -963,13 +984,6 @@ class SRegion(RegularRegion):
         if self.check_command_params_init(self, kwargs) is False:
             sys.exit(0)
 
-    #def __init__(self, slen, nrreg, zstep, r_subregion_list=None, name=None):
-     #   self.slen = slen
-    #  self.nrreg = nrreg
-    #    self.zstep = zstep
-    #    self.subregions = []
-     #   RegularRegion.__init__(self, name)
-
     def __str__(self):
         return 'SRegion:\n '+'slen='+str(self.slen) + ',' + 'nrreg=' + str(self.nrreg) + ',' + \
                'zstep=' + str(self.zstep)
@@ -1040,23 +1054,12 @@ class ModeledCommandParameter(object):
         if self.check_model_keyword_args(kwargs) is False:
             sys.exit(0)
         self.set_keyword_args_model_specified(kwargs)
-        #setattr(self, 'model', kwargs['model'])
-        #for key in kwargs:
-        #    print key
-        #    if not key == 'model':
-        #        setattr(self, key, kwargs[key])
 
     def __call__(self, kwargs):
         if self.check_model_specified(kwargs) is True:
             if self.check_partial_keywords_for_new_model(kwargs) is False:
                 sys.exit(0)
             self.set_keyword_args_model_specified(kwargs)
-            #setattr(self, 'model', kwargs['model'])
-            #for key in kwargs:
-            #    print key
-            #    if not key == 'model':
-            #        setattr(self, key, kwargs[key])
-            #    return
             return
         #Model not specified
         if self.check_partial_keywords_for_current_model(kwargs) is False:
@@ -1228,9 +1231,27 @@ class Material(object):
     ...
 
     """
-    geom_dict = {}
-
-    def __init__(self, mtag, mgeom, gparm):
+    materials = {
+        'vac': {'desc': 'Vacuum (no material)'},
+        'gh':  {'desc': 'Gaseous hydrogen'},
+        'ghe': {'desc': 'Gaseous helium'},
+        'lh':  {'desc': 'Liquid hydrogen'},
+        'lhe': {'desc': 'Liquid helium'},
+        'Li':  {'desc': 'Lithium'},
+        'Be':  {'desc': 'Berylliyum'},
+        'B':   {'desc': 'Boron'},
+        'C':   {'desc': 'Carbon'},
+        'Al':  {'desc': 'Aluminum'},
+        'Ti':  {'desc': 'Titanium'},
+        'Fe':  {'desc': 'Iron'},
+        'Cu':  {'desc': 'Copper'},
+        'W':   {'desc': 'Tungsten'},
+        'Hg':  {'desc:': 'Mercury'},
+        'Pb':  {'desc:': 'Lead'}
+        }
+            
+   
+    def __init__(self, **kwargs):
         self.mtag = mtag
         self.mgeom = mgeom
         self.mparm = gparm
