@@ -1249,8 +1249,25 @@ class Material(object):
         'Hg':  {'desc:': 'Mercury'},
         'Pb':  {'desc:': 'Lead'}
         }
-            
-   
+    
+    geometries = {
+
+        'aspw': {'desc': 'Azimuthally Symmetric Polynomial Wedge absorber region.  Edge shape given by '
+                 'r(dz) = a0 + a1*dz + a2*dz^2 + a3*dz^3 in the 1st quadrant and '
+                 'where dz is measured from the wedge center.',
+                 'parms': {'zpos': 1, 'zoff': 2, 'a0': 3, 'a1': 4, 'a2': 5, 'a3': 6}},
+
+        'asrw': {'desc': 'Edge shape given by dz(r) = a0 + a1*r + a2*r^2 + a3*r^3 '
+                 'This is the half-thickness of the wedge. The wedge is symmetric about the x-y plane located '
+                 'at z=ZV.  The wedge material is filled in from z=ZV-dz to z=ZV+dz at any given radius.',
+                 'parms': {'dis': 1, 'thick': 2, 'a0': 3, 'a1': 4, 'a2': 5, 'a3': 6}},
+
+        'cblock': {'desc': 'Cylindrical block',
+                   'parms': {}},
+
+
+              }       
+
     def __init__(self, **kwargs):
         self.mtag = mtag
         self.mgeom = mgeom
@@ -1265,6 +1282,8 @@ class Material(object):
         for s in mparm:
             file.write(s)
             file.write(" ")
+
+
 
 
 class Accel(Field):
