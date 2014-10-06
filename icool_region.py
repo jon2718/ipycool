@@ -73,7 +73,6 @@ ENDB
 
 Command parameters:
 Each regular and pseduoregion command is respectively associated with a set of command parameters.
-
 """
 
 
@@ -376,10 +375,15 @@ class Cont(ICoolVariablesSet):
         'nuthmin':      {'default': 0,
                          'desc': '(R) Minimum polar angle to write neutrino production data to file. [radians]',
                          'type': 'Real'},
-                
-        'nuthmax': {},
-                
-        'output1': {},
+
+        'nuthmax':      {'default': 3.14,
+                         'desc': 'Maximum polar angle to write neutrino production data to file. [radians]',
+                         'type': 'Real'},
+
+        'output1':      {'default': False,
+                         'desc': 'if .true. => write particle information at production (plane 1) to the '
+                         'postprocessor output file for009.dat.',
+                         'type': 'Logical'},
                 
         'phantom': {},
                 
@@ -456,7 +460,7 @@ class Cont(ICoolVariablesSet):
         file.write("/")
 
 
-class Bmt(object):
+class Bmt(ICoolVariablesSet):
     bmt_dict = {}
 
     def __init__(self, **kwargs):
@@ -466,11 +470,7 @@ class Bmt(object):
         pass
 
 
-class BmType(object):
-    pass
-
-
-class Ints(object):
+class Ints(ICoolVariablesSet):
     def __init__(self, **kwargs):
         pass
 
@@ -575,8 +575,6 @@ class Region(object):
             self.__setattr__(key, command_params[key])
         return True
 
-    
-
     def check_command_params_call(self, cls, command_params):
         """
         Checks whether the parameters specified for command are valid and all required parameters exist.
@@ -667,6 +665,7 @@ class PseudoRegion(Region):
         return '[A PseudoRegion can be either a APERTURE, CUTV, DENP, DENS, DISP, DUMMY, DVAR, EDGE, GRID\
                 OUTPUT, REFP, REF2, RESET, RKICK, ROTATE, TAPER, TILT, TRANSPORT, BACKGROUND, BFIELD, ENDB, ! or &]'
 
+
 class Container(object):
     """Abstract class container for other commands.
     """
@@ -691,6 +690,7 @@ class Container(object):
             print e
             return False
         return True
+
 
 class Section(RegularRegion, Container):
     """
@@ -896,7 +896,7 @@ class Cell(RegularRegion, Container):
         self.material = kwargs['material']
         Container.__init__(self)
         #RegularRegion.__init__(self, None, None)
-        
+
     def __setattr__(self, name, value):
         Container.__setattr__(self, name, value)
 
@@ -905,20 +905,20 @@ class Cell(RegularRegion, Container):
 
     def __repr__(self):
         return 'Cell\n'
-      
-    def add_region_command(command):
+
+    def add_region_command(self, command):
         if self.check_allowed_command(command) is False:
             sys.exit(0)
         else:
             self.region_commands.append(command)
 
-    def insert_region_command(command, insert_point):
+    def insert_region_command(self, command, insert_point):
         if self.check_allowed_command(command) is False:
             sys.exit(0)
         else:
             self.region_commands.insert(insert_point, command)
 
-    def remove_region_command(delete_point):
+    def remove_region_command(self, delete_point):
         del self.region_commands[delete_point]
 
     def gen(self, file):
@@ -1048,7 +1048,7 @@ class SubRegion(object):
         pass
 
 
-class ModeledCommandParameter(object):
+class ModeledCommandParameter_OLD(object):
     def __init__(self, kwargs):
         #Check that ALL keywords for model are specified.  If not, throw exception.
         if self.check_model_keyword_args(kwargs) is False:
@@ -1106,6 +1106,66 @@ class ModeledCommandParameter(object):
             if hasattr(self, key):
                 delattr(self, key)
 
+
+class ModeledCommandParameter(object):
+    def __init__(self, kwargs):
+        #Check that ALL keywords for model are specified.  If not, throw exception.
+        if self.check_model_keyword_args(kwargs) is False:
+            sys.exit(0)
+        self.set_keyword_args_model_specified(kwargs)
+
+    def __call__(self, kwargs):
+        if self.check_model_specified(kwargs) is True:
+            if self.check_partial_keywords_for_new_model(kwargs) is False:
+                sys.exit(0)
+            self.set_keyword_args_model_specified(kwargs)
+            return
+        #Model not specified
+        if self.check_partial_keywords_for_current_model(kwargs) is False:
+                sys.exit(0)
+        self.set_keyword_args_model_not_specified(kwargs)
+
+    def __setattr__(self, name, value):
+        new_model = False
+        if name == self.get_model_descriptor_name():
+            if hasattr(self, self.get_model_descriptor_name()):
+                new_model = True
+                #Delete all attributes of the current model
+                print 'Resetting model to ', value
+                for key in self.get_model_dict(getattr(self, self.get_model_descriptor_name())):
+                    if hasattr(self, key):
+                        delattr(self, key)
+            object.__setattr__(self, self.get_model_descriptor_name(), value)
+            #If new model, set all attributes of new model to 0.
+            if new_model is True:
+                for key in self.get_model_dict(value):
+                    if key is not self.get_model_descriptor_name():
+                        setattr(self, key, 0)
+            return
+        try:
+            if self.check_keyword_in_model(name):
+                object.__setattr__(self, name, value)
+            else:
+                raise ie.SetAttributeError('', self, name)
+        except ie.SetAttributeError as e:
+            print e
+
+    def set_keyword_args_model_specified(self, kwargs):
+        setattr(self, self.get_model_descriptor_name(), kwargs[self.get_model_descriptor_name()])
+        for key in kwargs:
+            if not key == self.get_model_descriptor_name():
+                setattr(self, key, kwargs[key])
+
+    def set_keyword_args_model_not_specified(self, kwargs):
+        for key in kwargs:
+            object.__setattr__(self, key, kwargs[key])
+
+    def reset_model(self):
+        for key in self.get_model_dict(self.model):
+            if hasattr(self, key):
+                delattr(self, key)
+
+
     def check_model_keyword_args(self, input_dict):
         """
         Checks if ALL keywords for a model are specified.  If not, raises InputArgumentsError
@@ -1116,7 +1176,7 @@ class ModeledCommandParameter(object):
             if not self.check_model_specified(input_dict):
                 actual_dict = {'Unknown': 0}
                 raise ie.InputArgumentsError('Model most be specified', input_dict, actual_dict)
-            model = input_dict['model']
+            model = input_dict[self.get_model_descriptor_name()]
             actual_dict = self.models[str(model)]['parms']
             if sorted(input_dict.keys()) != sorted(actual_dict.keys()):
                 raise ie.InputArgumentsError('Model parameter specification error', input_dict, actual_dict)
@@ -1129,7 +1189,7 @@ class ModeledCommandParameter(object):
         """
         Checks if given keyword specified is in the model associated with self.  If not, raises InputArgumentsError
         """
-        if keyword in self.get_model_dict(self.model):
+        if keyword in self.get_model_dict(getattr(self, self.get_model_descriptor_name())):
             return True
         else:
             return False
@@ -1138,7 +1198,7 @@ class ModeledCommandParameter(object):
         """
         Checks whether the keywords specified for a current model correspond to that model.
         """
-        actual_dict = self.get_model_dict(self.model)
+        actual_dict = self.get_model_dict(getattr(self, self.get_model_descriptor_name()))
         for key in input_dict:
             if not key in actual_dict:
                 raise ie.InputArgumentsError('Input Arguments Error', input_dict, actual_dict)
@@ -1148,7 +1208,7 @@ class ModeledCommandParameter(object):
         """
         Checks whether the keywords specified for a new model correspond to that model.
         """
-        model = input_dict['model']
+        model = input_dict[self.get_model_descriptor_name()]
         actual_dict = self.get_model_dict(model)
         for key in input_dict:
             if not key in actual_dict:
@@ -1156,7 +1216,7 @@ class ModeledCommandParameter(object):
         return True
 
     def check_model_specified(self, input_dict):
-        if 'model' in input_dict.keys():
+        if self.get_model_descriptor_name() in input_dict.keys():
             return True
         else:
             return False
@@ -1164,7 +1224,10 @@ class ModeledCommandParameter(object):
     def get_model_dict(self, model):
         return self.models[str(model)]['parms']
 
+    def get_model_descriptor_name(self):
+        return self.models['model_descriptor']['name']
 
+       
 class Field(ModeledCommandParameter):
     """
     A Field is a:
@@ -1201,7 +1264,7 @@ class Field(ModeledCommandParameter):
             file.write(" ")
 
 
-class Material(object):
+class Material(ModeledCommandParameter):
     """
     A Material is a:
     MTAG (A) material composition tag
@@ -1250,28 +1313,27 @@ class Material(object):
         'Pb':  {'desc:': 'Lead'}
         }
     
-    geometries = {
+    models = {
+
+        'model_descriptor': {'desc': 'Geometry',
+                             'name': 'geom'},
 
         'aspw': {'desc': 'Azimuthally Symmetric Polynomial Wedge absorber region.  Edge shape given by '
                  'r(dz) = a0 + a1*dz + a2*dz^2 + a3*dz^3 in the 1st quadrant and '
                  'where dz is measured from the wedge center.',
-                 'parms': {'zpos': 1, 'zoff': 2, 'a0': 3, 'a1': 4, 'a2': 5, 'a3': 6}},
+                 'parms': {'mtag': None, 'geom': None, 'zpos': 1, 'zoff': 2, 'a0': 3, 'a1': 4, 'a2': 5, 'a3': 6}},
 
         'asrw': {'desc': 'Edge shape given by dz(r) = a0 + a1*r + a2*r^2 + a3*r^3 '
                  'This is the half-thickness of the wedge. The wedge is symmetric about the x-y plane located '
                  'at z=ZV.  The wedge material is filled in from z=ZV-dz to z=ZV+dz at any given radius.',
-                 'parms': {'dis': 1, 'thick': 2, 'a0': 3, 'a1': 4, 'a2': 5, 'a3': 6}},
+                 'parms': {'mtag': None, 'geom': None, 'dis': 1, 'thick': 2, 'a0': 3, 'a1': 4, 'a2': 5, 'a3': 6}},
 
         'cblock': {'desc': 'Cylindrical block',
                    'parms': {}},
-
-
-              }       
+        }       
 
     def __init__(self, **kwargs):
-        self.mtag = mtag
-        self.mgeom = mgeom
-        self.mparm = gparm
+        ModeledCommandParameter.__init__(self, kwargs)
 
     def gen(self, file):
         file.write('\n')
@@ -1282,8 +1344,6 @@ class Material(object):
         for s in mparm:
             file.write(s)
             file.write(" ")
-
-
 
 
 class Accel(Field):
@@ -1526,6 +1586,9 @@ class Accel(Field):
 """
     models = {
 
+        'model_descriptor': {'desc': 'Name of model parameter descriptor',
+                             'name': 'model'},
+
         '1': {'desc': 'Ez only with no transverse variation',
               'parms': {'model': 1, 'freq': 2, 'grad': 3, 'phase': 4, 'rect_cyn': 5, 'mode': 8}},
 
@@ -1701,27 +1764,29 @@ class Sol(Field):
               'parms': {'freq': 2, 'grad': 3, 'phase': 4, 'length': 8, 'gap': 9, 'drift_tube_radius': 10,
                         'nose_radius': 11}},
 
-        '5': ['User-supplied azimuthally-symmetric TM mode (SuperFish)', 
-            {'freq': 2, 'phase': 4, 'file_no': 8, 'field_strength_norm': 9, 'rad_cut': 10, 'axial_dist': 11,
-             'axial_sym': 12}],
+        '5': {'desc': 'User-supplied azimuthally-symmetric TM mode (SuperFish)',
+              'parms': {'freq': 2, 'phase': 4, 'file_no': 8, 'field_strength_norm': 9, 'rad_cut': 10, 'axial_dist': 11,
+                        'axial_sym': 12}},
 
-        '6': ['Induction linac model - waveform from user-supplied polynomial coefficients', 
-            {'time_offset': 2, 'gap': 3, 'time_reset': 4, 'V0': 5, 'V1': 6, 'V2': 7, 'V3': 8, 'V4': 9, 'V5': 10, 
-            'V6': 11, 'V7': 12, 'V8': 13}],
+        '6': {'desc': 'Induction linac model - waveform from user-supplied polynomial coefficients',
+              'parms': {'time_offset': 2, 'gap': 3, 'time_reset': 4, 'V0': 5, 'V1': 6, 'V2': 7, 'V3': 8, 'V4': 9,
+                        'V5': 10, 'V6': 11, 'V7': 12, 'V8': 13}},
 
-        '7': ['Induction linac model - waveform from internally generated waveform', 
-            {'num_gaps': 2, 'start_volt': 3, 'volt_swing': 4, 'time_offset': 5, 'kin_en': 6, 'pulse_dur': 7, 
-             'slope': 8, 'bins': 9, 'gap_len': 10, 'file_num': 11, 'kill_flag': 12, 'restart_flag': 13}],
+        '7': {'desc': 'Induction linac model - waveform from internally generated waveform',
+              'parms': {'num_gaps': 2, 'start_volt': 3, 'volt_swing': 4, 'time_offset': 5, 'kin_en': 6, 'pulse_dur': 7,
+                        'slope': 8, 'bins': 9, 'gap_len': 10, 'file_num': 11, 'kill_flag': 12, 'restart_flag': 13}},
 
-        '8': ['Induction linac model - Waveform from user-supplied file', 
-            {'time_offset': 2, 'gap': 3, 'time_reset': 4, 'file_num_wav': 5, 'poly_order': 6, 'file_num_out': 7, 
-            'time_inc': 8}],
+        '8': {'desc': 'Induction linac model - Waveform from user-supplied file',
+              'parms': {'time_offset': 2, 'gap': 3, 'time_reset': 4, 'file_num_wav': 5, 'poly_order': 6,
+                        'file_num_out': 7, 'time_inc': 8}},
 
-        '9': ['Sector-shaped pillbox cavity (circular cross section)', 
-            {'freq': 2, 'grad': 3, 'phase': 4}], '10': ['Variable {frequency gradient} pillbox cavity', 
-            {'phase': 4, 'num_wavelengths': 5, 'reset_parm': 6, 'buncher_length': 7, 'g0': 8, 'g1': 9, 'g2': 10, 
-             'phase_model': 12}]
-            }
+        '9': {'desc': 'Sector-shaped pillbox cavity (circular cross section)',
+              'parms': {'freq': 2, 'grad': 3, 'phase': 4}},
+
+        '10': {'desc': 'Variable {frequency gradient} pillbox cavity',
+               'parms': {'phase': 4, 'num_wavelengths': 5, 'reset_parm': 6, 'buncher_length': 7, 'g0': 8, 'g1': 9,
+                         'g2': 10, 'phase_model': 12}}
+        }
   
     def __init__(self, **kwargs):
         Field.__init__(self, 'Accel', kwargs)
