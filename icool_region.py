@@ -1070,7 +1070,6 @@ class SubRegion(Region):
         Region.__setattr__(self, name, value)
 
 
-
 class ModeledCommandParameter_OLD(object):
     def __init__(self, kwargs):
         #Check that ALL keywords for model are specified.  If not, throw exception.
@@ -1785,8 +1784,10 @@ class Sol(Field):
     """
 
     models = {
+        'model_descriptor': {'desc': 'Name of model parameter descriptor',
+                             'name': 'model'},
         '1': {'desc': 'Ez only with no transverse variation',
-              'parm': {'freq': 2, 'grad': 3, 'phase': 4, 'rect_cyn': 5, 'mode': 8}},
+              'parms': {'freq': 2, 'grad': 3, 'phase': 4, 'rect_cyn': 5, 'mode': 8}},
 
         '2': {'desc': 'Cylindrical TM01p pillbox',
               'parms': {'freq': 2, 'grad': 3, 'phase': 4, 'rect_cyn': 5, 'longitudinal_mode': 8}},
