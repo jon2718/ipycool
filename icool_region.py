@@ -561,6 +561,17 @@ class Region(object):
             return False
         return True
 
+    def check_command_param_type(self, name, value):
+        """Checks to see whether a particular command parameter of name with value is of the correct type"""
+        command_params_dict = self.command_params
+        try:
+            if self.check_type(command_params_dict[name]['type'], value) is False:
+                raise ie.InvalidType(command_params_dict[name]['type'], value.__class__.__name__)
+        except ie.InvalidType as e:
+            print e
+            return False
+        return True
+
     def check_command_params_init(self, command_params):
         """
         Checks whether the parameters specified for command are valid, all required parameters are
@@ -571,6 +582,7 @@ class Region(object):
                 or not self.check_command_params_type(command_params):
                     return False
 
+        #Now set the command parameters
         for key in command_params:
             self.__setattr__(key, command_params[key])
         return True
@@ -616,14 +628,13 @@ class Region(object):
             if provided_type_name == 'bool':
                 return True
             else:
-                return False   
+                return False
 
         if icool_type == 'Field':
             if isinstance(provided_type, Field):
                 return True
             else:
                 return False
-
 
         if icool_type == 'Material':
             if isinstance(provided_type, Material):
@@ -677,10 +688,14 @@ class Container(object):
         if name == 'enclosed_commands':
             object.__setattr__(self, name, value)
         else:
-            if self.check_command_param(name):
-                object.__setattr__(self, name, value)
+            if not self.check_command_param(name):
+                return False
             else:
-                sys.exit(0)
+                if not self.check_command_param_type(name, value):
+                    return False
+                else:
+                    object.__setattr__(self, name, value)
+                    return True 
 
     def check_allowed_command(command, allowed_commands):
         try:
@@ -889,13 +904,7 @@ class Cell(RegularRegion, Container):
 
     def __init__(self, **kwargs):
         RegularRegion.__init__(self, kwargs)
-        #self.enclosed_commands = []
-        self.ncells = kwargs['ncells']
-        self.flip = kwargs['flip']
-        self.field = kwargs['field']
-        self.material = kwargs['material']
         Container.__init__(self)
-        #RegularRegion.__init__(self, None, None)
 
     def __setattr__(self, name, value):
         Container.__setattr__(self, name, value)
@@ -981,7 +990,7 @@ class SRegion(RegularRegion):
         }
 
     def __init__(self, **kwargs):
-        if self.check_command_params_init(self, kwargs) is False:
+        if self.check_command_params_init(kwargs) is False:
             sys.exit(0)
 
     def __str__(self):
@@ -994,8 +1003,12 @@ class SRegion(RegularRegion):
     def __setattr__(self, name, value):
         Region.__setattr__(self, name, value)
 
-    def add_subregions(subregion_list):
-        pass
+    def add_subregion(self, subregion):
+        self.subregion_list.append(subregion)
+
+    def add_subregions(self, subregion_list):
+        for subregion in subregion_list:
+            self.subregion_list.append(subregion)
 
     def gen(self, file):
         file.write('\n')
@@ -1011,7 +1024,7 @@ class SRegion(RegularRegion):
             subregion.gen(file)
 
 
-class SubRegion(object):
+class SubRegion(Region):
     """
     A SubRegion is a:
     (1) IRREG r-region number;
@@ -1021,31 +1034,41 @@ class SubRegion(object):
     (5) Material object.
     """
 
-    subregion_dict = {
+    command_params = {
         'irreg':  {'desc': 'R-Region Number',
-                   'type': 'Integer'},
+                   'type': 'Integer',
+                   'req': True},
 
         'rlow':   {'desc': 'Inner radius of this r subregion',
-                   'type': 'Real'},
+                   'type': 'Real',
+                   'req': True},
 
         'rhigh':   {'desc': 'Outer radius of this r subregion',
-                    'type': 'Real'},
+                    'type': 'Real',
+                    'req': True},
 
         'field':   {'desc': 'Field object',
-                    'type': 'Field'},
+                    'type': 'Field',
+                    'req': True},
 
         'material': {'desc': 'Material object',
-                     'type': 'Material'}
+                     'type': 'Material',
+                     'req': True}
         }
 
-    def __init__(self, kwargs):
+    def __init__(self, **kwargs):
+        if self.check_command_params_init(kwargs) is False:
+            sys.exit(0)
+
+    def __str__(self):
+        pass
+
+    def __repr__(self):
         pass
 
     def __setattr__(self, name, value):
-        pass
+        Region.__setattr__(self, name, value)
 
-    def gen(self, file):
-        pass
 
 
 class ModeledCommandParameter_OLD(object):
@@ -1150,6 +1173,12 @@ class ModeledCommandParameter(object):
         except ie.SetAttributeError as e:
             print e
 
+    def __str__(self):
+        desc ='ModeledCommandParameter\n'
+        for key in self.get_model_dict(getattr(self, self.get_model_descriptor_name())):
+            desc=desc + key + ': '+ str(getattr(self, key)) + '\n'
+        return desc
+
     def set_keyword_args_model_specified(self, kwargs):
         setattr(self, self.get_model_descriptor_name(), kwargs[self.get_model_descriptor_name()])
         for key in kwargs:
@@ -1227,7 +1256,7 @@ class ModeledCommandParameter(object):
     def get_model_descriptor_name(self):
         return self.models['model_descriptor']['name']
 
-       
+    
 class Field(ModeledCommandParameter):
     """
     A Field is a:
@@ -1246,6 +1275,9 @@ class Field(ModeledCommandParameter):
 
     def __setattr__(self, name, value):
         ModeledCommandParameter.__setattr__(self, name, value)
+
+    def __str__(self):
+        return self.ftag + ':' + 'Field:' + ModeledCommandParameter.__str__(self)
 
     def gen_fparm(self):
         self.fparm = [0]*15
@@ -1655,6 +1687,9 @@ class Accel(Field):
                 print '\n Illegal attempt to set incorrect ftag.\n'  # Should raise exception here
         else:
             Field.__setattr__(self, name, value)
+
+    def __str__(self):
+        return Field.__str__(self)
 
     def gen_fparm(self):
         Field.gen_fparm(self)
