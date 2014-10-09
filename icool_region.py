@@ -774,7 +774,7 @@ class Begs(RegularRegion):
         RegularRegion.__init(self, None, None)
 
     def gen(self, file):
-        region.gen('BEGS')
+        pass
 
 
 class Repeat(RegularRegion, Container):
@@ -785,27 +785,32 @@ class Repeat(RegularRegion, Container):
     ROTATE, TILT, TRANSPORT} commands. Repeat sections cannot be nested in other repeat sections.
     (see parameters below)
     """
+    command_params = {
+        'nrep':  {'desc': '# of times to repeat following region commands',
+                  'type': 'Integer',
+                  'req': True}
+        }
+
     allowed_enclosed_commands = [
         'SRegion', 'Aperture', 'Dens', 'Disp', 'Dummy', 'Dvar', 'Edge', 'Output', 'Refp',
         'Ref2', 'Reset', 'Rkick', 'Rotate', 'Tilt', 'Transport'
     ]
 
-    def __init__(self, num_repeats, region_command_list):
-        RegularRegion.__init__(self, None, None)
-        self.region_commands = region_commands
-        self.num_repeats = num_repeats
+    def __init__(self, **kwargs):
+        RegularRegion.__init__(self, kwargs)
+        Container.__init__(self)
 
-    def add_region_command(command):
-        print
+    def __setattr__(self, name, value):
+        Container.__setattr__(self, name, value)
 
-    def add_region_command_at(command, insert_point):
-        print
+    def __str__(self):
+        return 'Section\n'
 
-    def remove_region_command_at(delete_point):
-        print
+    def __repr__(self):
+        return 'Section\n'
 
     def gen(self, file):
-        region.gen('REPEAT')
+        pass
 
 
 class Background(PseudoRegion):
