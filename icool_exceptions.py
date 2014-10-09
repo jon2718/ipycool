@@ -62,6 +62,7 @@ def check_type(icool_type, provided_type):
 def check_command_params(cls, input_dict):
     pass
 
+
 def check_model_keyword_args(input_dict, cls):
     """
     Checks if ALL keywords for a model are specified.  If not, raises InputArgumentsError
@@ -270,7 +271,7 @@ class ContainerCommandError(InputError):
         self.command = command
 
     def __str__(self):
-        msg = '\nIllegal command: ' + str(self.command)
+        msg = '\nIllegal container command: ' + str(self.command)
         return msg
 
 

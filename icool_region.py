@@ -77,7 +77,6 @@ Each regular and pseduoregion command is respectively associated with a set of c
 
 
 class ICoolGen(object):
-
     """Generate ICOOL for001.dat
     Takes an ICoolInput object and generates an ICOOL for001.dat file.
     """
@@ -104,7 +103,6 @@ class ICoolGen(object):
 
 
 class ICoolInput(object):
-
     """This is the actual generated ICoolInput from command objects
     Command objects include:
     Title, Cont, Bmt, Ints, Nhs, Nsc, Nzh, Nrh, Nem, Ncv and region command objects.
@@ -699,7 +697,7 @@ class Container(object):
                     return False
                 else:
                     object.__setattr__(self, name, value)
-                    return True 
+                    return True
 
     def add_enclosed_command(self, command):
         if self.check_allowed_enclosed_command(command) is False:
@@ -715,11 +713,11 @@ class Container(object):
 
     def remove_enclosed_command(self, delete_point):
         del self.enclosed_commands[delete_point]
-    
+
     def check_allowed_enclosed_command(self, command):
         try:
             if command.__class__.__name__ not in self.allowed_enclosed_commands:
-                raise ie.MissingCommandParameter(command, allowed_commands)
+                raise ie.ContainerCommandError(command, self.allowed_enclosed_commands)
         except ie.ContainerCommandError as e:
             print e
             return False
@@ -727,6 +725,7 @@ class Container(object):
 
     def check_allowed_enclosed_commands(self, enclosed_commands):
         pass
+
 
 class Section(RegularRegion, Container):
     """
@@ -737,8 +736,8 @@ class Section(RegularRegion, Container):
     """
 
     allowed_enclosed_commands = [
-        'Cell', 'Background', 'SRegion', 'Aperture', 'Dens', 'Disp', 'Dummy', 'DVar',
-        'Edge', 'Output', 'Refp', 'Ref2', 'Reset', 'RKick', 'Rotate', 'Tilt', 'Transport'
+        'Begs', 'Repeat', 'Cell', 'Background', 'SRegion', 'Aperture', 'Cutv', 'Dens', 'Disp', 'Dummy', 'DVar',
+        'Edge', 'Output', 'Refp', 'Ref2', 'Reset', 'RKick', 'Rotate', 'Tilt', 'Transport', 'Comment'
         'Repeat'
         ]
 
@@ -804,10 +803,10 @@ class Repeat(RegularRegion, Container):
         Container.__setattr__(self, name, value)
 
     def __str__(self):
-        return 'Section\n'
+        return 'Repeat\n'
 
     def __repr__(self):
-        return 'Section\n'
+        return 'Repeat\n'
 
     def gen(self, file):
         pass
@@ -1166,9 +1165,9 @@ class ModeledCommandParameter(object):
             print e
 
     def __str__(self):
-        desc ='ModeledCommandParameter\n'
+        desc = 'ModeledCommandParameter\n'
         for key in self.get_model_dict(getattr(self, self.get_model_descriptor_name())):
-            desc=desc + key + ': '+ str(getattr(self, key)) + '\n'
+            desc = desc + key + ': ' + str(getattr(self, key)) + '\n'
         return desc
 
     def set_keyword_args_model_specified(self, kwargs):
@@ -1185,7 +1184,6 @@ class ModeledCommandParameter(object):
         for key in self.get_model_dict(self.model):
             if hasattr(self, key):
                 delattr(self, key)
-
 
     def check_model_keyword_args(self, input_dict):
         """
@@ -1248,7 +1246,7 @@ class ModeledCommandParameter(object):
     def get_model_descriptor_name(self):
         return self.models['model_descriptor']['name']
 
-    
+
 class Field(ModeledCommandParameter):
     """
     A Field is a:
