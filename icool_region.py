@@ -681,7 +681,11 @@ class Container(object):
     """Abstract class container for other commands.
     """
     def __init__(self, enclosed_commands=None):
-        self.enclosed_commands = enclosed_commands
+        if enclosed_commands is None:
+            self.enclosed_commands = []
+        else:
+            if self.check_allowed_enclosed_commands(enclosed_commands):
+                self.enclosed_commands = enclosed_commands
 
     def __setattr__(self, name, value):
         #command_parameters_dict = self.command_params
@@ -697,15 +701,32 @@ class Container(object):
                     object.__setattr__(self, name, value)
                     return True 
 
-    def check_allowed_command(command, allowed_commands):
+    def add_enclosed_command(self, command):
+        if self.check_allowed_enclosed_command(command) is False:
+            sys.exit(0)
+        else:
+            self.enclosed_commands.append(command)
+
+    def insert_enclosed_command(self, command, insert_point):
+        if self.check_allowed_command(command) is False:
+            sys.exit(0)
+        else:
+            self.enclosed_commands.insert(insert_point, command)
+
+    def remove_enclosed_command(self, delete_point):
+        del self.enclosed_commands[delete_point]
+    
+    def check_allowed_enclosed_command(self, command):
         try:
-            if command.__class__.__name__ not in allowed_commands:
+            if command.__class__.__name__ not in self.allowed_enclosed_commands:
                 raise ie.MissingCommandParameter(command, allowed_commands)
         except ie.ContainerCommandError as e:
             print e
             return False
         return True
 
+    def check_allowed_enclosed_commands(self, enclosed_commands):
+        pass
 
 class Section(RegularRegion, Container):
     """
@@ -721,41 +742,23 @@ class Section(RegularRegion, Container):
         'Repeat'
         ]
 
-    command_params = None
+    command_params = {}
 
-    def __init__(self, nsections=1, command_list=None, name=None, metadata=None):
-        RegularRegion.__init__(self, name, metadata)
-        self.nsections=nsections
-        
-        if command_list!=None:
-            self.command_list=command_list
-        else:
-            self.command_list=[]
-        # if self.command_list!=None: 
-        #    for command in command_list:
-         #       pass
+    def __init__(self, **kwargs):
+        RegularRegion.__init__(self, kwargs)
+        Container.__init__(self)
+
+    def __setattr__(self, name, value):
+        Container.__setattr__(self, name, value)
 
     def __str__(self):
-        output='Section\n'
-        for command in self.command_list:
-            output=output+command.__str__()
-        return output
-        
-    def add_command(self, command):
-        try:
-            if self.check_command(command)==True:
-                self.command_list.append(command)
-            else:
-                raise ie.IncorrectObjectCommand('Incorrect Object Command.', 'Section', command.__class__.__name__)
-        except ie.IncorrectObjectCommand as e:
-            print e
-            sys.exit(0)
+        return 'Section\n'
 
-    def check_command(self, command):
-        if command.__class__.__name__ in self.allowed.keys():
-            return True
-        else:
-            return False
+    def __repr__(self):
+        return 'Section\n'
+
+    #def gen(self, file):
+    #    region.gen('SECTION')
 
     def gen(self, file):
         file.write('\n')
@@ -914,21 +917,6 @@ class Cell(RegularRegion, Container):
 
     def __repr__(self):
         return 'Cell\n'
-
-    def add_region_command(self, command):
-        if self.check_allowed_command(command) is False:
-            sys.exit(0)
-        else:
-            self.region_commands.append(command)
-
-    def insert_region_command(self, command, insert_point):
-        if self.check_allowed_command(command) is False:
-            sys.exit(0)
-        else:
-            self.region_commands.insert(insert_point, command)
-
-    def remove_region_command(self, delete_point):
-        del self.region_commands[delete_point]
 
     def gen(self, file):
         region.gen('CELL')
