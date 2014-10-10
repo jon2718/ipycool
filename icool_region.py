@@ -222,6 +222,138 @@ class ICoolVariablesSet(object):
         else:
             self.setall(kwargs)
 
+    def __str__(self):
+        return '[ICoolVariablesSet.]'
+
+    def __repr__(self):
+        return '[ICoolVariablesSet.]'
+
+    def __setattr__(self, name, value):
+        if self.check_variable(name):
+            object.__setattr__(self, name, value)
+        else:
+            sys.exit(0)
+
+    def check_variable(self, variable):
+        """
+        Checks whether a parameter specified for command is valid.
+        """
+        variables_dict = self.variables
+        #Check command parameters are all valid
+        try:
+            if not variable in variables_dict:
+                raise ie.InvalidVariable(variable, variables_dict.keys())
+        except ie.InvalidVariable as e:
+            print e
+            return False
+        return True
+
+    def check_variables_valid(self, command_params):
+        """Returns True if command_params are valid (correspond to the command)
+        Otherwise raises an exception and returns False"""
+        command_parameters_dict = self.command_params
+        try:
+            for key in command_params:
+                if not key in command_parameters_dict:
+                    raise ie.InvalidCommandParameter(key, command_parameters_dict)
+        except ie.InvalidCommandParameter as e:
+            print e
+            return False
+        return True
+
+    def check_command_params_type(self, command_params):
+        """Checks to see whether all required command parameters specified were of the correct type"""
+        command_params_dict = self.command_params
+        try:
+            for key in command_params:
+                if self.check_type(command_params_dict[key]['type'], command_params[key]) is False:
+                    raise ie.InvalidType(command_params_dict[key]['type'], command_params[key].__class__.__name__)
+        except ie.InvalidType as e:
+            print e
+            return False
+        return True
+
+    def check_variables_type(self, name, value):
+        """Checks to see whether a particular command parameter of name with value is of the correct type"""
+        command_params_dict = self.command_params
+        try:
+            if self.check_type(command_params_dict[name]['type'], value) is False:
+                raise ie.InvalidType(command_params_dict[name]['type'], value.__class__.__name__)
+        except ie.InvalidType as e:
+            print e
+            return False
+        return True
+
+    def check_variables_init(self, variables):
+        """
+        Checks whether the variables specified for a VariablesSet are valid,
+        and all variables are of correct type.  If not, raises an exception.
+        If all variables are valid, sets the variables.
+        """
+        if not self.check_variables_valid(variables)\
+                or not self.check_variables_type(variables):
+            return False
+
+        #Now set the command parameters
+        for key in variables:
+            self.__setattr__(key, variables[key])
+        return True
+
+    def check_variables_call(self, variables):
+        """
+        Checks whether the parameters specified for command are valid and all required parameters exist.
+        """
+        variables_dict = self.variables
+        #Check command parameters are all valid
+        try:
+            for key in variables:
+                if not key in variables_dict:
+                    raise ie.InvalidVariable(key, variables_dict.keys())
+        except ie.InvalidVariable as e:
+            print e
+            return False
+        return True
+
+    def setall(self, variables):
+        for key in variables:
+            self.__setattr__(key, variables[key])
+
+    def check_type(self, icool_type, provided_type):
+        """Takes provided python object and compares with required icool type name.
+        Returns True if the types match and False otherwise.
+        """
+        provided_type_name = provided_type.__class__.__name__
+        print icool_type, provided_type_name
+        if icool_type == 'Real':
+            if provided_type_name == 'int' or provided_type_name == 'long' or provided_type_name == 'float':
+                return True
+            else:
+                return False
+
+        if icool_type == 'Integer':
+            if provided_type_name == 'int' or provided_type_name == 'long':
+                return True
+            else:
+                return False
+
+        if icool_type == 'Logical':
+            if provided_type_name == 'bool':
+                return True
+            else:
+                return False
+
+        if icool_type == 'Field':
+            if isinstance(provided_type, Field):
+                return True
+            else:
+                return False
+
+        if icool_type == 'Material':
+            if isinstance(provided_type, Material):
+                return True
+            else:
+                return False
+
 
 class Cont(ICoolVariablesSet):
     variables = {
