@@ -15,10 +15,12 @@ An ICOOl input file consists of:
 9. Emittance plane definition variables
 10. Covariance plane definition variables
 11. Region definition variables.
-** Note that region definition variables are referred to in the ICOOL Manual and herein as commands.
+** Note that region definition variables are referred to in the ICOOL Manual and 
+herein as commands.
 
 This program will use of following object definitions:
-Namelists.  Namelists in the for001.dat file are preceded by an '&' sign (e.g., &cont).
+Namelists.  Namelists in the for001.dat file are preceded by an '&' 
+sign (e.g., &cont).
 
 Namelists include:
 CONT: Control Variables
@@ -210,6 +212,17 @@ class Title(object):
 
 
 class ICoolVariablesSet(object):
+    """Variables Sets comprise:
+    CONT
+    BMT
+    INTS
+    NHS  
+    NSC    
+    NZH    
+    NRH    
+    NEM   
+    NCV    
+    """
     def __init__(self, kwargs):
         if self.check_variables_init(kwargs) is False:
             sys.exit(0)
@@ -261,24 +274,24 @@ class ICoolVariablesSet(object):
             return False
         return True
 
-    def check_command_params_type(self, command_params):
-        """Checks to see whether all required command parameters specified were of the correct type"""
-        command_params_dict = self.command_params
+    def check_variables_type(self, variables):
+        """Checks to see whether all variables specified were of the correct type"""
+        variables_dict = self.variables
         try:
-            for key in command_params:
-                if self.check_type(command_params_dict[key]['type'], command_params[key]) is False:
-                    raise ie.InvalidType(command_params_dict[key]['type'], command_params[key].__class__.__name__)
+            for key in variables:
+                if self.check_type(variables_dict[key]['type'], variables[key]) is False:
+                    raise ie.InvalidType(variables_dict[key]['type'], variables[key].__class__.__name__)
         except ie.InvalidType as e:
             print e
             return False
         return True
 
-    def check_variables_type(self, name, value):
-        """Checks to see whether a particular command parameter of name with value is of the correct type"""
-        command_params_dict = self.command_params
+    def check_variable_type(self, name, value):
+        """Checks to see whether a particular variable of name with value is of the correct type"""
+        variables_dict = self.variables
         try:
-            if self.check_type(command_params_dict[name]['type'], value) is False:
-                raise ie.InvalidType(command_params_dict[name]['type'], value.__class__.__name__)
+            if self.check_type(variables_dict[name]['type'], value) is False:
+                raise ie.InvalidType(variables_dict[name]['type'], value.__class__.__name__)
         except ie.InvalidType as e:
             print e
             return False
