@@ -210,7 +210,17 @@ class Title(object):
 
 
 class ICoolVariablesSet(object):
-    pass
+    def __init__(self, kwargs):
+        if self.check_variables_init(kwargs) is False:
+            sys.exit(0)
+        else:
+            self.setall(kwargs)
+
+    def __call__(self, **kwargs):
+        if self.check_variables_call(self, kwargs) is False:
+            sys.exit(0)
+        else:
+            self.setall(kwargs)
 
 
 class Cont(ICoolVariablesSet):
@@ -382,10 +392,19 @@ class Cont(ICoolVariablesSet):
                          'desc': 'if .true. => write particle information at production (plane 1) to the '
                          'postprocessor output file for009.dat.',
                          'type': 'Logical'},
-                
-        'phantom': {},
-                
-        'phasemodel': {},
+      
+        'phantom':     {'default': False,
+                        'desc': 'if .true. => force particle to keep initial transverse coordinates after every '
+                                '(L) if .true. => force particle to keep initial transverse coordinates after '
+                                'every step. This is useful for making magnetic field maps. (false)',
+                        'type': 'Logical'},
+                                   
+        'phasemodel':   {'default': 1,
+                         'desc': 'PHASEMODEL (I) controls how the phase is determined in rf cavities. (1) '
+                                 '1: takes phase directly from ACCEL command [degrees] '
+                                 '2 - 6: takes phase model from REFP command '
+                                 '7: reads phases in from file FOR0mn.DAT, where RFPHASE=mn. See sec. 5.1.},',
+                         'type': 'Integer'},
 
         'prlevel': {},
                 
