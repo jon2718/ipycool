@@ -171,8 +171,8 @@ class UnknownVariable(InputError):
 
     """Exception raised for unknown variable in a given namelist."""
 
-    def __init__(self, expr, variable, namelist):
-        InputError.__init__(self, expr, 'Unknown variable.')
+    def __init__(self, variable, namelist):
+        InputError.__init__(self, 'Unknown variable', 'Unknown variable.')
         self.variable = variable
         self.namelist = namelist
 

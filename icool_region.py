@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import sys
 import icool_exceptions as ie
 
@@ -76,6 +77,19 @@ ENDB
 Command parameters:
 Each regular and pseduoregion command is respectively associated with a set of command parameters.
 """
+from IPython.core.magic_arguments import (argument, magic_arguments,
+    parse_argstring)
+
+
+@magic_arguments()
+@argument('-o', '--option', help='An optional argument.')
+@argument('arg', type=int, help='An integer positional argument.')
+def ipycool(self, arg):
+    """ A really cool ipycool magic command.
+
+    """
+    args = parse_argstring(ipycool, arg)
+
 
 
 class ICoolGen(object):
@@ -130,7 +144,6 @@ class ICoolInput(object):
     nem is an emittance plane definition variables object.
     ncv is a covariance plane definition variables object.
     sec is a region definition variables object, which contains all region definitions.
-
     """
 
     def __init__(
@@ -216,12 +229,12 @@ class ICoolVariablesSet(object):
     CONT
     BMT
     INTS
-    NHS  
-    NSC    
-    NZH    
-    NRH    
-    NEM   
-    NCV    
+    NHS
+    NSC
+    NZH
+    NRH
+    NEM
+    NCV
     """
     def __init__(self, kwargs):
         if self.check_variables_init(kwargs) is False:
@@ -255,21 +268,21 @@ class ICoolVariablesSet(object):
         #Check command parameters are all valid
         try:
             if not variable in variables_dict:
-                raise ie.InvalidVariable(variable, variables_dict.keys())
-        except ie.InvalidVariable as e:
+                raise ie.UnknownVariable(variable, variables_dict.keys())
+        except ie.UnknownVariable as e:
             print e
             return False
         return True
 
-    def check_variables_valid(self, command_params):
+    def check_variables_valid(self, variables):
         """Returns True if command_params are valid (correspond to the command)
         Otherwise raises an exception and returns False"""
-        command_parameters_dict = self.command_params
+        variables_dict = self.variables
         try:
-            for key in command_params:
-                if not key in command_parameters_dict:
-                    raise ie.InvalidCommandParameter(key, command_parameters_dict)
-        except ie.InvalidCommandParameter as e:
+            for key in variables:
+                if not key in variables_dict:
+                    raise ie.UnknownVariable(key, variables_dict)
+        except ie.UnknownVariable as e:
             print e
             return False
         return True
@@ -297,6 +310,20 @@ class ICoolVariablesSet(object):
             return False
         return True
 
+    def check_all_required_variables_specified(self, variables):
+        """Returns True if all required variables were specified
+        Otherwise raises an exception and returns False"""
+        variables_dict = self.variables
+        try:
+            for key in variables_dict:
+                if variables_dict[key]['req'] is True:
+                    if not key in variables:
+                        raise ie.MissingCommandParameter(key, variables)
+        except ie.MissingCommandParameter as e:
+            print e
+            return False
+        return True
+    
     def check_variables_init(self, variables):
         """
         Checks whether the variables specified for a VariablesSet are valid,
@@ -304,7 +331,8 @@ class ICoolVariablesSet(object):
         If all variables are valid, sets the variables.
         """
         if not self.check_variables_valid(variables)\
-                or not self.check_variables_type(variables):
+                or not self.check_variables_type(variables)\
+                or not self.check_all_required_variables_specified(variables):
             return False
 
         #Now set the command parameters
@@ -321,8 +349,8 @@ class ICoolVariablesSet(object):
         try:
             for key in variables:
                 if not key in variables_dict:
-                    raise ie.InvalidVariable(key, variables_dict.keys())
-        except ie.InvalidVariable as e:
+                    raise ie.UnknownVariable(key, variables_dict.keys())
+        except ie.UnknownVariable as e:
             print e
             return False
         return True
@@ -367,17 +395,25 @@ class ICoolVariablesSet(object):
             else:
                 return False
 
+        if icool_type == 'Distribution':
+            if isinstance(provided_type, Distribution):
+                return True
+            else:
+                return False
+
 
 class Cont(ICoolVariablesSet):
     variables = {
         'betaperp':  {'default': None,
                       'desc': '(R) beta value to use in calculating amplitude variable A^2',
-                      'type': 'Real'},
+                      'type': 'Real',
+                      'req': False},
 
         'bgen':     {'default': True,
                      'desc': '(L) if .true.=>generate initial beam particles, otherwise read input from FOR003.DAT '
                      '(true)',
-                     'type': 'Logical'},
+                     'type': 'Logical',
+                     'req': False},
 
         'bunchcut': {'default': 1E6,
                      'desc': '(R) maximum time difference allowed between a particle and the reference particle [s] '
@@ -593,15 +629,9 @@ class Cont(ICoolVariablesSet):
     }
 
     def __init__(self, **kwargs):
-        for command, value in kwargs.items():
-            if ie.valid_command(self.cont_dict, command, value, 'CONT') == -1:
-                print 'Valid commands are:\n'
-                for key in self.cont_dict:
-                    print key, ',',
-                print
-                sys.exit(0)
-                # raise ValueError
-        self.cont_commands = kwargs
+        if self.check_variables_init(kwargs) is False:
+            sys.exit(0)
+
 
     def __str__(self):
         defined_cont = display_commands(cont_commands)
@@ -622,14 +652,46 @@ class Cont(ICoolVariablesSet):
         file.write("/")
 
 
+
 class Bmt(ICoolVariablesSet):
-    bmt_dict = {}
+    variables = {
+        'nbeamtyp':  {'desc': '# of beam types, e.g., particles of different masses.',
+                      'type': 'Integer',
+                      'default': 1,
+                      'req': True},
+
+        'bmalt':   {'desc': 'if true => flip sign of alternate particles when BGEN = true.',
+                    'type': 'Logical',
+                    'default': False,
+                    'req': False},
+
+        'beamtype_list':   {'desc': 'List of distribution objects',
+                    'type': 'List[Distribution]',
+                    'default':  None,
+                    'req': False},
+
+        'correlation_list': {'desc': 'List of Correlation objects',
+                           'type': 'List[Correlation]',
+                           'default': None,
+                           'req': False},
+        }
 
     def __init__(self, **kwargs):
         pass
 
-    def add_bmtype(bmtype):
-        pass
+    def add_beamtype(self, beamtype):
+        self.beamtype_list.append(beamtype)
+
+    def add_beamtypes(self, beamtype_list):
+        for beamtype in beamtype_list:
+            self.beamtype_list.append(beamtype)
+
+    def add_correlation(self, correlation):
+        self.correlation_list.append(correlation)
+
+    def add_correlations(self, correlation_list):
+        for correlation in correlation_list:
+            self.correlation_list.append(correlation)
 
 
 class Ints(ICoolVariablesSet):
@@ -1360,10 +1422,15 @@ class ModeledCommandParameter(object):
                 actual_dict = {'Unknown': 0}
                 raise ie.InputArgumentsError('Model most be specified', input_dict, actual_dict)
             model = input_dict[self.get_model_descriptor_name()]
+            if not str(model) in self.models.keys():
+                raise ie.InvalidCommandParameter(str(model), self.models.keys())
             actual_dict = self.models[str(model)]['parms']
             if sorted(input_dict.keys()) != sorted(actual_dict.keys()):
                 raise ie.InputArgumentsError('Model parameter specification error', input_dict, actual_dict)
         except ie.InputArgumentsError as e:
+            print e
+            return False
+        except ie.InvalidCommandParameter as e:
             print e
             return False
         return True
@@ -1409,6 +1476,141 @@ class ModeledCommandParameter(object):
 
     def get_model_descriptor_name(self):
         return self.models['model_descriptor']['name']
+
+
+class Distribution(ModeledCommandParameter):
+    """
+    A Distribution is a:
+    (1) partnum (particle number);
+    (2) bmtype Innter radius of this r subregion;
+    (3) RHIGH Outer radius of this r subregion;
+    (4) Field object; and
+    (5) Material object.
+    """
+
+    models = {
+
+        'model_descriptor': {'desc': 'Distribution type',
+                             'name': 'dist'},
+
+        'gaussian': {'desc': 'Gaussian beam distribution',
+                     'parms': {'dist': None, 'x_mean': 1, 'y_mean': 2, 'z_mean': 3, 'px_mean': 4, 'py_mean': 5, 'pz_mean': 6,
+                               'x_std': 7, 'y_std': 8, 'z_std': 9, 'px_std': 10, 'py_std': 11, 'pz_std': 12}},
+
+        'uniform': {'desc': 'Uniform circular segment beam distribution',
+                    'parms': {'dist': None, 'r_low': 1, 'r_high': 2, 'phi_low': 3, 'phi_high': 4, 'z_low': 5, 'z_high': 6,
+                              'pr_low': 7, 'pr_high': 8, 'pphi_low': 9, 'pphi_high': 10, 'pz_low': 11,
+                              'pz_high': 12}},
+
+        }
+               
+    def __init__(self, **kwargs):
+        ModeledCommandParameter.__init__(self, kwargs)
+    
+    def __call__(self, **kwargs):
+        ModeledCommandParameter.__call__(self, kwargs)
+
+    def __setattr__(self, name, value):
+        ModeledCommandParameter.__setattr__(self, name, value)
+
+    def __str__(self):
+        return self.ftag + ':' + 'Distribution:' + ModeledCommandParameter.__str__(self)
+
+
+class Correlation(ModeledCommandParameter):
+    """
+    A SubRegion is a:
+    (1) CORRTYP;
+    (2) RLOW Innter radius of this r subregion;
+    (3) RHIGH Outer radius of this r subregion;
+    (4) Field object; and
+    (5) Material object.
+    """
+    models = {
+
+        'model_descriptor': {'desc': 'Correlation type',
+                             'name': 'corrtyp'},
+
+        'ang_mom': {'desc': 'Angular momentum appropriate for constant solenoid field',
+                    'parms': {'corrtyp': 1, 'sol_field': 2}},
+
+        'palmer': {'desc': 'Palmer amplitude correlation',
+                   'parms': {'corrtyp': 1, 'strength': 2, 'beta_eff': 3}},
+
+        'rf_bucket_ellipse': {'desc': 'Rf bucket, small amplitude ellipse',
+                              'parms': {'corrtyp': 1, 'e_peak': 2, 'phase': 3, 'freq': 4}},
+
+        'rf_bucket_small_separatrix': {'desc': 'Rf bucket, small amplitude separatrix',
+                                       'parms': {'corrtyp': 1, 'e_peak': 2, 'phase': 3, 'freq': 4}},
+
+        'rf_bucket_large_separatrix': {'desc': 'Rf bucket, small amplitude separatrix',
+                                       'parms': {'corrtyp': 1, 'e_peak': 2, 'phase': 3, 'freq': 4}},
+
+        'twiss_px': {'desc': 'Twiss parameters in x Px',
+                     'parms': {'corrtyp': 1, 'alpha': 2, 'beta': 3, 'epsilon': 4}},
+
+        'twiss_py': {'desc': 'Twiss parameters in x Px',
+                     'parms': {'corrtyp': 1, 'alpha': 2, 'beta': 3, 'epsilon': 4}}
+
+        }
+
+    def __init__(self, **kwargs):
+        ModeledCommandParameter.__init__(self, kwargs)
+    
+    def __call__(self, **kwargs):
+        ModeledCommandParameter.__call__(self, kwargs)
+
+    def __setattr__(self, name, value):
+        ModeledCommandParameter.__setattr__(self, name, value)
+
+    def __str__(self):
+        return self.ftag + ':' + 'Correlation:' + ModeledCommandParameter.__str__(self)
+
+class BeamType(ICoolVariablesSet):
+    """
+    A BeamType is a:
+    PARTNUM (I) particle number
+    BMTYPE (I) beam type {magnitude = mass code; sign = charge}
+        1: e
+        2: μ
+        3: π
+        4: K
+        5: p
+        6: d
+        7: He3
+        8: Li7
+    FRACBT (R) fraction of beam of this type {0-1} The sum of all fracbt(i) should =1.0
+    """
+    variables = {
+        'partnum':  {'default': None,
+                     'desc': 'Particle number',
+                     'type': 'Integer',
+                     'req': True},
+
+        'bmtype':   {'default': None,
+                     'desc': 'beam type {magnitude = mass code; sign = charge}: 1: e, 2: μ, 3: π, 4: K, 5: p.'
+                     '6: d, 7: He3, 8: Li7',
+                     'type': 'Integer',
+                     'req': True},
+
+        'fractbt': {'default': None,
+                    'desc': 'Fraction of beam of this type {0-1} The sum of all fracbt(i) should =1.0',
+                    'type': 'Real',
+                    'req': True},
+        'bdistyp': {'default': None,
+                    'desc': 'Beam distribution type {1:Gaussian 2:uniform circular segment}',
+                    'type': 'Distribution',
+                    'req': True}}
+
+    def __init__(self, **kwargs):
+        if self.check_variables_init(kwargs) is False:
+            sys.exit(0)
+
+    def __str__(self):
+        return 'BeamTYpe: \n'
+
+    def __repr__(self):
+        return '[BeamType: ]'
 
 
 class Field(ModeledCommandParameter):
