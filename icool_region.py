@@ -224,6 +224,73 @@ class Title(object):
         file.write(self.title)
 
 
+class ICoolType(object):
+    def check_variables_type(self, variables):
+        """Checks to see whether all variables specified were of the correct type"""
+        variables_dict = self.variables
+        try:
+            for key in variables:
+                if self.check_type(variables_dict[key]['type'], variables[key]) is False:
+                    raise ie.InvalidType(variables_dict[key]['type'], variables[key].__class__.__name__)
+        except ie.InvalidType as e:
+            print e
+            return False
+        return True
+
+    def check_variable_type(self, name, value):
+        """Checks to see whether a particular variable of name with value is of the correct type"""
+        variables_dict = self.variables
+        try:
+            if self.check_type(variables_dict[name]['type'], value) is False:
+                raise ie.InvalidType(variables_dict[name]['type'], value.__class__.__name__)
+        except ie.InvalidType as e:
+            print e
+            return False
+        return True
+
+    def check_type(self, icool_type, provided_type):
+        """Takes provided python object and compares with required icool type name.
+        Returns True if the types match and False otherwise.
+        """
+        provided_type_name = provided_type.__class__.__name__
+        print icool_type, provided_type_name
+        if icool_type == 'Real':
+            if provided_type_name == 'int' or provided_type_name == 'long' or provided_type_name == 'float':
+                return True
+            else:
+                return False
+
+        if icool_type == 'Integer':
+            if provided_type_name == 'int' or provided_type_name == 'long':
+                return True
+            else:
+                return False
+
+        if icool_type == 'Logical':
+            if provided_type_name == 'bool':
+                return True
+            else:
+                return False
+
+        if icool_type == 'Field':
+            if isinstance(provided_type, Field):
+                return True
+            else:
+                return False
+
+        if icool_type == 'Material':
+            if isinstance(provided_type, Material):
+                return True
+            else:
+                return False
+
+        if icool_type == 'Distribution':
+            if isinstance(provided_type, Distribution):
+                return True
+            else:
+                return False
+
+
 class ICoolVariablesSet(object):
     """Variables Sets comprise:
     CONT
@@ -255,7 +322,7 @@ class ICoolVariablesSet(object):
         return '[ICoolVariablesSet.]'
 
     def __setattr__(self, name, value):
-        if self.check_variable(name):
+        if self.check_variable(name) and self.check_variable_type(name, value):
             object.__setattr__(self, name, value)
         else:
             sys.exit(0)
@@ -677,7 +744,9 @@ class Bmt(ICoolVariablesSet):
         }
 
     def __init__(self, **kwargs):
-        pass
+        if self.check_variables_init(kwargs) is False:
+            sys.exit(0)
+
 
     def add_beamtype(self, beamtype):
         self.beamtype_list.append(beamtype)
@@ -699,7 +768,7 @@ class Ints(ICoolVariablesSet):
         pass
 
 
-class Region(object):
+class Region(ICoolVariablesSet):
     def __init__(self, kwargs):
         if self.check_command_params_init(kwargs) is False:
             sys.exit(0)
@@ -1288,66 +1357,7 @@ class SubRegion(Region):
         Region.__setattr__(self, name, value)
 
 
-class ModeledCommandParameter_OLD(object):
-    def __init__(self, kwargs):
-        #Check that ALL keywords for model are specified.  If not, throw exception.
-        if self.check_model_keyword_args(kwargs) is False:
-            sys.exit(0)
-        self.set_keyword_args_model_specified(kwargs)
-
-    def __call__(self, kwargs):
-        if self.check_model_specified(kwargs) is True:
-            if self.check_partial_keywords_for_new_model(kwargs) is False:
-                sys.exit(0)
-            self.set_keyword_args_model_specified(kwargs)
-            return
-        #Model not specified
-        if self.check_partial_keywords_for_current_model(kwargs) is False:
-                sys.exit(0)
-        self.set_keyword_args_model_not_specified(kwargs)
-
-    def __setattr__(self, name, value):
-        new_model = False
-        if name == 'model':
-            if hasattr(self, 'model'):
-                new_model = True
-                #Delete all attributes of the current model
-                print 'Resetting model to ', value
-                for key in self.get_model_dict(self.model):
-                    if hasattr(self, key):
-                        delattr(self, key)
-            object.__setattr__(self, 'model', value)
-            #If new model, set all attributes of new model to 0.
-            if new_model is True:
-                for key in self.get_model_dict(value):
-                    if key is not 'model':
-                        setattr(self, key, 0)
-            return
-        try:
-            if self.check_keyword_in_model(name):
-                object.__setattr__(self, name, value)
-            else:
-                raise ie.SetAttributeError('', self, name)
-        except ie.SetAttributeError as e:
-            print e
-
-    def set_keyword_args_model_specified(self, kwargs):
-        setattr(self, 'model', kwargs['model'])
-        for key in kwargs:
-            if not key == 'model':
-                setattr(self, key, kwargs[key])
-
-    def set_keyword_args_model_not_specified(self, kwargs):
-        for key in kwargs:
-            object.__setattr__(self, key, kwargs[key])
-
-    def reset_model(self):
-        for key in self.get_model_dict(self.model):
-            if hasattr(self, key):
-                delattr(self, key)
-
-
-class ModeledCommandParameter(object):
+class ModeledCommandParameter(ICoolType):
     def __init__(self, kwargs):
         #Check that ALL keywords for model are specified.  If not, throw exception.
         if self.check_model_keyword_args(kwargs) is False:
@@ -1514,7 +1524,7 @@ class Distribution(ModeledCommandParameter):
         ModeledCommandParameter.__setattr__(self, name, value)
 
     def __str__(self):
-        return self.ftag + ':' + 'Distribution:' + ModeledCommandParameter.__str__(self)
+        return self.dist + ':' + 'Distribution:' + ModeledCommandParameter.__str__(self)
 
 
 class Correlation(ModeledCommandParameter):
@@ -1564,7 +1574,8 @@ class Correlation(ModeledCommandParameter):
         ModeledCommandParameter.__setattr__(self, name, value)
 
     def __str__(self):
-        return self.ftag + ':' + 'Correlation:' + ModeledCommandParameter.__str__(self)
+        return self.corrtyp + ':' + 'Correlation:' + ModeledCommandParameter.__str__(self)
+
 
 class BeamType(ICoolVariablesSet):
     """
@@ -1607,7 +1618,7 @@ class BeamType(ICoolVariablesSet):
             sys.exit(0)
 
     def __str__(self):
-        return 'BeamTYpe: \n'
+        return 'BeamType: \n'
 
     def __repr__(self):
         return '[BeamType: ]'
