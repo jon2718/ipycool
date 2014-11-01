@@ -1358,19 +1358,29 @@ class SubRegion(Region):
 
 
 class ModeledCommandParameter(ICoolType):
+
     def __init__(self, kwargs):
-        #Check that ALL keywords for model are specified.  If not, throw exception.
+        """
+        Checks to see whether all required parameters are specified.  If not, raises exception and exits.
+        """
         if self.check_model_keyword_args(kwargs) is False:
             sys.exit(0)
         self.set_keyword_args_model_specified(kwargs)
 
     def __call__(self, kwargs):
+        """
+        Checks to see whether new model specified in call.
+        If so, checks that the parameters specified correspond to that model and raises an exception if they dont.
+        Does NOT require all parameters specified for new model.  Unspecified parameters are set to 0.
+        If model is not specified, checks whether the parameters specified correspond to the current model and
+        raises an exception otherwise.
+        """
         if self.check_model_specified(kwargs) is True:
             if self.check_partial_keywords_for_new_model(kwargs) is False:
                 sys.exit(0)
             self.set_keyword_args_model_specified(kwargs)
             return
-        #Model not specified
+        """Model not specified"""
         if self.check_partial_keywords_for_current_model(kwargs) is False:
                 sys.exit(0)
         self.set_keyword_args_model_not_specified(kwargs)
@@ -1379,6 +1389,12 @@ class ModeledCommandParameter(ICoolType):
         new_model = False
         if name == self.get_model_descriptor_name():
             if hasattr(self, self.get_model_descriptor_name()):
+                try:
+                    if self.check_valid_model(value) is False:
+                        raise ie.SetAttributeError('', self, name)
+                except ie.SetAttributeError as e:
+                    print e
+                    return
                 new_model = True
                 #Delete all attributes of the current model
                 print 'Resetting model to ', value
@@ -1394,9 +1410,14 @@ class ModeledCommandParameter(ICoolType):
             return
         try:
             if self.check_keyword_in_model(name):
-                object.__setattr__(self, name, value)
+                if self.check_model_variable_type(name, value):
+                  object.__setattr__(self, name, value)
+                else:
+                    raise ie.InvalidType(self.get_model_parms_dict()[name]['type'], value.__class__.__name__)
             else:
                 raise ie.SetAttributeError('', self, name)
+        except ie.InvalidType as e:
+            print e
         except ie.SetAttributeError as e:
             print e
 
@@ -1423,7 +1444,7 @@ class ModeledCommandParameter(ICoolType):
 
     def check_model_keyword_args(self, input_dict):
         """
-        Checks if ALL keywords for a model are specified.  If not, raises InputArgumentsError
+        Checks if ALL keywords for a model are specified.  If not, raises InputArgumentsError.
         If model is not specified, raises ModelNotSpecifiedError.
         Initialization of a model (e.g., Accel, SOL, etc. requires all keywords specified)
         """
@@ -1440,6 +1461,19 @@ class ModeledCommandParameter(ICoolType):
         except ie.InputArgumentsError as e:
             print e
             return False
+        except ie.InvalidCommandParameter as e:
+            print e
+            return False
+        return True
+
+    def check_valid_model(self, model):
+        """
+        Checks whether model specified is valid.  
+        If model is not valid, raises an exception and returns False.  Otherwise returns True.
+        """
+        try:
+            if not str(model) in self.models.keys():
+                raise ie.InvalidCommandParameter(str(model), self.models.keys())
         except ie.InvalidCommandParameter as e:
             print e
             return False
@@ -1476,16 +1510,77 @@ class ModeledCommandParameter(ICoolType):
         return True
 
     def check_model_specified(self, input_dict):
+        """
+        Check whether the user specified a model in specifying parameters to Init or Call.
+        if so, returns True.  Otherwise, returns False.
+        """
         if self.get_model_descriptor_name() in input_dict.keys():
             return True
         else:
             return False
 
+    def get_model_parms_dict(self):
+        """
+        Returns the parameter dictionary for the current model.
+        """
+        return self.get_model_dict(getattr(self, self.get_model_descriptor_name()))
+
     def get_model_dict(self, model):
         return self.models[str(model)]['parms']
 
     def get_model_descriptor_name(self):
+        """
+        The model descriptor name is an alias name for the term 'model', which is specified for each descendent class.
+        Returns the model descriptor name.
+        """
         return self.models['model_descriptor']['name']
+
+    def check_model_variable_type(self, name, value):
+        """Checks to see whether a particular variable for a model of name with value is of the correct type"""
+        parms_dict = self.get_model_parms_dict()
+        try:
+            if self.check_type(parms_dict[name]['type'], value) is False:
+                raise ie.InvalidType(parms_dict[name]['type'], value.__class__.__name__)
+        except ie.InvalidType as e:
+            print e
+            return False
+        return True
+
+    def check_type(self, icool_type, provided_type):
+        """Takes provided python object and compares with required icool type name.
+        Returns True if the types match and False otherwise.
+        """
+        provided_type_name = provided_type.__class__.__name__
+        print icool_type, provided_type_name
+        if icool_type == 'Real':
+            if provided_type_name == 'int' or provided_type_name == 'long' or provided_type_name == 'float':
+                return True
+            else:
+                return False
+
+        if icool_type == 'Integer':
+            if provided_type_name == 'int' or provided_type_name == 'long':
+                return True
+            else:
+                return False
+
+        if icool_type == 'Logical':
+            if provided_type_name == 'bool':
+                return True
+            else:
+                return False
+
+        if icool_type == 'Field':
+            if isinstance(provided_type, Field):
+                return True
+            else:
+                return False
+
+        if icool_type == 'String':
+            if isinstance(provided_type, str):
+                return True
+            else:
+                return False
 
 
 class Distribution(ModeledCommandParameter):
@@ -1542,7 +1637,7 @@ class Correlation(ModeledCommandParameter):
                              'name': 'corrtyp'},
 
         'ang_mom': {'desc': 'Angular momentum appropriate for constant solenoid field',
-                    'parms': {'corrtyp': 1, 'sol_field': 2}},
+                    'parms': {'corrtyp': {'pos': 1, 'type': 'String'}, 'sol_field': {'pos': 2, 'type': 'Real'}}},
 
         'palmer': {'desc': 'Palmer amplitude correlation',
                    'parms': {'corrtyp': 1, 'strength': 2, 'beta_eff': 3}},
@@ -1988,8 +2083,8 @@ class Accel(Field):
         'model_descriptor': {'desc': 'Name of model parameter descriptor',
                              'name': 'model'},
 
-        '1': {'desc': 'Ez only with no transverse variation',
-              'parms': {'model': 1, 'freq': 2, 'grad': 3, 'phase': 4, 'rect_cyn': 5, 'mode': 8}},
+        'Ez': {'desc': 'Ez only with no transverse variation',
+               'parms': {'model': 1, 'freq': 2, 'grad': 3, 'phase': 4, 'rect_cyn': 5, 'mode': 8}},
 
         '2': {'desc': 'Cylindrical TM01p pillbox',
               'parms': {'model': 1, 'freq': 2, 'grad': 3, 'phase': 4, 'rect_cyn': 5, 'longitudinal_mode': 8}},
