@@ -255,6 +255,17 @@ class InvalidCommandParameter(InputError):
         return msg
 
 
+class InvalidModel(InputError):
+    def __init__(self, model, allowed_models):
+        self.model = model
+        self.allowed_models = allowed_models
+
+    def __str__(self):
+        msg = '\nInvalid model: ' + str(self.model) + '\nAllowed models are:\n' + ' '.join(self.allowed_models)
+        return msg
+
+
+
 class MissingCommandParameter(InputError):
     def __init__(self, command_parameter, allowed_parameters):
         self.command_parameter = command_parameter

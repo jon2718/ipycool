@@ -1386,15 +1386,13 @@ class ModeledCommandParameter(ICoolType):
         self.set_keyword_args_model_not_specified(kwargs)
 
     def __setattr__(self, name, value):
-        new_model = False
+        #Check whether the attribute being set is the model
         if name == self.get_model_descriptor_name():
+            if self.check_valid_model(value) is False:
+                return
+            new_model = False
+            #Check whether this is a new model (i.e. model was previously defined)
             if hasattr(self, self.get_model_descriptor_name()):
-                try:
-                    if self.check_valid_model(value) is False:
-                        raise ie.SetAttributeError('', self, name)
-                except ie.SetAttributeError as e:
-                    print e
-                    return
                 new_model = True
                 #Delete all attributes of the current model
                 print 'Resetting model to ', value
@@ -1411,9 +1409,7 @@ class ModeledCommandParameter(ICoolType):
         try:
             if self.check_keyword_in_model(name):
                 if self.check_model_variable_type(name, value):
-                  object.__setattr__(self, name, value)
-                else:
-                    raise ie.InvalidType(self.get_model_parms_dict()[name]['type'], value.__class__.__name__)
+                    object.__setattr__(self, name, value)
             else:
                 raise ie.SetAttributeError('', self, name)
         except ie.InvalidType as e:
@@ -1473,8 +1469,8 @@ class ModeledCommandParameter(ICoolType):
         """
         try:
             if not str(model) in self.models.keys():
-                raise ie.InvalidCommandParameter(str(model), self.models.keys())
-        except ie.InvalidCommandParameter as e:
+                raise ie.InvalidModel(str(model), self.models.keys())
+        except ie.InvalidModel as e:
             print e
             return False
         return True
@@ -1598,17 +1594,44 @@ class Distribution(ModeledCommandParameter):
         'model_descriptor': {'desc': 'Distribution type',
                              'name': 'dist'},
 
-        'gaussian': {'desc': 'Gaussian beam distribution',
-                     'parms': {'dist': None, 'x_mean': 1, 'y_mean': 2, 'z_mean': 3, 'px_mean': 4, 'py_mean': 5, 'pz_mean': 6,
-                               'x_std': 7, 'y_std': 8, 'z_std': 9, 'px_std': 10, 'py_std': 11, 'pz_std': 12}},
+        'gaussian':
+        {'desc': 'Gaussian beam distribution',
+         'doc': '',
+         'parms':
+                 {'dist': {'pos': 1, 'type': 'String', 'doc': ''},
+                  'x_mean': {'pos': 2, 'type': 'Real', 'doc': ''},
+                  'y_mean': {'pos': 3, 'type': 'Real', 'doc': ''},
+                  'z_mean': {'pos': 4, 'type': 'Real', 'doc': ''},
+                  'px_mean': {'pos': 5, 'type': 'Real', 'doc': ''},
+                  'py_mean': {'pos': 6, 'type': 'Real', 'doc': ''},
+                  'pz_mean': {'pos': 7, 'type': 'Real', 'doc': ''},
+                  'x_std': {'pos': 8, 'type': 'Real', 'doc': ''},
+                  'y_std': {'pos': 9, 'type': 'Real', 'doc': ''},
+                  'z_std': {'pos': 10, 'type': 'Real', 'doc': ''},
+                  'px_std': {'pos': 11, 'type': 'Real', 'doc': ''},
+                  'py_std': {'pos': 12, 'type': 'Real', 'doc': ''},
+                  'pz_std': {'pos': 13, 'type': 'Real', 'doc': ''}}},
 
-        'uniform': {'desc': 'Uniform circular segment beam distribution',
-                    'parms': {'dist': None, 'r_low': 1, 'r_high': 2, 'phi_low': 3, 'phi_high': 4, 'z_low': 5, 'z_high': 6,
-                              'pr_low': 7, 'pr_high': 8, 'pphi_low': 9, 'pphi_high': 10, 'pz_low': 11,
-                              'pz_high': 12}},
+        'uniform':
+        {'desc': 'Uniform circular segment beam distribution',
+         'doc': '',
+         'parms':
+                 {'dist': {'pos': 1, 'type': 'String', 'doc': ''},
+                  'r_low': {'pos': 2, 'type': 'Real', 'doc': ''},
+                  'r_high': {'pos': 3, 'type': 'Real', 'doc': ''},
+                  'phi_low': {'pos': 4, 'type': 'Real', 'doc': ''},
+                  'phi_high': {'pos': 5, 'type': 'Real', 'doc': ''},
+                  'z_low': {'pos': 6, 'type': 'Real', 'doc': ''},
+                  'z_high': {'pos': 7, 'type': 'Real', 'doc': ''},
+                  'pr_low': {'pos': 8, 'type': 'Real', 'doc': ''},
+                  'pr_high': {'pos': 9, 'type': 'Real', 'doc': ''},
+                  'pphi_low': {'pos': 10, 'type': 'Real', 'doc': ''},
+                  'pphi_high': {'pos': 11, 'type': 'Real', 'doc': ''},
+                  'pz_low': {'pos': 12, 'type': 'Real', 'doc': ''},
+                  'pz_high': {'pos': 13, 'type': 'Real', 'doc': ''}}},
 
         }
-               
+      
     def __init__(self, **kwargs):
         ModeledCommandParameter.__init__(self, kwargs)
     
@@ -1636,26 +1659,97 @@ class Correlation(ModeledCommandParameter):
         'model_descriptor': {'desc': 'Correlation type',
                              'name': 'corrtyp'},
 
-        'ang_mom': {'desc': 'Angular momentum appropriate for constant solenoid field',
-                    'parms': {'corrtyp': {'pos': 1, 'type': 'String'}, 'sol_field': {'pos': 2, 'type': 'Real'}}},
+        'ang_mom':
+        {'desc': 'Angular momentum appropriate for constant solenoid field',
+         'doc': '',
+         'parms':
+                 {'corrtyp': {'pos': 1, 'type': 'String'},
+                  'sol_field': {'pos': 2, 'type': 'Real'}}},
 
-        'palmer': {'desc': 'Palmer amplitude correlation',
-                   'parms': {'corrtyp': 1, 'strength': 2, 'beta_eff': 3}},
+        'palmer':
+        {'desc': 'Palmer amplitude correlation',
+         'doc': '',
+         'parms':
+                 {'corrtyp': {'pos': 1, 'type': 'String'},
+                  'strength': {'pos': 2, 'type': 'Real'},
+                  'beta_eff': {'pos': 3, 'type': 'Real'}}},
 
-        'rf_bucket_ellipse': {'desc': 'Rf bucket, small amplitude ellipse',
-                              'parms': {'corrtyp': 1, 'e_peak': 2, 'phase': 3, 'freq': 4}},
+        'rf_bucket_ellipse':
+        {'desc': 'Rf bucket, small amplitude ellipse',
+         'doc': '',
+         'parms':
+                 {'corrtyp': {'pos': 1, 'type': 'String'},
+                  'e_peak': {'pos': 2, 'type': 'Real'},
+                  'phase': {'pos': 3, 'type': 'Real'},
+                  'freq': {'pos': 4, 'type': 'Real'}}},
 
-        'rf_bucket_small_separatrix': {'desc': 'Rf bucket, small amplitude separatrix',
-                                       'parms': {'corrtyp': 1, 'e_peak': 2, 'phase': 3, 'freq': 4}},
+        'rf_bucket_small_separatrix':
+        {'desc': 'Rf bucket, small amplitude separatrix',
+         'doc': '',
+         'parms':
+                 {'corrtyp': {'pos': 1, 'type': 'String'},
+                  'e_peak': {'pos': 2, 'type': 'Real'},
+                  'phase': {'pos': 3, 'type': 'Real'},
+                  'freq': {'pos': 4, 'type': 'Real'}}},
 
-        'rf_bucket_large_separatrix': {'desc': 'Rf bucket, small amplitude separatrix',
-                                       'parms': {'corrtyp': 1, 'e_peak': 2, 'phase': 3, 'freq': 4}},
+        'rf_bucket_large_separatrix':
+        {'desc': 'Rf bucket, small amplitude separatrix',
+         'doc': '',
+         'parms':
+                 {'corrtyp': {'pos': 1, 'type': 'Real'},
+                  'e_peak': {'pos': 2, 'type': 'Real'},
+                  'phase': {'pos': 3, 'type': 'Real'},
+                  'freq': {'pos': 4, 'type': 'Real'}}},
 
-        'twiss_px': {'desc': 'Twiss parameters in x Px',
-                     'parms': {'corrtyp': 1, 'alpha': 2, 'beta': 3, 'epsilon': 4}},
+        'twiss_px':
+        {'desc': 'Twiss parameters in x Px',
+         'doc': '',
+         'parms':
+                 {'corrtyp': {'pos': 1, 'type': 'String'},
+                  'alpha': {'pos': 2, 'type': 'Real'},
+                  'beta': {'pos': 3, 'type': 'Real'},
+                  'epsilon': {'pos': 4, 'type': 'Real'}}},
 
-        'twiss_py': {'desc': 'Twiss parameters in x Px',
-                     'parms': {'corrtyp': 1, 'alpha': 2, 'beta': 3, 'epsilon': 4}}
+        'twiss_py':
+        {'desc': 'Twiss parameters in x Px',
+         'doc': 'The spread in y and Py in the beam definition are ignored. '
+                'For Gaussian distributions epsilon is the rms geometrical '
+                'emittance. For uniform distributions it specifies the limiting ellipse.',
+         'parms':
+                 {'corrtyp': {'pos': 1, 'type': 'Real', 'doc': ''},
+                  'alpha': {'pos': 2, 'type': 'Real', 'doc': 'Twiss alpha parameter [m]'},
+                  'beta': {'pos': 3, 'type': 'Real', 'doc': 'Twiss beta parameter [m]'},
+                  'epsilon': {'pos': 4, 'type': 'Real', 'doc': 'Twiss epsilon parameter [m]'}}},
+
+        'equal_sol':
+        {'desc': 'Equal time in solenoid.',
+         'doc':  'Set up with pz and σPz such that βz > βo. '
+                 'Set up initial pt = 0. This correlation determines the pt '
+                 'for a given pz that gives all the initial particles the same βo. '
+                 'If parameter 3 is 0, the azimuthal angle is chosen randomly.',
+         'parms':
+                 {'corrtyp': {'pos': 1, 'type': 'Real', 'doc': ''},
+                  'axial_beta': {'pos': 2, 'type': 'Real', 'doc': 'desired axial beta (=v/c) value βo'},
+                  'az_ang_mom': {'pos': 3, 'type': 'Real', 'doc': 'azimuthal angle of transverse momentum [deg]'}}},
+
+        'balbekov':
+        {'desc': 'Balbekov version of amplitude-energy.',
+         'doc':  '',
+         'parms':
+                 {'corrtyp': {'pos': 1, 'type': 'String', 'doc': ''},
+                  'eref': {'pos': 2, 'type': 'Real', 'doc': 'Eref [GeV]'},
+                  'babs': {'pos': 3, 'type': 'Real', 'doc': 'Babs [ T ]'},
+                  'sigma_e:': {'pos': 4, 'type': 'Real', 'doc': 'σE [GeV]'}}},
+
+        'dispersion':
+        {'desc': 'Dispersion',
+         'doc':  '',
+         'parms':
+                 {'corrtyp': {'pos': 1, 'type': 'String', 'doc': ''},
+                  'value': {'pos': 2, 'type': 'Real', 'doc': '[m or rad]'},
+                  'pref': {'pos': 3, 'type': 'Real', 'doc': '[GeV/c]'},
+                  'type': {'pos': 4, 'type': 'Real', 'doc': 'Type flag.  x, y, x_prime, y_prime'}}},
+
 
         }
 
@@ -2083,21 +2177,46 @@ class Accel(Field):
         'model_descriptor': {'desc': 'Name of model parameter descriptor',
                              'name': 'model'},
 
-        'Ez': {'desc': 'Ez only with no transverse variation',
-               'parms': {'model': 1, 'freq': 2, 'grad': 3, 'phase': 4, 'rect_cyn': 5, 'mode': 8}},
+        'ez': {'desc': 'Ez only with no transverse variation',
+               'parms':
+                       {'model': {'pos': 1, 'type': 'String', 'doc': ''},
+                        'freq': {'pos': 2, 'type': 'Real', 'doc': ''},
+                        'grad': {'pos': 3, 'type': 'Real', 'doc': ''},
+                        'phase': {'pos': 4, 'type': 'Real', 'doc': ''},
+                        'rect_cyn': {'pos': 5, 'type': 'Real', 'doc': ''},
+                        'mode': {'pos': 8, 'type': 'Real', 'doc': ''}}},
 
-        '2': {'desc': 'Cylindrical TM01p pillbox',
-              'parms': {'model': 1, 'freq': 2, 'grad': 3, 'phase': 4, 'rect_cyn': 5, 'longitudinal_mode': 8}},
+        'cyn_pill': {'desc': 'Cylindrical TM01p pillbox',
+                     'parms':
+                             {'model': {'pos': 1, 'type': 'String'},
+                              'freq': {'pos': 2, 'type': 'Real'},
+                              'grad': {'pos': 3, 'type': 'Real'},
+                              'phase': {'pos': 4, 'type': 'Real'},
+                              'rect_cyn': {'pos': 5, 'type': 'Real'},
+                              'longitudinal_mode': {'pos': 8, 'type': 'Real'}}},
 
-        '3': {'desc': 'Traveling wave cavity',
-              'parms': {'model': 1, 'freq': 2, 'grad': 3, 'phase': 4, 'rect_cyn': 5, 'x_offset': 6,
-                        'y_offset': 7, 'phase_velocity': 8}},
+        'trav': {'desc': 'Traveling wave cavity',
+                 'parms':
+                         {'model': {'pos': 1, 'type': 'String'},
+                          'freq': {'pos': 2, 'type': 'Real'},
+                          'grad': {'pos': 3, 'type': 'Real'},
+                          'phase': {'pos': 4, 'type': 'Real'},
+                          'rect_cyn': {'pos': 5, 'type': 'Real'},
+                          'x_offset': {'pos': 6, 'type': 'Real'},
+                          'y_offset': {'pos': 7, 'type': 'Real'},
+                          'phase_velocity': {'pos': 8, 'type': 'Real'}}},
 
-        '4': {'desc': 'Approximate fields for symmetric circular-nosed cavity',
-              'parms': {'model': 1, 'freq': 2, 'grad': 3, 'phase': 4, 'length': 8, 'gap': 9,
-                        'drift_tube_radius': 10, 'nose_radius': 11}},
+        'circ_nose': {'desc': 'Approximate fields for symmetric circular-nosed cavity',
+                      'parms': {'model': {'pos': 1, 'type': 'String'},
+                                'freq': {'pos': 2, 'type': 'Real'},
+                                'grad': {'pos': 3, 'type': 'Real'},
+                                'phase': {'pos': 4, 'type': 'Real'},
+                                'length': {'pos': 8, 'type': 'Real'},
+                                'gap': {'pos': 9, 'type': 'Real'},
+                                'drift_tube_radius': {'pos': 10, 'type': 'Real'},
+                                'nose_radius': {'pos': 11}, 'type': 'Real'}}},
 
-        '5': {'desc': 'User-supplied azimuthally-symmetric TM mode (SuperFish)',
+        'az_tm': {'desc': 'User-supplied azimuthally-symmetric TM mode (SuperFish)',
               'parms': {'model': 1, 'freq': 2, 'phase': 4, 'file_no': 8, 'field_strength_norm': 9, 'rad_cut': 10,
                         'axial_dist': 11, 'axial_sym': 12}},
 
