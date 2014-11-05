@@ -2471,8 +2471,8 @@ class Accel(Field):
                            'v8': {'pos': 13, 'type': 'Real', 'doc': ''}}},
 
         'ilgen': {'desc': 'Induction linac model - waveform from internally generated waveform',
-                   'doc': '',
-                   'parms':
+                  'doc': '',
+                  'parms':
                           {'model': {'pos': 1, 'type': 'String', 'doc': ''},
                            'num_gaps': {'pos': 2,  'type': 'Real', 'doc': ''},
                            'start_volt': {'pos': 3, 'type': 'Real', 'doc': ''},
@@ -2499,26 +2499,64 @@ class Accel(Field):
                            'file_num_out': {'pos': 7, 'type': 'Real', 'doc': ''},
                            'time_inc': {'pos': 8, 'type': 'Real', 'doc': ''}}},
 
-        
 
-        '9': {'desc': 'Sector-shaped pillbox cavity (circular cross section)',
-              'parms': {'model': 1, 'freq': 2, 'grad': 3, 'phase': 4}},
+        'sec_pill_circ': {'desc': 'Sector-shaped pillbox cavity (circular cross section)',
+                          'doc': '',
+                          'parms':
+                                  {'model': {'pos': 1, 'type': 'String', 'doc': ''},
+                                   'freq': {'pos': 2,  'type': 'Real', 'doc': ''},
+                                   'grad': {'pos': 3, 'type': 'Real', 'doc': ''},
+                                   'phase': {'pos': 4, 'type': 'Real', 'doc': ''}}},
 
-        '10': {'desc': 'Variable {frequency gradient} pillbox cavity',
-               'parms': {'model': 1, 'phase': 4, 'num_wavelengths': 5, 'reset_parm': 6, 'buncher_length': 7,
-                         'g0': 8, 'g1': 9, 'g2': 10, 'phase_model': 12}},
+        'var_pill': {'desc': 'Variable {frequency gradient} pillbox cavity',
+                     'doc': '',
+                     'parms':
+                            {'model': {'pos': 1, 'type': 'String', 'doc': ''},
+                             'phase': {'pos': 2,  'type': 'Real', 'doc': ''},
+                             'num_wavelengths': {'pos': 3, 'type': 'Real', 'doc': ''},
+                             'reset_parms': {'pos': 4, 'type': 'Real', 'doc': ''},
+                             'buncher_len': {'pos': 5, 'type': 'Real', 'doc': ''},
+                             'g0': {'pos': 6, 'type': 'Real', 'doc': ''},
+                             'g1': {'pos': 7, 'type': 'Real', 'doc': ''},
+                             'g2': {'pos': 8, 'type': 'Real', 'doc': ''},
+                             'phase_model': {'pos': 9, 'type': 'Real', 'doc': ''}}},
 
-        '11': {'desc': 'Straight pillbox or SuperFish cavity in dipole region',
-               'parms': {'model': 1, 'freq': 2, 'grad': 3, 'phase': 4, 'radial_offset': 5, 'axial_length': 6,
-                         'cavity_type': 7, 'file_num': 8, 'sf_field_norm': 9, 'sf_rad_cutoff': 10,
-                         'sf_ axial_disp': 11, 'sf_axial_sym': 12}},
+        'straight_pill': {'desc': 'Straight pillbox or SuperFish cavity in dipole region',
+                          'doc': '',
+                          'parms':
+                                  {'model': {'pos': 1, 'type': 'String', 'doc': ''},
+                                   'freq': {'pos': 2,  'type': 'Real', 'doc': ''},
+                                   'grad': {'pos': 3, 'type': 'Real', 'doc': ''},
+                                   'phase': {'pos': 4, 'type': 'Real', 'doc': ''},
+                                   'radial_offset': {'pos': 5, 'type': 'Real', 'doc': ''},
+                                   'axial_length': {'pos': 6, 'type': 'Real', 'doc': ''},
+                                   'cavity_type': {'pos': 7, 'type': 'Real', 'doc': ''},
+                                   'file_num': {'pos': 8, 'type': 'Real', 'doc': ''},
+                                   'sf_field_norm': {'pos': 9, 'type': 'Real', 'doc': ''},
+                                   'sf_rad_cut': {'pos': 10, 'type': 'Real', 'doc': ''},
+                                   'sf_axial_disp': {'pos': 11, 'type': 'Real', 'doc': ''},
+                                   'sf_axial_sym': {'pos': 12, 'type': 'Real', 'doc': ''}}},
 
-        '12': {'desc': 'Sector-shaped pillbox cavity (rectangular cross section)',
-               'parms':  {'model': 1, 'freq': 2, 'grad': 3, 'phase': 4, 'rad_offset': 5, 'cav_width': 6,
-                          'cav_height': 7}},
+        'sec_pill_rec': {'desc': 'Variable {frequency gradient} pillbox cavity',
+                         'doc': '',
+                         'parms':
+                                 {'model': {'pos': 1, 'type': 'String', 'doc': ''},
+                                  'freq': {'pos': 2,  'type': 'Real', 'doc': ''},
+                                  'grad': {'pos': 3, 'type': 'Real', 'doc': ''},
+                                  'phase': {'pos': 4, 'type': 'Real', 'doc': ''},
+                                  'rad_offset': {'pos': 5, 'type': 'Real', 'doc': ''},
+                                  'width': {'pos': 6, 'type': 'Real', 'doc': ''},
+                                  'height': {'pos': 7, 'type': 'Real', 'doc': ''}}},
 
-        '13': {'desc': 'Open cell standing wave cavity',
-               'parms': {'model': 1, 'freq': 2, 'grad': 3, 'phase': 4, 'focus_flag': 5}}
+        'open_cell_stand': {'desc': 'Open cell standing wave cavity',
+                            'doc': '',
+                            'parms':
+                                   {'model': {'pos': 1, 'type': 'String', 'doc': ''},
+                                    'freq': {'pos': 2,  'type': 'Real', 'doc': ''},
+                                    'grad': {'pos': 3, 'type': 'Real', 'doc': ''},
+                                    'phase': {'pos': 4, 'type': 'Real', 'doc': ''},
+                                    'focus_flag': {'pos': 5, 'type': 'Real', 'doc': ''}}},
+
     }
 
     def __init__(self, **kwargs):
