@@ -2026,22 +2026,22 @@ class Material(ModeledCommandParameter):
                   'az': {'pos': 5, 'type': 'Real', 'doc': 'Azimuthal angle of vector pointing to vertex in plane '
                          'of wedge w.r.t. +ve x-axis [deg]'},
                   'width': {'pos': 6, 'type': 'Real', 'doc': 'Total width of wedge in dispersion direction [m]'},
-                  'height': {'pos': 6, 'type': 'Real', 'doc': 'Total height of wedge in non-dispersion direction [m]'},
-                  'a0': {'pos': 7, 'type': 'Real', 'doc': 'Polar angle from vertex of right edge [deg] '},
-                  'a1': {'pos': 8, 'type': 'Real', 'doc': 'Azimuthal angle of right face [deg]'},
-                  'a2': {'pos': 9, 'type': 'Real', 'doc': 'Polar angle from vertex of right edge [deg] '},
-                  'a3': {'pos': 10, 'type': 'Real', 'doc': 'Azimuthal angle of right face [deg]'},
+                  'height': {'pos': 7, 'type': 'Real', 'doc': 'Total height of wedge in non-dispersion direction [m]'},
+                  'a0': {'pos': 8, 'type': 'Real', 'doc': 'Polar angle from vertex of right edge [deg] '},
+                  'a1': {'pos': 9, 'type': 'Real', 'doc': 'Azimuthal angle of right face [deg]'},
+                  'a2': {'pos': 10, 'type': 'Real', 'doc': 'Polar angle from vertex of right edge [deg] '},
+                  'a3': {'pos': 11, 'type': 'Real', 'doc': 'Azimuthal angle of right face [deg]'}}},
 
         'ring':
         {'desc': 'Annular ring of material',
          'doc': 'This is functionally equivalent to defining a region with two radial subregions, the first of '
                  'which has vacuum as the material type. However, the boundary crossing algorithm used for RING is '
-                  'more sophisticated and should give more accurate simulations.',
+                 'more sophisticated and should give more accurate simulations.',
          'parms':
                  {'mtag': {'pos': 1, 'type': 'String', 'doc': ''},
                   'geom': {'pos': 2, 'type': 'String', 'doc': ''},
                   'inner': {'pos': 3, 'type': 'Real', 'doc': 'Inner radius (R) [m]'},
-                  'outer': {'pos': 4, 'type': 'Real', 'doc': 'Outer radius (R) [m]'},
+                  'outer': {'pos': 4, 'type': 'Real', 'doc': 'Outer radius (R) [m]'}}},
 
         'wedge':
         {'desc': 'Asymmetric wedge absorber region',
@@ -2072,65 +2072,70 @@ class Material(ModeledCommandParameter):
          'plane is maintained. '
          'Finally, the wedge is translated in the Z direction by a distance Zv, so that its XY symmetry plane '
          'lies a distance Zv downstream of the start of the region. Usually Zv should be at least large',
-         enough so that the entire volume of the wedge lies within its region, i.e. Zv .ge. W tan (A/2), the
-maximum Z half-thickness of the wedge. As well, the region usually should be long enough to
-contain the entire volume of the wedge, i.e. RegionLength .ge. Zv + W tan (A/2). Wedges that do
-lie completely within their region retain their symmetry about the XY plane Z=Zv.
-If portions of a wedge lie outside their region in Z, then the volume of the wedge lying outside
-the region is ignored when propagating particles through the wedge. Such a wedge will grow in
-thickness until it reaches the region boundary, but will not extend beyond it. In such cases,
-wedges may lose their symmetry about the XY plane Z=Zv.
-Wedges may be defined such that they extend outside the radial boundaries of the radial
-subregion within which they are defined. However, any portion of the wedge volume lying inside the inner radial boundary or outside the outer radial boundary is ignored when propagating particles through the wedge. For example, if the user intends that an entire radial subregion of circular cross-section be filled with a wedge, then it is clear that the corners of the wedge must extend outside the radial region, but particles passing outside the wedge's radial subregion will not see the wedge at all.
-In short, we may say that although it is permitted (and sometimes essential) to define a wedge to
-be larger than its subregion, for the purposes of particle propagation the wedge is always trimmed at the region's Z boundaries and the subregion's radial boundaries. Any volume within the region and subregion that is not occupied by the material specified for the wedge is assumed to be vacuum.
----------------------------------------------------------------------------------------------------------------
-Example 1: Within a region 0.4 meters long in Z, within a radial subregion extending from the Z axis out to a radius of 0.3 meters, a wedge is to fill the X<0 (right) half of the 0.3 meter aperture of the subregion, and increase in Z thickness proportional to -X, such that it is 0.2 meters thick at the rightmost point in the subregion (X=-0.3, Y=0).
-The wedge is to be 0.2 meters thick at a point 0.3 meters from its vertex. The half-thickness is
-0.1 meters, the half-opening angle is atan (0.1/0.3) = 18.4 degrees, so the full opening angle of
-the wedge A is 36.8 degrees. The width (X extent) of the wedge must be 0.3 meters, and the
-height (Y extent) of the wedge must be 0.6 meters. Two corners of the wedge extend well beyond the subregion, but they will be ignored during particle propagation. The wedge does not need to be translated in X (U = 0) nor does it need to be rotated about the Z axis (PHI = 0). For
-convenience we center the wedge (in Z) within its region, so Zv = 0.2 meters. Since the
-maximum half-thickness of the wedge is only 0.1 meters, the wedge does not extend beyond (or
-even up to) the Z boundaries of the region. The volume within the region and subregion but
-outside the wedge is assumed to be vacuum.
-------------------------------------------------------------------------------------------------------------
-Example 2: In the same region and subregion, we need a wedge with the same opening angle,
-but filling the entire aperture of the subregion, thickness gradient in the +Y direction, thickness =
-0 at the lowest point in the subregion (X=0, Y=-0.3).
-The wedge must now have H = W = 0.6 meters so it can fill the entire aperture of the subregion.
-From its initial position, it must first be translated 0.3 meters in the +X direction (U = 0.3) to
-center it in the subregion's aperture, and then (from the perspective of someone looking
-downstream along the beam) rotated counterclockwise 90 degrees (PHI = -90.) so that the Z
-thickness increases proportionally to +Y. Since the wedge has the same opening angle as before
-but has twice the width, its maximum Z thickness is now 0.4 meters, just barely fitting between
-the Z boundaries of the region if Zv = 0.2 meters. All four corners of the wedge now extend
-outside the radial subregion's outer boundary, but they will be ignored during particle
-propagation.” {S.B.}
-The wedge geometry can accept a second MTAG parameter in the SREGION construct. The first material refers to the interior of the wedge. The second material, if present, refers to the exterior of the wedge. If a second MTAG parameter is not present, vacuum is assumed.
+         'enough so that the entire volume of the wedge lies within its region, i.e. Zv .ge. W tan (A/2), the '
+         'maximum Z half-thickness of the wedge. As well, the region usually should be long enough to '
+         'contain the entire volume of the wedge, i.e. RegionLength .ge. Zv + W tan (A/2). Wedges that do '
+         'lie completely within their region retain their symmetry about the XY plane Z=Zv.  '
+         'If portions of a wedge lie outside their region in Z, then the volume of the wedge lying outside '
+         'the region is ignored when propagating particles through the wedge. Such a wedge will grow in '
+         'thickness until it reaches the region boundary, but will not extend beyond it. In such cases, '
+         'wedges may lose their symmetry about the XY plane Z=Zv.'
+         'Wedges may be defined such that they extend outside the radial boundaries of the radial '
+         'subregion within which they are defined. However, any portion of the wedge volume lying inside the inner '
+         'radial boundary or outside the outer radial boundary is ignored when propagating particles through '
+         'the wedge. For example, if the user intends that an entire radial subregion of circular cross-section be '
+         'filled with a wedge, then it is clear that the corners of the wedge must extend outside the radial region, '
+         "but particles passing outside the wedge's radial subregion will not see the wedge at all.  "
+         'In short, we may say that although it is permitted (and sometimes essential) to define a wedge to '
+         'be larger than its subregion, for the purposes of particle propagation the wedge is always trimmed at the '
+         "region's Z boundaries and the subregion's radial boundaries. Any volume within the region and subregion "
+         'that is not occupied by the material specified for the wedge is assumed to be vacuum.'
+         '------------------------------------------------------------------------------------------------------------'
+         'Example 1: Within a region 0.4 meters long in Z, within a radial subregion extending from the Z axis out '
+         'to a radius of 0.3 meters, a wedge is to fill the X<0 (right) half of the 0.3 meter aperture of the '
+         'subregion, and increase in Z thickness proportional to -X, such that it is 0.2 meters thick at the '
+         'rightmost point in the subregion (X=-0.3, Y=0).  The wedge is to be 0.2 meters thick at a point 0.3 '
+         'meters from its vertex. The half-thickness is 0.1 meters, the half-opening angle is '
+         'atan (0.1/0.3) = 18.4 degrees, so the full opening angle of the wedge A is 36.8 degrees. The width '
+         '(X extent) of the wedge must be 0.3 meters, and the height (Y extent) of the wedge must be 0.6 meters. '
+         'Two corners of the wedge extend well beyond the subregion, but they will be ignored during particle '
+         'propagation. The wedge does not need to be translated in X (U = 0) nor does it need to be rotated '
+         'about the Z axis (PHI = 0). For convenience we center the wedge (in Z) within its region, '
+         'so Zv = 0.2 meters. Since the maximum half-thickness of the wedge is only 0.1 meters, the wedge '
+         'does not extend beyond (or even up to) the Z boundaries of the region. The volume within the region '
+         'and subregion but outside the wedge is assumed to be vacuum.'
+         '------------------------------------------------------------------------------------------------------------'
+         'Example 2: In the same region and subregion, we need a wedge with the same opening angle, '
+         'but filling the entire aperture of the subregion, thickness gradient in the +Y direction, thickness = '
+         '0 at the lowest point in the subregion (X=0, Y=-0.3).'
+         'The wedge must now have H = W = 0.6 meters so it can fill the entire aperture of the subregion.'
+         'From its initial position, it must first be translated 0.3 meters in the +X direction (U = 0.3) to '
+         "center it in the subregion's aperture, and then (from the perspective of someone looking "
+         'downstream along the beam) rotated counterclockwise 90 degrees (PHI = -90.) so that the Z '
+         'thickness increases proportionally to +Y. Since the wedge has the same opening angle as before '
+         'but has twice the width, its maximum Z thickness is now 0.4 meters, just barely fitting between '
+         'the Z boundaries of the region if Zv = 0.2 meters. All four corners of the wedge now extend '
+         "outside the radial subregion's outer boundary, but they will be ignored during particle "
+         'propagation.” {S.B.}'
+         'The wedge geometry can accept a second MTAG parameter in the SREGION construct. The first material '
+         'refers to the interior of the wedge. The second material, if present, refers to the exterior of the wedge. '
+         'If a second MTAG parameter is not present, vacuum is assumed.'
          
          'parms':
                  {'mtag': {'pos': 1, 'type': 'String', 'doc': ''},
                   'geom': {'pos': 2, 'type': 'String', 'doc': ''},
-                  'init_vertex': {'pos': 3, 'type': 'Real', 'doc': 'Initial position of the vertex along '
+                  'vert_ang': {'pos': 3, 'type': 'Real', 'doc': 'Full angle at vertex, α (or A) [degrees]'
                                   'the x axis [m]'},
-                  'z_wedge_vertex': {'pos': 4, 'type': 'Real', 'doc': 'z position of wedge vertex [m] '},
-                  'az': {'pos': 5, 'type': 'Real', 'doc': 'Azimuthal angle of vector pointing to vertex in plane '
-                         'of wedge w.r.t. +ve x-axis [deg]'},
-                  'width': {'pos': 6, 'type': 'Real', 'doc': 'Total width of wedge in dispersion direction [m]'},
-                  'height': {'pos': 6, 'type': 'Real', 'doc': 'Total height of wedge in non-dispersion direction [m]'},
-                  'a0': {'pos': 7, 'type': 'Real', 'doc': 'Polar angle from vertex of right edge [deg] '},
-                  'a1': {'pos': 8, 'type': 'Real', 'doc': 'Azimuthal angle of right face [deg]'},
-                  'a2': {'pos': 9, 'type': 'Real', 'doc': 'Polar angle from vertex of right edge [deg] '},
-                  'a3': {'pos': 10, 'type': 'Real', 'doc': 'Azimuthal angle of right face [deg]'},
-                  
+                  'vert_init': {'pos': 4, 'type': 'Real', 'doc': 'Initial position of the vertex along '
+                                'the x axis, U [m]'},
+                  'vert_z': {'pos': 5, 'type': 'Real', 'doc': 'Z position of wedge vertex, Zv [m]'},
+                  'vert_az': {'pos': 6, 'type': 'Real', 'doc': 'azimuthal angle φ of vector pointing to vertex '
+                              'in plane of wedge w.r.t. +ve x-axis [deg]'},
+                  'width': {'pos': 7, 'type': 'Real', 'doc': 'Total width of wedge in dispersion direction, w [m]'},
+                  'height': {'pos': 8, 'type': 'Real', 'doc': 'Total height of wedge in non-dispersion direction, '
+                             'h [m]'}}}
+}
 
-
-        }
-
-
-                
-     
 
     def __init__(self, **kwargs):
         ModeledCommandParameter.__init__(self, kwargs)
@@ -2393,11 +2398,14 @@ class Accel(Field):
                'doc': '',
                'parms':
                        {'model': {'pos': 1, 'type': 'String', 'doc': ''},
-                        'freq': {'pos': 2, 'type': 'Real', 'doc': ''},
-                        'grad': {'pos': 3, 'type': 'Real', 'doc': ''},
-                        'phase': {'pos': 4, 'type': 'Real', 'doc': ''},
-                        'rect_cyn': {'pos': 5, 'type': 'Real', 'doc': ''},
-                        'mode': {'pos': 8, 'type': 'Real', 'doc': ''}}},
+                        'freq': {'pos': 2, 'type': 'Real', 'doc': 'Frequency [MHz]'},
+                        'grad': {'pos': 3, 'type': 'Real', 'doc': 'Gradient on-axis at center of gap [MV/m]'},
+                        'phase': {'pos': 4, 'type': 'Real', 'doc': 'Phase shift [deg] {0-360}.'},
+                        'rect_cyn': {'pos': 5, 'type': 'Real', 'doc': 'Parameter to approximate a rectangular cavity '
+                                     'in cylindrical geometry; if set to radius of curvature ρ, then EZ is scaled by '
+                                     '1-x/ ρ, where x is the horizontal distance from the reference circle.'},
+                        'mode': {'pos': 8, 'type': 'Int', 'doc': '0 : Time-independent 1: sinusoidal time '
+                                 'variation'}}},
 
         'cyn_pill': {'desc': 'Cylindrical TM01p pillbox',
                      'doc': '',
@@ -2445,18 +2453,53 @@ class Accel(Field):
                            'axial_dist': {'pos': 11, 'type': 'Real', 'doc': ''},
                            'daxial_sym': {'pos': 12, 'type': 'Real', 'doc': ''}}},
 
-        '6': {'il_poly': 'Induction linac model - waveform from user-supplied polynomial coefficients',
-              'parms': {'model': 1, 'time_offset': 2, 'gap': 3, 'time_reset': 4, 'V0': 5, 'V1': 6, 'V2': 7,
-                        'V3': 8, 'V4': 9, 'V5': 10, 'V6': 11, 'V7': 12, 'V8': 13}},
+        'ilpoly': {'desc': 'Induction linac model - waveform from user-supplied polynomial coefficients',
+                   'doc': '',
+                   'parms':
+                          {'model': {'pos': 1, 'type': 'String', 'doc': ''},
+                           'time_offset': {'pos': 2,  'type': 'Real', 'doc': ''},
+                           'gap': {'pos': 3, 'type': 'Real', 'doc': ''},
+                           'time_reset': {'pos': 4, 'type': 'Real', 'doc': ''},
+                           'v0': {'pos': 5, 'type': 'Real', 'doc': ''},
+                           'v1': {'pos': 6, 'type': 'Real', 'doc': ''},
+                           'v2': {'pos': 7, 'type': 'Real', 'doc': ''},
+                           'v3': {'pos': 8, 'type': 'Real', 'doc': ''},
+                           'v4': {'pos': 9, 'type': 'Real', 'doc': ''},
+                           'v5': {'pos': 10, 'type': 'Real', 'doc': ''},
+                           'v6': {'pos': 11, 'type': 'Real', 'doc': ''},
+                           'v7': {'pos': 12, 'type': 'Real', 'doc': ''},
+                           'v8': {'pos': 13, 'type': 'Real', 'doc': ''}}},
 
-        '7': {'desc': 'Induction linac model - waveform from internally generated waveform',
-              'parms': {'model': 1, 'num_gaps': 2, 'start_volt': 3, 'volt_swing': 4, 'time_offset': 5, 'kin_en': 6,
-                        'pulse_dur': 7, 'slope': 8, 'bins': 9, 'gap_len': 10, 'file_num': 11, 'kill_flag': 12,
-                        'restart_flag': 13}},
+        'ilgen': {'desc': 'Induction linac model - waveform from internally generated waveform',
+                   'doc': '',
+                   'parms':
+                          {'model': {'pos': 1, 'type': 'String', 'doc': ''},
+                           'num_gaps': {'pos': 2,  'type': 'Real', 'doc': ''},
+                           'start_volt': {'pos': 3, 'type': 'Real', 'doc': ''},
+                           'volt_swing': {'pos': 4, 'type': 'Real', 'doc': ''},
+                           'time_offset': {'pos': 5, 'type': 'Real', 'doc': ''},
+                           'kin': {'pos': 6, 'type': 'Real', 'doc': ''},
+                           'pulse_dur': {'pos': 7, 'type': 'Real', 'doc': ''},
+                           'slope': {'pos': 8, 'type': 'Real', 'doc': ''},
+                           'bins': {'pos': 9, 'type': 'Real', 'doc': ''},
+                           'gap_len': {'pos': 10, 'type': 'Real', 'doc': ''},
+                           'file_num': {'pos': 11, 'type': 'Real', 'doc': ''},
+                           'kill': {'pos': 12, 'type': 'Real', 'doc': ''},
+                           'restart': {'pos': 13, 'type': 'Real', 'doc': ''}}},
 
-        '8': {'desc': 'Induction linac model - Waveform from user-supplied file',
-              'parms': {'model': 1, 'time_offset': 2, 'gap': 3,
-                        'time_reset': 4, 'file_num_wav': 5, 'poly_order': 6, 'file_num_out': 7, 'time_inc': 8}},
+        'ilfile': {'desc': 'Induction linac model - Waveform from user-supplied file',
+                   'doc': '',
+                   'parms':
+                          {'model': {'pos': 1, 'type': 'String', 'doc': ''},
+                           'time_offset': {'pos': 2,  'type': 'Real', 'doc': ''},
+                           'gap': {'pos': 3, 'type': 'Real', 'doc': ''},
+                           'time_reset': {'pos': 4, 'type': 'Real', 'doc': ''},
+                           'file_num_wav': {'pos': 5, 'type': 'Real', 'doc': ''},
+                           'poly_order': {'pos': 6, 'type': 'Real', 'doc': ''},
+                           'file_num_out': {'pos': 7, 'type': 'Real', 'doc': ''},
+                           'time_inc': {'pos': 8, 'type': 'Real', 'doc': ''}}},
+
+        
 
         '9': {'desc': 'Sector-shaped pillbox cavity (circular cross section)',
               'parms': {'model': 1, 'freq': 2, 'grad': 3, 'phase': 4}},
