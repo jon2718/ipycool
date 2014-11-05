@@ -16,7 +16,7 @@ An ICOOl input file consists of:
 9. Emittance plane definition variables
 10. Covariance plane definition variables
 11. Region definition variables.
-** Note that region definition variables are referred to in the ICOOL Manual and 
+** Note that region definition variables are referred to in the ICOOL Manual and
 herein as commands.
 
 This program will use of following object definitions:
@@ -79,8 +79,10 @@ Each regular and pseduoregion command is respectively associated with a set of c
 """
 from IPython.core.magic_arguments import (argument, magic_arguments,
     parse_argstring)
+from IPython.core.magic import (register_line_magic, register_cell_magic,
+                                register_line_cell_magic)
 
-
+#@register_line_magic
 @magic_arguments()
 @argument('-o', '--option', help='An optional argument.')
 @argument('arg', type=int, help='An integer positional argument.')
@@ -89,7 +91,6 @@ def ipycool(self, arg):
 
     """
     args = parse_argstring(ipycool, arg)
-
 
 
 class ICoolGen(object):
@@ -746,7 +747,6 @@ class Bmt(ICoolVariablesSet):
     def __init__(self, **kwargs):
         if self.check_variables_init(kwargs) is False:
             sys.exit(0)
-
 
     def add_beamtype(self, beamtype):
         self.beamtype_list.append(beamtype)
@@ -1464,7 +1464,7 @@ class ModeledCommandParameter(ICoolType):
 
     def check_valid_model(self, model):
         """
-        Checks whether model specified is valid.  
+        Checks whether model specified is valid.
         If model is not valid, raises an exception and returns False.  Otherwise returns True.
         """
         try:
@@ -1577,6 +1577,14 @@ class ModeledCommandParameter(ICoolType):
                 return True
             else:
                 return False
+    
+    def set_model_parameters(self):
+        parms_dict = self.get_model_parms_dict()
+        high_pos = 0
+        for key in parms_dict:
+            if key['pos'] > high_pos:
+                high_pos = key['pos']
+        self.parms = [0]*high_pos
 
 
 class Distribution(ModeledCommandParameter):
@@ -1584,54 +1592,61 @@ class Distribution(ModeledCommandParameter):
     A Distribution is a:
     (1) partnum (particle number);
     (2) bmtype Innter radius of this r subregion;
-    (3) RHIGH Outer radius of this r subregion;
-    (4) Field object; and
-    (5) Material object.
+    (3) fracbt (R) fraction of beam of this type {0-1} The sum of all fracbt(i) should =1.0
+    (4) bdistyp (I) beam distribution type {1:Gaussian 2:uniform circular segment}
+    (5-16) 12 Parameters for bdistyp
     """
 
     models = {
 
         'model_descriptor': {'desc': 'Distribution type',
-                             'name': 'dist'},
+                             'name': 'bmdistyp',
+                             'num_parms': 16},
 
         'gaussian':
         {'desc': 'Gaussian beam distribution',
          'doc': '',
          'parms':
-                 {'dist': {'pos': 1, 'type': 'String', 'doc': ''},
-                  'x_mean': {'pos': 2, 'type': 'Real', 'doc': ''},
-                  'y_mean': {'pos': 3, 'type': 'Real', 'doc': ''},
-                  'z_mean': {'pos': 4, 'type': 'Real', 'doc': ''},
-                  'px_mean': {'pos': 5, 'type': 'Real', 'doc': ''},
-                  'py_mean': {'pos': 6, 'type': 'Real', 'doc': ''},
-                  'pz_mean': {'pos': 7, 'type': 'Real', 'doc': ''},
-                  'x_std': {'pos': 8, 'type': 'Real', 'doc': ''},
-                  'y_std': {'pos': 9, 'type': 'Real', 'doc': ''},
-                  'z_std': {'pos': 10, 'type': 'Real', 'doc': ''},
-                  'px_std': {'pos': 11, 'type': 'Real', 'doc': ''},
-                  'py_std': {'pos': 12, 'type': 'Real', 'doc': ''},
-                  'pz_std': {'pos': 13, 'type': 'Real', 'doc': ''}}},
+                 {'partnum': {'pos': 1, 'type': 'Int', 'doc': '', 'min': 1, 'max': 5},
+                  'bmtype': {'pos': 2, 'type': 'Int', 'doc': '', 'min': 1, 'max': 7},
+                  'fractbt': {'pos': 3, 'type': 'Real', 'doc': '', 'min': 0, 'max': 1},
+                  'bdistyp': {'pos': 4, 'type': 'String', 'doc': ''},
+                  'x_mean': {'pos': 5, 'type': 'Real', 'doc': ''},
+                  'y_mean': {'pos': 6, 'type': 'Real', 'doc': ''},
+                  'z_mean': {'pos': 7, 'type': 'Real', 'doc': ''},
+                  'px_mean': {'pos': 8, 'type': 'Real', 'doc': ''},
+                  'py_mean': {'pos': 9, 'type': 'Real', 'doc': ''},
+                  'pz_mean': {'pos': 10, 'type': 'Real', 'doc': ''},
+                  'x_std': {'pos': 11, 'type': 'Real', 'doc': ''},
+                  'y_std': {'pos': 12, 'type': 'Real', 'doc': ''},
+                  'z_std': {'pos': 13, 'type': 'Real', 'doc': ''},
+                  'px_std': {'pos': 14, 'type': 'Real', 'doc': ''},
+                  'py_std': {'pos': 15, 'type': 'Real', 'doc': ''},
+                  'pz_std': {'pos': 16, 'type': 'Real', 'doc': ''}}},
 
         'uniform':
         {'desc': 'Uniform circular segment beam distribution',
          'doc': '',
          'parms':
-                 {'dist': {'pos': 1, 'type': 'String', 'doc': ''},
-                  'r_low': {'pos': 2, 'type': 'Real', 'doc': ''},
-                  'r_high': {'pos': 3, 'type': 'Real', 'doc': ''},
-                  'phi_low': {'pos': 4, 'type': 'Real', 'doc': ''},
-                  'phi_high': {'pos': 5, 'type': 'Real', 'doc': ''},
-                  'z_low': {'pos': 6, 'type': 'Real', 'doc': ''},
-                  'z_high': {'pos': 7, 'type': 'Real', 'doc': ''},
-                  'pr_low': {'pos': 8, 'type': 'Real', 'doc': ''},
-                  'pr_high': {'pos': 9, 'type': 'Real', 'doc': ''},
-                  'pphi_low': {'pos': 10, 'type': 'Real', 'doc': ''},
-                  'pphi_high': {'pos': 11, 'type': 'Real', 'doc': ''},
-                  'pz_low': {'pos': 12, 'type': 'Real', 'doc': ''},
-                  'pz_high': {'pos': 13, 'type': 'Real', 'doc': ''}}},
+                 {'partnum': {'pos': 1, 'type': 'Int', 'doc': '', 'min': 1, 'max': 5},
+                  'bmtype': {'pos': 2, 'type': 'Int', 'doc': '', 'min': 1, 'max': 7},
+                  'fractbt': {'pos': 3, 'type': 'Real', 'doc': '', 'min': 0, 'max': 1},
+                  'bdistyp': {'pos': 4, 'type': 'String', 'doc': ''},
+                  'r_low': {'pos': 5, 'type': 'Real', 'doc': ''},
+                  'r_high': {'pos': 6, 'type': 'Real', 'doc': ''},
+                  'phi_low': {'pos': 7, 'type': 'Real', 'doc': ''},
+                  'phi_high': {'pos': 8, 'type': 'Real', 'doc': ''},
+                  'z_low': {'pos': 9, 'type': 'Real', 'doc': ''},
+                  'z_high': {'pos': 10, 'type': 'Real', 'doc': ''},
+                  'pr_low': {'pos': 11, 'type': 'Real', 'doc': ''},
+                  'pr_high': {'pos': 12, 'type': 'Real', 'doc': ''},
+                  'pphi_low': {'pos': 13, 'type': 'Real', 'doc': ''},
+                  'pphi_high': {'pos': 14, 'type': 'Real', 'doc': ''},
+                  'pz_low': {'pos': 15, 'type': 'Real', 'doc': ''},
+                  'pz_high': {'pos': 16, 'type': 'Real', 'doc': ''}}},
 
         }
-      
+
     def __init__(self, **kwargs):
         ModeledCommandParameter.__init__(self, kwargs)
     
@@ -1647,68 +1662,68 @@ class Distribution(ModeledCommandParameter):
 
 class Correlation(ModeledCommandParameter):
     """
-    A SubRegion is a:
-    (1) CORRTYP;
-    (2) RLOW Innter radius of this r subregion;
-    (3) RHIGH Outer radius of this r subregion;
-    (4) Field object; and
-    (5) Material object.
+    A Correlation is a:
+    (1) CORRTYP (I) correlation type
+    (2) CORR1(i) (R) correlation parameter 1
+    (3) CORR2(i) (R) correlation parameter 2
+    (4) CORR3(i) (R) correlation parameter 3
     """
     models = {
 
         'model_descriptor': {'desc': 'Correlation type',
-                             'name': 'corrtyp'},
+                             'name': 'corrtyp',
+                             'num_parms': 4},
 
         'ang_mom':
         {'desc': 'Angular momentum appropriate for constant solenoid field',
          'doc': '',
          'parms':
-                 {'corrtyp': {'pos': 1, 'type': 'String'},
-                  'sol_field': {'pos': 2, 'type': 'Real'}}},
+                 {'corrtyp': {'pos': 1, 'type': 'String', 'doc': ''},
+                  'sol_field': {'pos': 2, 'type': 'Real', 'doc': ''}}},
 
         'palmer':
         {'desc': 'Palmer amplitude correlation',
          'doc': '',
          'parms':
-                 {'corrtyp': {'pos': 1, 'type': 'String'},
-                  'strength': {'pos': 2, 'type': 'Real'},
-                  'beta_eff': {'pos': 3, 'type': 'Real'}}},
+                 {'corrtyp': {'pos': 1, 'type': 'String', 'doc': ''},
+                  'strength': {'pos': 2, 'type': 'Real', 'doc': ''},
+                  'beta_eff': {'pos': 3, 'type': 'Real', 'doc': ''}}},
 
         'rf_bucket_ellipse':
         {'desc': 'Rf bucket, small amplitude ellipse',
          'doc': '',
          'parms':
-                 {'corrtyp': {'pos': 1, 'type': 'String'},
-                  'e_peak': {'pos': 2, 'type': 'Real'},
-                  'phase': {'pos': 3, 'type': 'Real'},
-                  'freq': {'pos': 4, 'type': 'Real'}}},
+                 {'corrtyp': {'pos': 1, 'type': 'String', 'doc': ''},
+                  'e_peak': {'pos': 2, 'type': 'Real', 'doc': ''},
+                  'phase': {'pos': 3, 'type': 'Real', 'doc': ''},
+                  'freq': {'pos': 4, 'type': 'Real', 'doc': ''}}},
 
         'rf_bucket_small_separatrix':
         {'desc': 'Rf bucket, small amplitude separatrix',
          'doc': '',
          'parms':
-                 {'corrtyp': {'pos': 1, 'type': 'String'},
-                  'e_peak': {'pos': 2, 'type': 'Real'},
-                  'phase': {'pos': 3, 'type': 'Real'},
-                  'freq': {'pos': 4, 'type': 'Real'}}},
+                 {'corrtyp': {'pos': 1, 'type': 'String', 'doc': ''},
+                  'e_peak': {'pos': 2, 'type': 'Real', 'doc': ''},
+                  'phase': {'pos': 3, 'type': 'Real', 'doc': ''},
+                  'freq': {'pos': 4, 'type': 'Real', 'doc': ''}}},
 
         'rf_bucket_large_separatrix':
         {'desc': 'Rf bucket, small amplitude separatrix',
          'doc': '',
          'parms':
-                 {'corrtyp': {'pos': 1, 'type': 'Real'},
-                  'e_peak': {'pos': 2, 'type': 'Real'},
-                  'phase': {'pos': 3, 'type': 'Real'},
-                  'freq': {'pos': 4, 'type': 'Real'}}},
+                 {'corrtyp': {'pos': 1, 'type': 'Real', 'doc': ''},
+                  'e_peak': {'pos': 2, 'type': 'Real', 'doc': ''},
+                  'phase': {'pos': 3, 'type': 'Real', 'doc': ''},
+                  'freq': {'pos': 4, 'type': 'Real', 'doc': ''}}},
 
         'twiss_px':
         {'desc': 'Twiss parameters in x Px',
          'doc': '',
          'parms':
-                 {'corrtyp': {'pos': 1, 'type': 'String'},
-                  'alpha': {'pos': 2, 'type': 'Real'},
-                  'beta': {'pos': 3, 'type': 'Real'},
-                  'epsilon': {'pos': 4, 'type': 'Real'}}},
+                 {'corrtyp': {'pos': 1, 'type': 'String', 'doc': ''},
+                  'alpha': {'pos': 2, 'type': 'Real', 'doc': ''},
+                  'beta': {'pos': 3, 'type': 'Real', 'doc': ''},
+                  'epsilon': {'pos': 4, 'type': 'Real', 'doc': ''}}},
 
         'twiss_py':
         {'desc': 'Twiss parameters in x Px',
@@ -1855,9 +1870,9 @@ class Field(ModeledCommandParameter):
 class Material(ModeledCommandParameter):
     """
     A Material is a:
-    MTAG (A) material composition tag
-    MGEOM (A) material geometry tag
-    GPARM (R) 10 parameters that describe the geometry of the material
+    (1) MTAG (A) material composition tag
+    (2) MGEOM (A) material geometry tag
+    (3-12) GPARM (R) 10 parameters that describe the geometry of the material
 
     Enter MTAG in upper case.
     Valid MTAG'S are:
@@ -1904,21 +1919,218 @@ class Material(ModeledCommandParameter):
     models = {
 
         'model_descriptor': {'desc': 'Geometry',
-                             'name': 'geom'},
+                             'name': 'geom',
+                             'num_parms': 12},
+        'vac':
+        {'desc': 'Vacuum',
+         'doc': 'Vacuum region.  Specify vacuum for mtag.  Geom will be set to NONE.',
+         'parms':
+                 {'mtag': {'pos': 1, 'type': 'String', 'doc': ''}}},
 
-        'aspw': {'desc': 'Azimuthally Symmetric Polynomial Wedge absorber region.  Edge shape given by '
-                 'r(dz) = a0 + a1*dz + a2*dz^2 + a3*dz^3 in the 1st quadrant and '
-                 'where dz is measured from the wedge center.',
-                 'parms': {'mtag': None, 'geom': None, 'zpos': 1, 'zoff': 2, 'a0': 3, 'a1': 4, 'a2': 5, 'a3': 6}},
+        'cblock':
+        {'desc': 'Cylindrical block',
+         'doc': 'Cylindrical block',
+         'parms':
+                 {'mtag': {'pos': 1, 'type': 'String', 'doc': ''},
+                  'geom': {'pos': 2, 'type': 'String', 'doc': ''}}},
 
-        'asrw': {'desc': 'Edge shape given by dz(r) = a0 + a1*r + a2*r^2 + a3*r^3 '
-                 'This is the half-thickness of the wedge. The wedge is symmetric about the x-y plane located '
-                 'at z=ZV.  The wedge material is filled in from z=ZV-dz to z=ZV+dz at any given radius.',
-                 'parms': {'mtag': None, 'geom': None, 'dis': 1, 'thick': 2, 'a0': 3, 'a1': 4, 'a2': 5, 'a3': 6}},
+         'aspw':
+        {'desc': 'Azimuthally Symmetric Polynomial Wedge absorber region',
+         'doc': 'Edge shape given by '
+                'r(dz) = a0 + a1*dz + a2*dz^2 + a3*dz^3 in the 1st quadrant and '
+                'where dz is measured from the wedge center. '
+                '1 z position of wedge center in region [m] '
+                '2 z offset from wedge center to edge of absorber [m] '
+                '3 a0 [m] '
+                '4 a1 '
+                '5 a2 [m^(-1)] '
+                '6 a3 [m^(-2)]',
+         'parms':
+                 {'mtag': {'pos': 1, 'type': 'String', 'doc': ''},
+                  'geom': {'pos': 2, 'type': 'String', 'doc': ''},
+                  'zpos': {'pos': 3, 'type': 'Real', 'doc': ''},
+                  'zoff': {'pos': 4, 'type': 'Real', 'doc': ''},
+                  'a0': {'pos': 5, 'type': 'Real', 'doc': ''},
+                  'a1': {'pos': 6, 'type': 'Real', 'doc': ''},
+                  'a2': {'pos': 7, 'type': 'Real', 'doc': ''},
+                  'a3': {'pos': 8, 'type': 'Real', 'doc': ''}}},
 
-        'cblock': {'desc': 'Cylindrical block',
-                   'parms': {}},
-        }       
+         'asrw':
+        {'desc': 'Azimuthally Symmetric Polynomial Wedge absorber region',
+         'doc': 'Edge shape given by '
+                'r(dz) = a0 + a1*dz + a2*dz^2 + a3*dz^3 in the 1st quadrant and '
+                'where dz is measured from the wedge center. '
+                '1 z position of wedge center in region [m] '
+                '2 z offset from wedge center to edge of absorber [m] '
+                '3 a0 [m] '
+                '4 a1 '
+                '5 a2 [m^(-1)] '
+                '6 a3 [m^(-2)]',
+         'parms':
+                 {'mtag': {'pos': 1, 'type': 'String', 'doc': ''},
+                  'geom': {'pos': 2, 'type': 'String', 'doc': ''},
+                  'zpos': {'pos': 3, 'type': 'Real', 'doc': ''},
+                  'zoff': {'pos': 4, 'type': 'Real', 'doc': ''},
+                  'a0': {'pos': 5, 'type': 'Real', 'doc': ''},
+                  'a1': {'pos': 6, 'type': 'Real', 'doc': ''},
+                  'a2': {'pos': 7, 'type': 'Real', 'doc': ''},
+                  'a3': {'pos': 8, 'type': 'Real', 'doc': ''}}},
+
+
+        'hwin':
+        {'desc': 'Hemispherical absorber end region',
+         'doc': '1 end flag {-1: entrance, +1: exit} '
+                '2 inner radius of window[m] '
+                '3 window thickness [m] '
+                '4 axial offset of center of spherical window from start of end region [m]',
+         'parms':
+                 {'mtag': {'pos': 1, 'type': 'String', 'doc': ''},
+                  'geom': {'pos': 2, 'type': 'String', 'doc': ''},
+                  'end_flag': {'pos': 3, 'type': 'Real', 'doc': 'End flag {-1: entrance, +1: exit}'},
+                  'in_rad': {'pos': 4, 'type': 'Real', 'doc': 'Inner radius of window'},
+                  'thick': {'pos': 5, 'type': 'Real', 'doc': 'Thickness of window'},
+                  'offset': {'pos': 6, 'type': 'Real', 'doc': 'Axial offset of center of spherical '
+                             'window from start of end region [m]'}}},
+
+        'nia':
+        {'desc': 'Non-isosceles absorber',
+         'doc': '1 zV distance of wedge “center” from start of region [m] '
+                '2 z0 distance from center to left edge [m] '
+                '3 z1 distance from center to right edge [m] '
+                '4 θ0 polar angle from vertex of left edge [deg] '
+                '5 φ0 azimuthal angle of left face [deg] '
+                '6 θ1 polar angle from vertex of right edge [deg] '
+                '7 φ1 azimuthal angle of right face [deg]',
+         'parms':
+                 {'mtag': {'pos': 1, 'type': 'String', 'doc': ''},
+                  'geom': {'pos': 2, 'type': 'String', 'doc': ''},
+                  'zv': {'pos': 3, 'type': 'Real', 'doc': 'Distance of wedge “center” from start of region [m]'},
+                  'z0': {'pos': 4, 'type': 'Real', 'doc': 'Distance from center to left edge [m] '},
+                  'z1': {'pos': 5, 'type': 'Real', 'doc': 'Distance from center to right edge [m]}'},
+                  'θ0': {'pos': 6, 'type': 'Real', 'doc': 'Polar angle from vertex of left edge [deg]'},
+                  'φ0': {'pos': 7, 'type': 'Real', 'doc': 'Azimuthal angle of left face [deg]'},
+                  'θ1': {'pos': 8, 'type': 'Real', 'doc': 'Polar angle from vertex of right edge [deg] '},
+                  'φ1': {'pos': 9, 'type': 'Real', 'doc': 'Azimuthal angle of right face [deg]'}}},
+                             
+        'pwedge':
+        {'desc': 'Asymmetric polynomial wedge absorber region',
+         'doc': 'Imagine the wedge lying with its narrow end along the x axis. The wedge is symmetric about the '
+                'x-y plane. The edge shape is given by dz(x) = a0 + a1*x + a2*x^2 + a3*x^3 '
+                'where dz is measured from the x axis.',
+         'parms':
+                 {'mtag': {'pos': 1, 'type': 'String', 'doc': ''},
+                  'geom': {'pos': 2, 'type': 'String', 'doc': ''},
+                  'init_vertex': {'pos': 3, 'type': 'Real', 'doc': 'Initial position of the vertex along '
+                                  'the x axis [m]'},
+                  'z_wedge_vertex': {'pos': 4, 'type': 'Real', 'doc': 'z position of wedge vertex [m] '},
+                  'az': {'pos': 5, 'type': 'Real', 'doc': 'Azimuthal angle of vector pointing to vertex in plane '
+                         'of wedge w.r.t. +ve x-axis [deg]'},
+                  'width': {'pos': 6, 'type': 'Real', 'doc': 'Total width of wedge in dispersion direction [m]'},
+                  'height': {'pos': 6, 'type': 'Real', 'doc': 'Total height of wedge in non-dispersion direction [m]'},
+                  'a0': {'pos': 7, 'type': 'Real', 'doc': 'Polar angle from vertex of right edge [deg] '},
+                  'a1': {'pos': 8, 'type': 'Real', 'doc': 'Azimuthal angle of right face [deg]'},
+                  'a2': {'pos': 9, 'type': 'Real', 'doc': 'Polar angle from vertex of right edge [deg] '},
+                  'a3': {'pos': 10, 'type': 'Real', 'doc': 'Azimuthal angle of right face [deg]'},
+
+        'ring':
+        {'desc': 'Annular ring of material',
+         'doc': 'This is functionally equivalent to defining a region with two radial subregions, the first of '
+                 'which has vacuum as the material type. However, the boundary crossing algorithm used for RING is '
+                  'more sophisticated and should give more accurate simulations.',
+         'parms':
+                 {'mtag': {'pos': 1, 'type': 'String', 'doc': ''},
+                  'geom': {'pos': 2, 'type': 'String', 'doc': ''},
+                  'inner': {'pos': 3, 'type': 'Real', 'doc': 'Inner radius (R) [m]'},
+                  'outer': {'pos': 4, 'type': 'Real', 'doc': 'Outer radius (R) [m]'},
+
+        'wedge':
+        {'desc': 'Asymmetric wedge absorber region',
+         'doc': 'We begin with an isosceles triangle, sitting on its base, vertex at the top. '
+         'The base-to-vertex distance is W. The full opening angle at the vertex is A. Using '
+         'two of these triangles as sides, we construct a prism-shaped wedge. The distance from '
+         'one triangular side to the other is H. The shape and size of the wedge are now established. '
+         'We define the vertex line of the wedge to be the line connecting the vertices of its two '
+         'triangular sides.  Next, we place the wedge in the right-handed ICOOL coordinate system. '
+         'The beam travels in the +Z direction. Looking downstream along the beamline (+Z into the page), '
+         '+X is horizontal and to the left, and +Y is up.  Assume the initial position of the wedge is as '
+         'follows: The vertex line of the wedge is vertical and lies along the Y axis, extending from Y = -H/2 '
+         'to Y = +H/2. The wedge extends to the right in the direction of -X, such that it is symmetric about '
+         "the XY plane. (Note that it is also symmetric about the XZ plane.) From the beam's point of view, "
+         'particles passing on the +X side of the Y axis will not encounter the wedge, while particles passing '
+         'on the -X side of the Y axis see a rectangle of height H and width W, centered in the Y direction, with '
+         'Z thickness proportional to -X.  '
+         'By setting parameter U to a non-zero value, the user may specify that the wedge is to be'
+         'translated in the X direction. If U>0, the wedge is moved (without rotation) in the +X direction.'
+         'For example, if U = W/2, then the wedge is centered in the X direction; its vertex is at X = W/2 '
+         'and its base is at X = -W/2. Note that the wedge is still symmetric about both the XY plane and '
+         'the XZ plane.  '
+         'Next, the wedge may be rotated about the Z axis by angle PHI. Looking downstream in the beam '
+         'direction, positive rotations are clockwise and negative rotations are counter-clockwise. For '
+         'example, setting PHI to 90 degrees rotates the wedge about the Z axis so that its vertex line is '
+         'parallel to the X axis and on top, while its base is parallel to the XZ plane and at the bottom. In '
+         'general this rotation breaks the symmetry about the XZ plane, but the symmetry about the XY '
+         'plane is maintained. '
+         'Finally, the wedge is translated in the Z direction by a distance Zv, so that its XY symmetry plane '
+         'lies a distance Zv downstream of the start of the region. Usually Zv should be at least large',
+         enough so that the entire volume of the wedge lies within its region, i.e. Zv .ge. W tan (A/2), the
+maximum Z half-thickness of the wedge. As well, the region usually should be long enough to
+contain the entire volume of the wedge, i.e. RegionLength .ge. Zv + W tan (A/2). Wedges that do
+lie completely within their region retain their symmetry about the XY plane Z=Zv.
+If portions of a wedge lie outside their region in Z, then the volume of the wedge lying outside
+the region is ignored when propagating particles through the wedge. Such a wedge will grow in
+thickness until it reaches the region boundary, but will not extend beyond it. In such cases,
+wedges may lose their symmetry about the XY plane Z=Zv.
+Wedges may be defined such that they extend outside the radial boundaries of the radial
+subregion within which they are defined. However, any portion of the wedge volume lying inside the inner radial boundary or outside the outer radial boundary is ignored when propagating particles through the wedge. For example, if the user intends that an entire radial subregion of circular cross-section be filled with a wedge, then it is clear that the corners of the wedge must extend outside the radial region, but particles passing outside the wedge's radial subregion will not see the wedge at all.
+In short, we may say that although it is permitted (and sometimes essential) to define a wedge to
+be larger than its subregion, for the purposes of particle propagation the wedge is always trimmed at the region's Z boundaries and the subregion's radial boundaries. Any volume within the region and subregion that is not occupied by the material specified for the wedge is assumed to be vacuum.
+---------------------------------------------------------------------------------------------------------------
+Example 1: Within a region 0.4 meters long in Z, within a radial subregion extending from the Z axis out to a radius of 0.3 meters, a wedge is to fill the X<0 (right) half of the 0.3 meter aperture of the subregion, and increase in Z thickness proportional to -X, such that it is 0.2 meters thick at the rightmost point in the subregion (X=-0.3, Y=0).
+The wedge is to be 0.2 meters thick at a point 0.3 meters from its vertex. The half-thickness is
+0.1 meters, the half-opening angle is atan (0.1/0.3) = 18.4 degrees, so the full opening angle of
+the wedge A is 36.8 degrees. The width (X extent) of the wedge must be 0.3 meters, and the
+height (Y extent) of the wedge must be 0.6 meters. Two corners of the wedge extend well beyond the subregion, but they will be ignored during particle propagation. The wedge does not need to be translated in X (U = 0) nor does it need to be rotated about the Z axis (PHI = 0). For
+convenience we center the wedge (in Z) within its region, so Zv = 0.2 meters. Since the
+maximum half-thickness of the wedge is only 0.1 meters, the wedge does not extend beyond (or
+even up to) the Z boundaries of the region. The volume within the region and subregion but
+outside the wedge is assumed to be vacuum.
+------------------------------------------------------------------------------------------------------------
+Example 2: In the same region and subregion, we need a wedge with the same opening angle,
+but filling the entire aperture of the subregion, thickness gradient in the +Y direction, thickness =
+0 at the lowest point in the subregion (X=0, Y=-0.3).
+The wedge must now have H = W = 0.6 meters so it can fill the entire aperture of the subregion.
+From its initial position, it must first be translated 0.3 meters in the +X direction (U = 0.3) to
+center it in the subregion's aperture, and then (from the perspective of someone looking
+downstream along the beam) rotated counterclockwise 90 degrees (PHI = -90.) so that the Z
+thickness increases proportionally to +Y. Since the wedge has the same opening angle as before
+but has twice the width, its maximum Z thickness is now 0.4 meters, just barely fitting between
+the Z boundaries of the region if Zv = 0.2 meters. All four corners of the wedge now extend
+outside the radial subregion's outer boundary, but they will be ignored during particle
+propagation.” {S.B.}
+The wedge geometry can accept a second MTAG parameter in the SREGION construct. The first material refers to the interior of the wedge. The second material, if present, refers to the exterior of the wedge. If a second MTAG parameter is not present, vacuum is assumed.
+         
+         'parms':
+                 {'mtag': {'pos': 1, 'type': 'String', 'doc': ''},
+                  'geom': {'pos': 2, 'type': 'String', 'doc': ''},
+                  'init_vertex': {'pos': 3, 'type': 'Real', 'doc': 'Initial position of the vertex along '
+                                  'the x axis [m]'},
+                  'z_wedge_vertex': {'pos': 4, 'type': 'Real', 'doc': 'z position of wedge vertex [m] '},
+                  'az': {'pos': 5, 'type': 'Real', 'doc': 'Azimuthal angle of vector pointing to vertex in plane '
+                         'of wedge w.r.t. +ve x-axis [deg]'},
+                  'width': {'pos': 6, 'type': 'Real', 'doc': 'Total width of wedge in dispersion direction [m]'},
+                  'height': {'pos': 6, 'type': 'Real', 'doc': 'Total height of wedge in non-dispersion direction [m]'},
+                  'a0': {'pos': 7, 'type': 'Real', 'doc': 'Polar angle from vertex of right edge [deg] '},
+                  'a1': {'pos': 8, 'type': 'Real', 'doc': 'Azimuthal angle of right face [deg]'},
+                  'a2': {'pos': 9, 'type': 'Real', 'doc': 'Polar angle from vertex of right edge [deg] '},
+                  'a3': {'pos': 10, 'type': 'Real', 'doc': 'Azimuthal angle of right face [deg]'},
+                  
+
+
+        }
+
+
+                
+     
 
     def __init__(self, **kwargs):
         ModeledCommandParameter.__init__(self, kwargs)
@@ -2178,6 +2390,7 @@ class Accel(Field):
                              'name': 'model'},
 
         'ez': {'desc': 'Ez only with no transverse variation',
+               'doc': '',
                'parms':
                        {'model': {'pos': 1, 'type': 'String', 'doc': ''},
                         'freq': {'pos': 2, 'type': 'Real', 'doc': ''},
@@ -2187,40 +2400,52 @@ class Accel(Field):
                         'mode': {'pos': 8, 'type': 'Real', 'doc': ''}}},
 
         'cyn_pill': {'desc': 'Cylindrical TM01p pillbox',
+                     'doc': '',
                      'parms':
-                             {'model': {'pos': 1, 'type': 'String'},
-                              'freq': {'pos': 2, 'type': 'Real'},
-                              'grad': {'pos': 3, 'type': 'Real'},
-                              'phase': {'pos': 4, 'type': 'Real'},
-                              'rect_cyn': {'pos': 5, 'type': 'Real'},
-                              'longitudinal_mode': {'pos': 8, 'type': 'Real'}}},
+                             {'model': {'pos': 1, 'type': 'String', 'doc': ''},
+                              'freq': {'pos': 2, 'type': 'Real', 'doc': ''},
+                              'grad': {'pos': 3, 'type': 'Real', 'doc': ''},
+                              'phase': {'pos': 4, 'type': 'Real', 'doc': ''},
+                              'rect_cyn': {'pos': 5, 'type': 'Real', 'doc': ''},
+                              'longitudinal_mode': {'pos': 8, 'type': 'Real', 'doc': ''}}},
 
         'trav': {'desc': 'Traveling wave cavity',
+                 'doc': '',
                  'parms':
-                         {'model': {'pos': 1, 'type': 'String'},
-                          'freq': {'pos': 2, 'type': 'Real'},
-                          'grad': {'pos': 3, 'type': 'Real'},
-                          'phase': {'pos': 4, 'type': 'Real'},
-                          'rect_cyn': {'pos': 5, 'type': 'Real'},
-                          'x_offset': {'pos': 6, 'type': 'Real'},
-                          'y_offset': {'pos': 7, 'type': 'Real'},
-                          'phase_velocity': {'pos': 8, 'type': 'Real'}}},
+                         {'model': {'pos': 1, 'type': 'String', 'doc': ''},
+                          'freq': {'pos': 2, 'type': 'Real', 'doc': ''},
+                          'grad': {'pos': 3, 'type': 'Real', 'doc': ''},
+                          'phase': {'pos': 4, 'type': 'Real', 'doc': ''},
+                          'rect_cyn': {'pos': 5, 'type': 'Real', 'doc': ''},
+                          'x_offset': {'pos': 6, 'type': 'Real', 'doc': ''},
+                          'y_offset': {'pos': 7, 'type': 'Real', 'doc': ''},
+                          'phase_velocity': {'pos': 8, 'type': 'Real', 'doc': ''}}},
 
         'circ_nose': {'desc': 'Approximate fields for symmetric circular-nosed cavity',
-                      'parms': {'model': {'pos': 1, 'type': 'String'},
-                                'freq': {'pos': 2, 'type': 'Real'},
-                                'grad': {'pos': 3, 'type': 'Real'},
-                                'phase': {'pos': 4, 'type': 'Real'},
-                                'length': {'pos': 8, 'type': 'Real'},
-                                'gap': {'pos': 9, 'type': 'Real'},
-                                'drift_tube_radius': {'pos': 10, 'type': 'Real'},
-                                'nose_radius': {'pos': 11}, 'type': 'Real'}}},
+                      'doc': '',
+                      'parms':
+                              {'model': {'pos': 1, 'type': 'String', 'doc': ''},
+                               'freq': {'pos': 2, 'type': 'Real', 'doc': ''},
+                               'grad': {'pos': 3, 'type': 'Real', 'doc': ''},
+                               'phase': {'pos': 4, 'type': 'Real', 'doc': ''},
+                               'length': {'pos': 8, 'type': 'Real', 'doc': ''},
+                               'gap': {'pos': 9, 'type': 'Real', 'doc': ''},
+                               'drift_tube_radius': {'pos': 10, 'type': 'Real', 'doc': ''},
+                               'nose_radius': {'pos': 11, 'type': 'Real', 'doc': ''}}},
 
         'az_tm': {'desc': 'User-supplied azimuthally-symmetric TM mode (SuperFish)',
-              'parms': {'model': 1, 'freq': 2, 'phase': 4, 'file_no': 8, 'field_strength_norm': 9, 'rad_cut': 10,
-                        'axial_dist': 11, 'axial_sym': 12}},
+                  'doc': '',
+                  'parms':
+                          {'model': {'pos': 1, 'type': 'String', 'doc': ''},
+                           'freq': {'pos': 2,  'type': 'Real', 'doc': ''},
+                           'phase': {'pos': 4, 'type': 'Real', 'doc': ''},
+                           'file_no': {'pos': 8, 'type': 'Real', 'doc': ''},
+                           'field_strength_norm': {'pos': 9, 'type': 'Real', 'doc': ''},
+                           'rad_cut': {'pos': 10, 'type': 'Real', 'doc': ''},
+                           'axial_dist': {'pos': 11, 'type': 'Real', 'doc': ''},
+                           'daxial_sym': {'pos': 12, 'type': 'Real', 'doc': ''}}},
 
-        '6': {'desc': 'Induction linac model - waveform from user-supplied polynomial coefficients',
+        '6': {'il_poly': 'Induction linac model - waveform from user-supplied polynomial coefficients',
               'parms': {'model': 1, 'time_offset': 2, 'gap': 3, 'time_reset': 4, 'V0': 5, 'V1': 6, 'V2': 7,
                         'V3': 8, 'V4': 9, 'V5': 10, 'V6': 11, 'V7': 12, 'V8': 13}},
 
