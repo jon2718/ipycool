@@ -1542,6 +1542,9 @@ class ModeledCommandParameter(ICoolType):
             return False
         return True
 
+    def get_icool_model_name(self):
+        return self.models[getattr(self, self.get_model_descriptor_name())]['icool_model_name']
+
     def check_type(self, icool_type, provided_type):
         """Takes provided python object and compares with required icool type name.
         Returns True if the types match and False otherwise.
@@ -1677,6 +1680,7 @@ class Correlation(ModeledCommandParameter):
         'ang_mom':
         {'desc': 'Angular momentum appropriate for constant solenoid field',
          'doc': '',
+         'icool_model_name': 1,
          'parms':
                  {'corrtyp': {'pos': 1, 'type': 'String', 'doc': ''},
                   'sol_field': {'pos': 2, 'type': 'Real', 'doc': ''}}},
@@ -1684,6 +1688,7 @@ class Correlation(ModeledCommandParameter):
         'palmer':
         {'desc': 'Palmer amplitude correlation',
          'doc': '',
+         'icool_model_name': 2,
          'parms':
                  {'corrtyp': {'pos': 1, 'type': 'String', 'doc': ''},
                   'strength': {'pos': 2, 'type': 'Real', 'doc': ''},
@@ -1692,6 +1697,7 @@ class Correlation(ModeledCommandParameter):
         'rf_bucket_ellipse':
         {'desc': 'Rf bucket, small amplitude ellipse',
          'doc': '',
+         'icool_model_name': 3,
          'parms':
                  {'corrtyp': {'pos': 1, 'type': 'String', 'doc': ''},
                   'e_peak': {'pos': 2, 'type': 'Real', 'doc': ''},
@@ -1701,6 +1707,7 @@ class Correlation(ModeledCommandParameter):
         'rf_bucket_small_separatrix':
         {'desc': 'Rf bucket, small amplitude separatrix',
          'doc': '',
+         'icool_model_name': 4,
          'parms':
                  {'corrtyp': {'pos': 1, 'type': 'String', 'doc': ''},
                   'e_peak': {'pos': 2, 'type': 'Real', 'doc': ''},
@@ -1710,6 +1717,7 @@ class Correlation(ModeledCommandParameter):
         'rf_bucket_large_separatrix':
         {'desc': 'Rf bucket, small amplitude separatrix',
          'doc': '',
+         'icool_model_name': 5,
          'parms':
                  {'corrtyp': {'pos': 1, 'type': 'Real', 'doc': ''},
                   'e_peak': {'pos': 2, 'type': 'Real', 'doc': ''},
@@ -1719,6 +1727,7 @@ class Correlation(ModeledCommandParameter):
         'twiss_px':
         {'desc': 'Twiss parameters in x Px',
          'doc': '',
+         'icool_model_name': 6,
          'parms':
                  {'corrtyp': {'pos': 1, 'type': 'String', 'doc': ''},
                   'alpha': {'pos': 2, 'type': 'Real', 'doc': ''},
@@ -1730,6 +1739,7 @@ class Correlation(ModeledCommandParameter):
          'doc': 'The spread in y and Py in the beam definition are ignored. '
                 'For Gaussian distributions epsilon is the rms geometrical '
                 'emittance. For uniform distributions it specifies the limiting ellipse.',
+         'icool_model_name': 7,
          'parms':
                  {'corrtyp': {'pos': 1, 'type': 'Real', 'doc': ''},
                   'alpha': {'pos': 2, 'type': 'Real', 'doc': 'Twiss alpha parameter [m]'},
@@ -1742,6 +1752,7 @@ class Correlation(ModeledCommandParameter):
                  'Set up initial pt = 0. This correlation determines the pt '
                  'for a given pz that gives all the initial particles the same βo. '
                  'If parameter 3 is 0, the azimuthal angle is chosen randomly.',
+         'icool_model_name': 9,
          'parms':
                  {'corrtyp': {'pos': 1, 'type': 'Real', 'doc': ''},
                   'axial_beta': {'pos': 2, 'type': 'Real', 'doc': 'desired axial beta (=v/c) value βo'},
@@ -1750,6 +1761,7 @@ class Correlation(ModeledCommandParameter):
         'balbekov':
         {'desc': 'Balbekov version of amplitude-energy.',
          'doc':  '',
+         'icool_model_name': 10,
          'parms':
                  {'corrtyp': {'pos': 1, 'type': 'String', 'doc': ''},
                   'eref': {'pos': 2, 'type': 'Real', 'doc': 'Eref [GeV]'},
@@ -1759,6 +1771,7 @@ class Correlation(ModeledCommandParameter):
         'dispersion':
         {'desc': 'Dispersion',
          'doc':  '',
+         'icool_model_name': 11,
          'parms':
                  {'corrtyp': {'pos': 1, 'type': 'String', 'doc': ''},
                   'value': {'pos': 2, 'type': 'Real', 'doc': '[m or rad]'},
@@ -1845,17 +1858,24 @@ class Field(ModeledCommandParameter):
         ModeledCommandParameter.__call__(self, kwargs)
 
     def __setattr__(self, name, value):
-        ModeledCommandParameter.__setattr__(self, name, value)
+        if name == 'fparm':
+            object.__setattr__(self, name, value)
+        else:
+            ModeledCommandParameter.__setattr__(self, name, value)
 
     def __str__(self):
         return self.ftag + ':' + 'Field:' + ModeledCommandParameter.__str__(self)
 
     def gen_fparm(self):
-        self.fparm = [0]*15
+        self.fparm = [0] * 10
         cur_model = self.get_model_dict(self.model)
         for key in cur_model:
-            pos = self.cur_model[key]
-            self.fparm[pos-1] = getattr(self, key)
+            pos = int(cur_model[key]['pos'])-1
+            if key == self.get_model_descriptor_name():
+                val = self.get_icool_model_name()
+            else:
+                val = getattr(self, key)
+            self.fparm[pos] = val
         print self.fparm
 
     def gen(self, file):
@@ -2119,7 +2139,7 @@ class Material(ModeledCommandParameter):
          'propagation.” {S.B.}'
          'The wedge geometry can accept a second MTAG parameter in the SREGION construct. The first material '
          'refers to the interior of the wedge. The second material, if present, refers to the exterior of the wedge. '
-         'If a second MTAG parameter is not present, vacuum is assumed.'
+         'If a second MTAG parameter is not present, vacuum is assumed.',
          
          'parms':
                  {'mtag': {'pos': 1, 'type': 'String', 'doc': ''},
@@ -2139,6 +2159,22 @@ class Material(ModeledCommandParameter):
 
     def __init__(self, **kwargs):
         ModeledCommandParameter.__init__(self, kwargs)
+
+    def __setattr__(self, name, value):
+        if name == 'mparm':
+            object.__setattr__(self, name, value)
+        else:
+            ModeledCommandParameter.__setattr__(self, name, value)
+
+
+    def gen_mparm(self):
+        self.mparm = [0] * 12
+        cur_model = self.get_model_dict(self.geom)
+        for key in cur_model:
+            pos = int(cur_model[key]['pos'])-1
+            val = getattr(self, key)
+            self.mparm[pos] = val
+        print self.mparm
 
     def gen(self, file):
         file.write('\n')
@@ -2396,6 +2432,7 @@ class Accel(Field):
 
         'ez': {'desc': 'Ez only with no transverse variation',
                'doc': '',
+               'icool_model_name': 1,
                'parms':
                        {'model': {'pos': 1, 'type': 'String', 'doc': ''},
                         'freq': {'pos': 2, 'type': 'Real', 'doc': 'Frequency [MHz]'},
@@ -2409,6 +2446,7 @@ class Accel(Field):
 
         'cyn_pill': {'desc': 'Cylindrical TM01p pillbox',
                      'doc': '',
+                     'icool_model_name': 2,
                      'parms':
                              {'model': {'pos': 1, 'type': 'String', 'doc': ''},
                               'freq': {'pos': 2, 'type': 'Real', 'doc': ''},
@@ -2419,6 +2457,7 @@ class Accel(Field):
 
         'trav': {'desc': 'Traveling wave cavity',
                  'doc': '',
+                 'icool_model_name': 3,
                  'parms':
                          {'model': {'pos': 1, 'type': 'String', 'doc': ''},
                           'freq': {'pos': 2, 'type': 'Real', 'doc': ''},
@@ -2431,6 +2470,7 @@ class Accel(Field):
 
         'circ_nose': {'desc': 'Approximate fields for symmetric circular-nosed cavity',
                       'doc': '',
+                      'icool_model_name': 4,
                       'parms':
                               {'model': {'pos': 1, 'type': 'String', 'doc': ''},
                                'freq': {'pos': 2, 'type': 'Real', 'doc': ''},
@@ -2443,6 +2483,7 @@ class Accel(Field):
 
         'az_tm': {'desc': 'User-supplied azimuthally-symmetric TM mode (SuperFish)',
                   'doc': '',
+                  'icool_model_name': 5,
                   'parms':
                           {'model': {'pos': 1, 'type': 'String', 'doc': ''},
                            'freq': {'pos': 2,  'type': 'Real', 'doc': ''},
@@ -2455,6 +2496,7 @@ class Accel(Field):
 
         'ilpoly': {'desc': 'Induction linac model - waveform from user-supplied polynomial coefficients',
                    'doc': '',
+                   'icool_model_name': 6,
                    'parms':
                           {'model': {'pos': 1, 'type': 'String', 'doc': ''},
                            'time_offset': {'pos': 2,  'type': 'Real', 'doc': ''},
@@ -2472,6 +2514,7 @@ class Accel(Field):
 
         'ilgen': {'desc': 'Induction linac model - waveform from internally generated waveform',
                   'doc': '',
+                  'icool_model_name': 7,
                   'parms':
                           {'model': {'pos': 1, 'type': 'String', 'doc': ''},
                            'num_gaps': {'pos': 2,  'type': 'Real', 'doc': ''},
@@ -2489,6 +2532,7 @@ class Accel(Field):
 
         'ilfile': {'desc': 'Induction linac model - Waveform from user-supplied file',
                    'doc': '',
+                   'icool_model_name': 8,
                    'parms':
                           {'model': {'pos': 1, 'type': 'String', 'doc': ''},
                            'time_offset': {'pos': 2,  'type': 'Real', 'doc': ''},
@@ -2502,6 +2546,7 @@ class Accel(Field):
 
         'sec_pill_circ': {'desc': 'Sector-shaped pillbox cavity (circular cross section)',
                           'doc': '',
+                          'icool_model_name': 9,
                           'parms':
                                   {'model': {'pos': 1, 'type': 'String', 'doc': ''},
                                    'freq': {'pos': 2,  'type': 'Real', 'doc': ''},
@@ -2510,6 +2555,7 @@ class Accel(Field):
 
         'var_pill': {'desc': 'Variable {frequency gradient} pillbox cavity',
                      'doc': '',
+                     'icool_model_name': 10,
                      'parms':
                             {'model': {'pos': 1, 'type': 'String', 'doc': ''},
                              'phase': {'pos': 2,  'type': 'Real', 'doc': ''},
@@ -2523,6 +2569,7 @@ class Accel(Field):
 
         'straight_pill': {'desc': 'Straight pillbox or SuperFish cavity in dipole region',
                           'doc': '',
+                          'icool_model_name': 11,
                           'parms':
                                   {'model': {'pos': 1, 'type': 'String', 'doc': ''},
                                    'freq': {'pos': 2,  'type': 'Real', 'doc': ''},
@@ -2539,6 +2586,7 @@ class Accel(Field):
 
         'sec_pill_rec': {'desc': 'Variable {frequency gradient} pillbox cavity',
                          'doc': '',
+                         'icool_model_name': 12,
                          'parms':
                                  {'model': {'pos': 1, 'type': 'String', 'doc': ''},
                                   'freq': {'pos': 2,  'type': 'Real', 'doc': ''},
@@ -2550,6 +2598,7 @@ class Accel(Field):
 
         'open_cell_stand': {'desc': 'Open cell standing wave cavity',
                             'doc': '',
+                            'icool_model_name': 13,
                             'parms':
                                    {'model': {'pos': 1, 'type': 'String', 'doc': ''},
                                     'freq': {'pos': 2,  'type': 'Real', 'doc': ''},
