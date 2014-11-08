@@ -768,7 +768,7 @@ class Ints(ICoolVariablesSet):
         pass
 
 
-class Region(ICoolVariablesSet):
+class Region(object):
     def __init__(self, kwargs):
         if self.check_command_params_init(kwargs) is False:
             sys.exit(0)
@@ -870,10 +870,17 @@ class Region(ICoolVariablesSet):
         Checks whether the parameters specified for command are valid, all required parameters are
         specified and all parameters are of correct type.  If not, raises an exception.
         """
-        if not self.check_command_params_valid(command_params)\
+        check_params = not self.check_command_params_valid(command_params)\
             or not self.check_all_required_command_params_specified(command_params)\
-                or not self.check_command_params_type(command_params):
-                    return False
+                or not self.check_command_params_type(command_params)
+
+        if check_params:
+            return False
+        
+        #if not self.check_command_params_valid(command_params)
+        #    or not self.check_all_required_command_params_specified(command_params)\
+         #       or not self.check_command_params_type(command_params):
+         #           return False
 
         #Now set the command parameters
         for key in command_params:
@@ -931,6 +938,12 @@ class Region(ICoolVariablesSet):
 
         if icool_type == 'Material':
             if isinstance(provided_type, Material):
+                return True
+            else:
+                return False
+
+        if icool_type == 'SubRegion':
+            if isinstance(provided_type, SubRegion):
                 return True
             else:
                 return False
@@ -1260,18 +1273,24 @@ class SRegion(RegularRegion):
 
     command_params = {
         'slen':  {'desc': 'Length of this s region [m]',
+                  'doc': '',
                   'type': 'Real',
                   'req': True},
 
         'nrreg':   {'desc': '# of radial subregions of this s region {1-4}',
+                    'doc': '',
                     'type': 'Int',
+                    'min': 1,
+                    'max': 4,
                     'req': False},
 
         'zstep':   {'desc': 'Step for tracking particles [m]',
+                    'doc': '',
                     'type': 'Real',
                     'req': True},
 
         'subregion_list': {'desc': 'List of SubRegion objects',
+                           'doc': '',
                            'type': 'List[SubRegion]',
                            'req': False},
         }
@@ -1291,7 +1310,10 @@ class SRegion(RegularRegion):
         Region.__setattr__(self, name, value)
 
     def add_subregion(self, subregion):
-        self.subregion_list.append(subregion)
+        if self.check_type('SubRegion', subregion):
+            if not hasattr(self, 'subregion_list'):
+                self.subregion_list = []
+            self.subregion_list.append(subregion)
 
     def add_subregions(self, subregion_list):
         for subregion in subregion_list:
@@ -1348,7 +1370,8 @@ class SubRegion(Region):
             sys.exit(0)
 
     def __str__(self):
-        pass
+        return 'SubRegion:\n '+'irreg='+str(self.irreg) + ',' + 'rlow=' + str(self.rlow) + ',' + \
+            'rhigh=' + str(self.rhigh) + ',' + 'field=' + str(self.field) + ',' + 'material=' + str(self.material)
 
     def __repr__(self):
         pass
@@ -2079,11 +2102,11 @@ class Material(ModeledCommandParameter):
          'particles passing on the +X side of the Y axis will not encounter the wedge, while particles passing '
          'on the -X side of the Y axis see a rectangle of height H and width W, centered in the Y direction, with '
          'Z thickness proportional to -X.  '
-         'By setting parameter U to a non-zero value, the user may specify that the wedge is to be'
-         'translated in the X direction. If U>0, the wedge is moved (without rotation) in the +X direction.'
+         'By setting parameter U to a non-zero value, the user may specify that the wedge is to be '
+         'translated in the X direction. If U>0, the wedge is moved (without rotation) in the +X direction. '
          'For example, if U = W/2, then the wedge is centered in the X direction; its vertex is at X = W/2 '
          'and its base is at X = -W/2. Note that the wedge is still symmetric about both the XY plane and '
-         'the XZ plane.  '
+         'the XZ plane. '
          'Next, the wedge may be rotated about the Z axis by angle PHI. Looking downstream in the beam '
          'direction, positive rotations are clockwise and negative rotations are counter-clockwise. For '
          'example, setting PHI to 90 degrees rotates the wedge about the Z axis so that its vertex line is '
@@ -2091,7 +2114,7 @@ class Material(ModeledCommandParameter):
          'general this rotation breaks the symmetry about the XZ plane, but the symmetry about the XY '
          'plane is maintained. '
          'Finally, the wedge is translated in the Z direction by a distance Zv, so that its XY symmetry plane '
-         'lies a distance Zv downstream of the start of the region. Usually Zv should be at least large',
+         'lies a distance Zv downstream of the start of the region. Usually Zv should be at least large '
          'enough so that the entire volume of the wedge lies within its region, i.e. Zv .ge. W tan (A/2), the '
          'maximum Z half-thickness of the wedge. As well, the region usually should be long enough to '
          'contain the entire volume of the wedge, i.e. RegionLength .ge. Zv + W tan (A/2). Wedges that do '
