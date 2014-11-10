@@ -1282,7 +1282,7 @@ class SRegion(RegularRegion):
                     'type': 'Int',
                     'min': 1,
                     'max': 4,
-                    'req': False},
+                    'req': True},
 
         'zstep':   {'desc': 'Step for tracking particles [m]',
                     'doc': '',
@@ -1300,20 +1300,29 @@ class SRegion(RegularRegion):
             sys.exit(0)
 
     def __str__(self):
-        return 'SRegion:\n '+'slen='+str(self.slen) + ',' + 'nrreg=' + str(self.nrreg) + ',' + \
+        ret_str = 'SRegion:\n'+'slen='+str(self.slen) + '\n' + 'nrreg=' + str(self.nrreg) + '\n' + \
                'zstep=' + str(self.zstep)
+        for element in self.subregions:
+            ret_str += element
+        return ret_str
 
     def __repr__(self):
-        return 'SRegion:\n '+'slen='+str(self.slen)+','+'nrreg='+str(self.nrreg)+','+'zstep='+str(self.zstep)
+        return 'SRegion:\n '+'slen='+str(self.slen)+'\n'+'nrreg='+str(self.nrreg)+'\n'+'zstep='+str(self.zstep)
 
     def __setattr__(self, name, value):
         Region.__setattr__(self, name, value)
 
     def add_subregion(self, subregion):
-        if self.check_type('SubRegion', subregion):
-            if not hasattr(self, 'subregion_list'):
-                self.subregion_list = []
-            self.subregion_list.append(subregion)
+        try:
+            if self.check_type('SubRegion', subregion):
+                if not hasattr(self, 'subregion_list'):
+                    self.subregion_list = []
+                self.subregion_list.append(subregion)
+            else:
+                raise ie.InvalidType('SubRegion', subregion.__class__.__name__)
+        except ie.InvalidType as e:
+            print e
+               
 
     def add_subregions(self, subregion_list):
         for subregion in subregion_list:
@@ -1370,11 +1379,12 @@ class SubRegion(Region):
             sys.exit(0)
 
     def __str__(self):
-        return 'SubRegion:\n '+'irreg='+str(self.irreg) + ',' + 'rlow=' + str(self.rlow) + ',' + \
-            'rhigh=' + str(self.rhigh) + ',' + 'field=' + str(self.field) + ',' + 'material=' + str(self.material)
+        return 'SubRegion:\n'+'irreg='+str(self.irreg) + '\n' + 'rlow=' + str(self.rlow) + '\n' + \
+            'rhigh=' + str(self.rhigh) + '\n' + 'Field=' + str(self.field) + '\n' + 'Material=' + str(self.material)
 
     def __repr__(self):
-        pass
+        return 'SubRegion:\n'+'irreg='+str(self.irreg) + '\n' + 'rlow=' + str(self.rlow) + '\n' + \
+            'rhigh=' + str(self.rhigh) + '\n' + 'Field=' + str(self.field) + '\n' + 'Material=' + str(self.material)
 
     def __setattr__(self, name, value):
         Region.__setattr__(self, name, value)
@@ -1887,7 +1897,7 @@ class Field(ModeledCommandParameter):
             ModeledCommandParameter.__setattr__(self, name, value)
 
     def __str__(self):
-        return self.ftag + ':' + 'Field:' + ModeledCommandParameter.__str__(self)
+        return self.ftag #+ ':' + 'Field:' + ModeledCommandParameter.__str__(self)
 
     def gen_fparm(self):
         self.fparm = [0] * 10
@@ -2189,6 +2199,7 @@ class Material(ModeledCommandParameter):
         else:
             ModeledCommandParameter.__setattr__(self, name, value)
 
+    
 
     def gen_mparm(self):
         self.mparm = [0] * 12
