@@ -1283,7 +1283,7 @@ class SRegion(RegularRegion):
                     'type': 'Real',
                     'req': True},
 
-        'subregion_list': {'desc': 'List of SubRegion objects',
+        'subregions':     {'desc': 'List of SubRegion objects',
                            'doc': '',
                            'type': 'List[SubRegion]',
                            'req': False},
@@ -1292,12 +1292,14 @@ class SRegion(RegularRegion):
     def __init__(self, **kwargs):
         if self.check_command_params_init(kwargs) is False:
             sys.exit(0)
+        if not 'subregions' in kwargs:
+            self.subregions = []
 
     def __str__(self):
         ret_str = 'SRegion:\n'+'slen='+str(self.slen) + '\n' + 'nrreg=' + str(self.nrreg) + '\n' + \
-               'zstep=' + str(self.zstep)
+               'zstep=' + str(self.zstep)+'\n'
         for element in self.subregions:
-            ret_str += element
+            ret_str += str(element)
         return ret_str
 
     def __repr__(self):
@@ -1309,18 +1311,17 @@ class SRegion(RegularRegion):
     def add_subregion(self, subregion):
         try:
             if self.check_type('SubRegion', subregion):
-                if not hasattr(self, 'subregion_list'):
-                    self.subregion_list = []
-                self.subregion_list.append(subregion)
+                if not hasattr(self, 'subregions'):
+                    self.subregions = []
+                self.subregions.append(subregion)
             else:
                 raise ie.InvalidType('SubRegion', subregion.__class__.__name__)
         except ie.InvalidType as e:
             print e
                
-
     def add_subregions(self, subregion_list):
         for subregion in subregion_list:
-            self.subregion_list.append(subregion)
+            self.subregions.append(subregion)
 
     def gen(self, file):
         file.write('\n')
