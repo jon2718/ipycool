@@ -1219,7 +1219,10 @@ class Cell(RegularRegion, Container):
         Container.__setattr__(self, name, value)
 
     def __str__(self):
-        return 'Cell\n'
+        return_str = 'CELL\n'
+        for command in self.enclosed_commands:
+            return_str += str(command)
+        return return_str
 
     def __repr__(self):
         return 'Cell\n'
