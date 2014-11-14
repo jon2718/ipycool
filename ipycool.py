@@ -1059,7 +1059,11 @@ class Section(RegularRegion, Container):
         Container.__setattr__(self, name, value)
 
     def __str__(self):
-        return 'Section\n'
+        return_str = 'SECTION\n'
+        for command in self.enclosed_commands:
+            return_str += str(command)
+        return_str += 'END_SECTION\n'
+        return return_str
 
     def __repr__(self):
         return 'Section\n'
@@ -1111,7 +1115,11 @@ class Repeat(RegularRegion, Container):
         Container.__setattr__(self, name, value)
 
     def __str__(self):
-        return 'Repeat\n'
+        return_str = 'REPEAT\n'
+        for command in self.enclosed_commands:
+            return_str += str(command)
+        return_str += 'END_REPEAT\n'
+        return return_str
 
     def __repr__(self):
         return 'Repeat\n'
