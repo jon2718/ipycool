@@ -2,6 +2,7 @@
 import sys
 import icool_exceptions as ie
 
+
 """Nomenclature:
 
 An ICOOl input file consists of:
@@ -92,6 +93,62 @@ def ipycool(self, arg):
     """
     args = parse_argstring(ipycool, arg)
 
+class Container(object):
+    """Abstract class container for other commands.
+    """
+    def __init__(self, enclosed_commands=None):
+        if enclosed_commands is None:
+            self.enclosed_commands = []
+        else:
+            if self.check_allowed_enclosed_commands(enclosed_commands):
+                self.enclosed_commands = enclosed_commands
+
+    def __setattr__(self, name, value):
+        #command_parameters_dict = self.command_params
+        if name == 'enclosed_commands':
+            object.__setattr__(self, name, value)
+        else:
+            if not self.check_command_param(name):
+                return False
+            else:
+                if not self.check_command_param_type(name, value):
+                    return False
+                else:
+                    object.__setattr__(self, name, value)
+                    return True
+
+    def __str__(self):
+        ret_str = ''
+        for command in self.enclosed_commands:
+            ret_str += str(command)
+        return ret_str
+
+    def add_enclosed_command(self, command):
+        if self.check_allowed_enclosed_command(command) is False:
+            sys.exit(0)
+        else:
+            self.enclosed_commands.append(command)
+
+    def insert_enclosed_command(self, command, insert_point):
+        if self.check_allowed_command(command) is False:
+            sys.exit(0)
+        else:
+            self.enclosed_commands.insert(insert_point, command)
+
+    def remove_enclosed_command(self, delete_point):
+        del self.enclosed_commands[delete_point]
+
+    def check_allowed_enclosed_command(self, command):
+        try:
+            if command.__class__.__name__ not in self.allowed_enclosed_commands:
+                raise ie.ContainerCommandError(command, self.allowed_enclosed_commands)
+        except ie.ContainerCommandError as e:
+            print e
+            return False
+        return True
+
+    def check_allowed_enclosed_commands(self, enclosed_commands):
+        pass
 
 class ICoolGen(object):
     """Generate ICOOL for001.dat
@@ -721,7 +778,10 @@ class Cont(ICoolVariablesSet):
 
 
 
-class Bmt(ICoolVariablesSet):
+class Bmt(ICoolVariablesSet, Container):
+    
+    allowed_enclosed_commands = ['Distribution', 'Correlation']
+
     variables = {
         'nbeamtyp':  {'desc': '# of beam types, e.g., particles of different masses.',
                       'type': 'Integer',
@@ -747,7 +807,11 @@ class Bmt(ICoolVariablesSet):
     def __init__(self, **kwargs):
         if self.check_variables_init(kwargs) is False:
             sys.exit(0)
+        Container.__init__(self)
 
+    def __setattr__(self, name, value):
+        Container.__setattr__(self, name, value)
+        
     def add_beamtype(self, beamtype):
         self.beamtype_list.append(beamtype)
 
@@ -983,58 +1047,6 @@ class PseudoRegion(Region):
                 OUTPUT, REFP, REF2, RESET, RKICK, ROTATE, TAPER, TILT, TRANSPORT, BACKGROUND, BFIELD, ENDB, ! or &]'
 
 
-class Container(object):
-    """Abstract class container for other commands.
-    """
-    def __init__(self, enclosed_commands=None):
-        if enclosed_commands is None:
-            self.enclosed_commands = []
-        else:
-            if self.check_allowed_enclosed_commands(enclosed_commands):
-                self.enclosed_commands = enclosed_commands
-
-    def __setattr__(self, name, value):
-        #command_parameters_dict = self.command_params
-        if name == 'enclosed_commands':
-            object.__setattr__(self, name, value)
-        else:
-            if not self.check_command_param(name):
-                return False
-            else:
-                if not self.check_command_param_type(name, value):
-                    return False
-                else:
-                    object.__setattr__(self, name, value)
-                    return True
-
-    def add_enclosed_command(self, command):
-        if self.check_allowed_enclosed_command(command) is False:
-            sys.exit(0)
-        else:
-            self.enclosed_commands.append(command)
-
-    def insert_enclosed_command(self, command, insert_point):
-        if self.check_allowed_command(command) is False:
-            sys.exit(0)
-        else:
-            self.enclosed_commands.insert(insert_point, command)
-
-    def remove_enclosed_command(self, delete_point):
-        del self.enclosed_commands[delete_point]
-
-    def check_allowed_enclosed_command(self, command):
-        try:
-            if command.__class__.__name__ not in self.allowed_enclosed_commands:
-                raise ie.ContainerCommandError(command, self.allowed_enclosed_commands)
-        except ie.ContainerCommandError as e:
-            print e
-            return False
-        return True
-
-    def check_allowed_enclosed_commands(self, enclosed_commands):
-        pass
-
-
 class Section(RegularRegion, Container):
     """
     SECTION Start of cooling section region definition.
@@ -1060,8 +1072,9 @@ class Section(RegularRegion, Container):
 
     def __str__(self):
         return_str = 'SECTION\n'
-        for command in self.enclosed_commands:
-            return_str += str(command)
+        return_str += str(Container.__str__(self))
+        #for command in self.enclosed_commands:
+        #    return_str += str(command)
         return_str += 'END_SECTION\n'
         return return_str
 
@@ -1115,10 +1128,7 @@ class Repeat(RegularRegion, Container):
         Container.__setattr__(self, name, value)
 
     def __str__(self):
-        return_str = 'REPEAT\n'
-        for command in self.enclosed_commands:
-            return_str += str(command)
-        return_str += 'END_REPEAT\n'
+        return_str = 'REPEAT\n' + str(Container.__str__(self)) + 'ENDREPEAT\n'
         return return_str
 
     def __repr__(self):
@@ -1227,9 +1237,9 @@ class Cell(RegularRegion, Container):
         Container.__setattr__(self, name, value)
 
     def __str__(self):
-        return_str = 'CELL\n'
-        for command in self.enclosed_commands:
-            return_str += str(command)
+        return_str = 'CELL\n' + str(Container.__str__(self)) + 'ENDCELL\n'
+        #for command in self.enclosed_commands:
+        #    return_str += str(command)
         return return_str
 
     def __repr__(self):
@@ -1239,7 +1249,7 @@ class Cell(RegularRegion, Container):
         region.gen('CELL')
 
 
-class SRegion(RegularRegion):
+class SRegion(RegularRegion, Container):
     """
     SREGION - Start of new s-region. Describes field and material properties.
 
@@ -1274,7 +1284,7 @@ class SRegion(RegularRegion):
     These 10 parameters must be on one input line (see specific material type below)
     """
 
-    allowed_enclosed_commands = None
+    allowed_enclosed_commands =  ['SubRegion']
 
     command_params = {
         'slen':  {'desc': 'Length of this s region [m]',
@@ -1303,21 +1313,24 @@ class SRegion(RegularRegion):
     def __init__(self, **kwargs):
         if self.check_command_params_init(kwargs) is False:
             sys.exit(0)
-        if not 'subregions' in kwargs:
-            self.subregions = []
+        Container.__init__(self)
+        #if not 'subregions' in kwargs:
+        #    self.subregions = []
 
     def __str__(self):
         ret_str = 'SRegion:\n'+'slen='+str(self.slen) + '\n' + 'nrreg=' + str(self.nrreg) + '\n' + \
-               'zstep=' + str(self.zstep)+'\n'
-        for element in self.subregions:
-            ret_str += str(element)
+               'zstep=' + str(self.zstep)+'\n' + str(Container.__str__(self))
         return ret_str
+        #for element in self.subregions:
+        #    ret_str += str(element)
+        #return ret_str
 
     def __repr__(self):
         return 'SRegion:\n '+'slen='+str(self.slen)+'\n'+'nrreg='+str(self.nrreg)+'\n'+'zstep='+str(self.zstep)
 
     def __setattr__(self, name, value):
-        Region.__setattr__(self, name, value)
+        #Region.__setattr__(self, name, value)
+        Container.__setattr__(self, name, value)
 
     def add_subregion(self, subregion):
         try:
@@ -1642,7 +1655,7 @@ class Distribution(ModeledCommandParameter):
     models = {
 
         'model_descriptor': {'desc': 'Distribution type',
-                             'name': 'bmdistyp',
+                             'name': 'bdistyp',
                              'num_parms': 16},
 
         'gaussian':
