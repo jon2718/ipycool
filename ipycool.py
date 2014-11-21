@@ -709,104 +709,136 @@ class ICoolVariablesSet(object):
             else:
                 return False
 
+#desc, doc, type, min, max, req, default
 
-class Cont(ICoolVariablesSet):
-    variables = {
-        'betaperp':  {'default': None,
-                      'desc': '(R) beta value to use in calculating amplitude variable A^2',
+
+class Cont(ICoolObject):
+    command_params = {
+        'betaperp':  {'desc': '(R) beta value to use in calculating amplitude variable A^2',
+                      'doc': '',
                       'type': 'Real',
-                      'req': False},
+                      'req': False,
+                      'default': None},
 
-        'bgen':     {'default': True,
-                     'desc': '(L) if .true.=>generate initial beam particles, otherwise read input from FOR003.DAT '
-                     '(true)',
-                     'type': 'Logical',
-                     'req': False},
+        'bgen':       {'desc': '(L) if .true.=>generate initial beam particles, otherwise read input from FOR003.DAT '
+                       '(true)',
+                       'doc': '',
+                       'type': 'Logical',
+                       'req': False,
+                       'default': True},
 
-        'bunchcut': {'default': 1E6,
-                     'desc': '(R) maximum time difference allowed between a particle and the reference particle [s] '
-                     '(1E6)',
-                     'type': 'Real'},
+        'bunchcut':   {'desc': '(R) maximum time difference allowed between a particle and the reference particle [s] '
+                       '(1E6)',
+                       'doc': '',
+                       'type': 'Real',
+                       'req': False,
+                       'default': 1E6},
 
-        'bzfldprd': {'default': None,
-                     'desc': '(R) Bz for solenoid at location of production plane (0.) This is used for output to '
-                     'file for009.dat and for canonical angular momentum correction.',
-                     'type': 'Real'},
+        'bzfldprd':   {'desc': '(R) Bz for solenoid at location of production plane (0.) This is used for output to '
+                       'file for009.dat and for canonical angular momentum correction.',
+                       'doc': '',
+                       'type': 'Real',
+                       'req': False,
+                       'default': None},
 
-        'dectrk':   {'default': False,
-                     'desc': '(L) if .true. => continue tracking daughter particle following decay.',
-                     'type': 'Logical'},
+        'dectrk':     {'desc': '(L) if .true. => continue tracking daughter particle following decay.',
+                       'doc': '',
+                       'type': 'Logical',
+                       'req': False,
+                       'default': False},
 
-        'diagref':  {'default': False,
-                     'desc': '(L) if .true. => continue tracking daughter particle following decay.',
-                     'type': 'Logical'},
+        'diagref':    {'desc': '(L) if .true. => continue tracking daughter particle following decay.',
+                       'doc': '',
+                       'type': 'Logical',
+                       'req': False,
+                       'default': False},
 
-        'epsf':     {'default': 0.05,
-                     'desc': '(R) desired tolerance on fractional field variation, energy loss, and multiple '
-                     'scattering per step',
-                     'type': 'Real'},
+        'epsf':      {'desc': '(R) desired tolerance on fractional field variation, energy loss, and multiple '
+                      'scattering per step',
+                      'doc': '',
+                      'type': 'Real',
+                      'req': False,
+                      'default': 0.05},
 
-        'bzfldprd': {'default': None,
-                     'desc': '(R) Bz for solenoid at location of production plane (0.) This is used for output to '
+        'bzfldprd': {'desc': '(R) Bz for solenoid at location of production plane (0.) This is used for output to '
                      'file for009.dat and for canonical angular '
                      'momentum correction.',
-                     'type': 'Real'},
+                     'doc': '',
+                     'type': 'Real',
+                     'req': False,
+                     'default': None},
 
-        'dectrk':   {'default': False,
-                     'desc': '(L) if .true. => continue tracking daughter particle following decay',
-                     'type': 'Logical'},
+        'dectrk':   {'desc': '(L) if .true. => continue tracking daughter particle following decay',
+                     'doc': '',
+                     'type': 'Logical',
+                     'req': False,
+                     'default': False},
 
-        'diagref':  {'default': False,
-                     'desc': '(L) if .true. => continue tracking daughter particle following decay',
-                     'type': 'Logical'},
+        'diagref':  {'desc': '(L) if .true. => continue tracking daughter particle following decay',
+                     'doc': '',
+                     'type': 'Logical',
+                     'req': False,
+                     'default': False},
 
-        'epsf':     {'default': 0.05,
-                     'desc': '(R) desired tolerance on fractional field variation, energy loss, and multiple '
+        'epsf':     {'desc': '(R) desired tolerance on fractional field variation, energy loss, and multiple '
                      'scattering per step',
-                     'type': 'Real'},
+                     'doc': '',
+                     'type': 'Real',
+                     'req': False,
+                     'default': False},
 
-        'epsreq':   {'default': None,
-                     'desc': '(R) required tolerance on error in tracking parameters (1E-3) This parameter is '
+        'epsreq':   {'desc': '(R) required tolerance on error in tracking parameters (1E-3) This parameter is '
                      'only used if varstep = true',
-                     'type': 'Real'},
+                     'doc': '',
+                     'type': 'Real',
+                     'req': False,
+                     'default': None},
 
-        'epsstep':  {'default': 1E-6,
-                     'desc': '(R) desired tolerance in spatial stepping to reach each destination plane [m]',
-                     'type': 'Real'},
+        'epsstep':  {'desc': '(R) desired tolerance in spatial stepping to reach each destination plane [m]',
+                     'type': 'Real',
+                     'doc': '',
+                     'req': False,
+                     'default': 1E-6},
 
         'ffcr':     {'default': False,
                      'desc': '(L) if .true. => inserts form feed and carriage returns in the output log file so there '
                      'are two plots per page starting at the top of a page',
-                     'type': 'Logical'},
+                     'type': 'Logical',
+                     'req': False},
 
         'forcerp':  {'default': True,
                      'desc': '(L) if .true. => set x, y, Px, and Py for reference particle to 0 for each new REFP '
                      'command and for each ACCEL region with phasemodel=4.',
-                     'type': 'Logical'},
+                     'type': 'Logical',
+                     'req': False},
 
         'fsav':     {'default': None,
                      'desc': '(L) if .true. => store particle info at plane IZFILE into file FOR004.DAT. (false). '
                      'It is possible to get the initial distribution of particles that get a given error flag be '
                      'setting the plane=IFAIL . It is possible to get the initial distribution of particles that '
                      'successfully make it to the end of the simulation by setting the plane= -1.',
-                     'type': 'Logical'},
+                     'type': 'Logical',
+                     'req': False},
 
         'fsavset':  {'default': False,
                      'type': '(L) if .true. => modify data stored using FSAV in FOR004.DAT to have z=0 and '
                      'times relative to reference particle at plane IZFILE.',
-                     'type': 'Logical'},
+                     'type': 'Logical',
+                     'req': False},
 
         'f9dp':     {'default': None,
                      'desc': '(I) number of digits after the decimal point for floating point variables in FOR009.DAT '
                      '{4,6,8,10,12,14,16,17} (4) F9DP=17 gives 16 digits after the decimal point and 3 digits in the '
                      'exponent',
-                     'type': 'Integer'},
+                     'type': 'Integer',
+                     'req': False},
 
         'goodtrack': {'default': True,
                       'desc': '(L) if .true. and BGEN=.false. => only accepts input data from file FOR003.DAT if '
                       'IPFLG=0.; if .false. => resets IPFLG of bad input tracks to 0 (this allows processing a '
                       'file of bad tracks for diagnostic purposes)',
-                      'type': 'Logical'},
+                      'type': 'Logical',
+                      'req': False},
 
         'izfile':    {'default': None,
                       'desc': '(I) z-plane where particle info is desired when using FSAV. Use 1 to store beam at '
@@ -814,86 +846,102 @@ class Cont(ICoolVariablesSet):
                       'particle properties for tracks that get to the end of the simulation if IZFILE=-1.  IZFILE '
                       'should point to the end of a REGION or to an APERTURE , ROTATE or TRANSPORT pseudoregion '
                       'command.',
-                      'type': 'Integer'},
+                      'type': 'Integer',
+                      'req': False},
 
         'magconf':    {'default': 0,
                        'desc': '(I) if 19 < MAGCONF=mn < 100 => reads in file FOR0mn.DAT, which contains data on '
                        'solenoidal magnets. Used with SHEET, model 4.',
-                       'type': 'Integer'},
+                       'type': 'Integer',
+                       'req': False},
 
         'mapdef':     {'default': 0,
                        'desc': '(I) if 19 < MAPDEF=mn < 100 => reads in file FOR0mn.DAT, which contains data on how '
                        'to set up field grid. Used with SHEET, model 4.',
-                       'type': 'Integer'},
+                       'type': 'Integer',
+                       'req': False},
 
         'neighbor':   {'default': False,
                        'desc': "(L) if .true. => include fields from previous and following regions when calculating "
                        "field.  This parameter can be used with soft-edge fields when the magnitude of the "
                        "field doesn't fall to 0 at the region boundary. A maximum of 100 region can be used "
                        "with this feature.",
-                       'type': 'Logical'},
+                       'type': 'Logical',
+                       'req': False},
 
         'neutrino':    {'default': 0,
                         'desc': '(I) if 19 < NEUTRINO=mn < 100 => writes out file FOR0mn.DAT, which contains '
                         'neutrino production data. See section 5.2 for the format.',
-                        'type': 'Integer'},
+                        'type': 'Integer',
+                        'req': False},
 
         'nnudk':       {'default': 1,
                         'desc': '(I) # of neutrinos to produce at each muon, pion and kaon decay.',
-                        'type': 'Integer'},
+                        'type': 'Integer',
+                        'req': False},
 
         'npart':       {'default': None,
                         'desc': '(I) # of particles in simulation. The first 300,000 particles are stored in memory. '
                         'Larger numbers are allowed in principle since ICOOL writes the excess particle '
                         'information to disc. However, there can be a large space and speed penalty in doing '
                         'so.',
-                        'type': 'Integer'},
+                        'type': 'Integer',
+                        'req': False},
 
         'nprnt':        {'default': -1,
                          'desc': ' Number of diagnostic events to print out to log file.',
-                         'type': 'Integer'},
+                         'type': 'Integer',
+                         'req': False},
 
         'npskip':       {'default': 0,
                          'desc': 'Number of input particles in external beam file to skip before processing starts',
-                         'type': 'Integer'},
+                         'type': 'Integer',
+                         'req': False},
 
         'nsections':    {'default': 1,
                          'desc': '(I) # of times to repeat basic cooling section (1).  This parameter can be used to '
                          'repeat all the commands between the SECTION and ENDSECTION commands in the problem '
                          'definition. If a REFP command immediately follows the SECTION command, it is not '
                          'repeated',
-                         'type': 'Integer'},
+                         'type': 'Integer',
+                         'req': False},
 
         'ntuple':        {'default': False,
                           'desc': '(L) if .true. => store information about each particle after every region in file '
                           'FOR009.DAT. This variable is forced to be false if RTUPLE= true.(false)}',
-                          'type': 'Logical'},
+                          'type': 'Logical',
+                          'req': False},
 
         'nuthmin':      {'default': 0,
                          'desc': '(R) Minimum polar angle to write neutrino production data to file. [radians]',
-                         'type': 'Real'},
+                         'type': 'Real',
+                         'req': False},
 
         'nuthmax':      {'default': 3.14,
                          'desc': 'Maximum polar angle to write neutrino production data to file. [radians]',
-                         'type': 'Real'},
+                         'type': 'Real',
+                         'req': False},
 
         'output1':      {'default': False,
                          'desc': 'if .true. => write particle information at production (plane 1) to the '
                          'postprocessor output file for009.dat.',
-                         'type': 'Logical'},
+                         'type': 'Logical',
+                         'req': False},
       
         'phantom':     {'default': False,
                         'desc': 'if .true. => force particle to keep initial transverse coordinates after every '
                                 '(L) if .true. => force particle to keep initial transverse coordinates after '
                                 'every step. This is useful for making magnetic field maps. (false)',
-                        'type': 'Logical'},
+                        'type': 'Logical',
+                        'req': False},
                                    
         'phasemodel':   {'default': 1,
                          'desc': 'PHASEMODEL (I) controls how the phase is determined in rf cavities. (1) '
                                  '1: takes phase directly from ACCEL command [degrees] '
                                  '2 - 6: takes phase model from REFP command '
                                  '7: reads phases in from file FOR0mn.DAT, where RFPHASE=mn. See sec. 5.1.},',
-                         'type': 'Integer'},
+                         'type': 'Integer',
+                         'req': False},
 
         'prlevel': {},
                 
@@ -937,8 +985,7 @@ class Cont(ICoolVariablesSet):
     }
 
     def __init__(self, **kwargs):
-        if self.check_variables_init(kwargs) is False:
-            sys.exit(0)
+        ICoolObject.__init__(self, kwargs)
 
 
     def __str__(self):
