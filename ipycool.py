@@ -530,8 +530,6 @@ class Title(object):
         file.write(self.title)
 
 
-
-
 class ICoolVariablesSet(object):
     """Variables Sets comprise:
     CONT
@@ -1133,7 +1131,7 @@ class Cont(ICoolObject):
         file.write("/")
 
 
-class Bmt(ICoolVariablesSet, Container):
+class Bmt(ICoolObject, Container):
 
     allowed_enclosed_commands = ['Distribution', 'Correlation']
 
@@ -1149,14 +1147,9 @@ class Bmt(ICoolVariablesSet, Container):
                     'req': False},
 
         'beamtype_list':   {'desc': 'List of distribution objects',
-                    'type': 'List[Distribution]',
+                    'type': 'List[BeamType]',
                     'default':  None,
-                    'req': False},
-
-        'correlation_list': {'desc': 'List of Correlation objects',
-                           'type': 'List[Correlation]',
-                           'default': None,
-                           'req': False},
+                    'req': False}
         }
 
     def __init__(self, **kwargs):
@@ -2218,7 +2211,7 @@ class Correlation(ModeledCommandParameter):
         return self.corrtyp + ':' + 'Correlation:' + ModeledCommandParameter.__str__(self)
 
 
-class BeamType(ICoolVariablesSet):
+class BeamType(ICoolObject, Container):
     """
     A BeamType is a:
     PARTNUM (I) particle number
@@ -2234,25 +2227,44 @@ class BeamType(ICoolVariablesSet):
     FRACBT (R) fraction of beam of this type {0-1} The sum of all fracbt(i) should =1.0
     """
     variables = {
-        'partnum':  {'default': None,
-                     'desc': 'Particle number',
-                     'type': 'Integer',
-                     'req': True},
+        'partnum':      {'desc': 'Particle number',
+                         'doc': '',
+                         'type': 'Integer',
+                         'req': True,
+                         'default': None},
 
-        'bmtype':   {'default': None,
-                     'desc': 'beam type {magnitude = mass code; sign = charge}: 1: e, 2: μ, 3: π, 4: K, 5: p.'
-                     '6: d, 7: He3, 8: Li7',
-                     'type': 'Integer',
-                     'req': True},
+        'bmtype':       {'desc': 'beam type {magnitude = mass code; sign = charge}: 1: e, 2: μ, 3: π, 4: K, 5: p. '
+                                 '6: d, 7: He3, 8: Li7',
+                         'doc': '',
+                         'type': 'Integer',
+                         'req': True,
+                         'default': None},
 
-        'fractbt': {'default': None,
-                    'desc': 'Fraction of beam of this type {0-1} The sum of all fracbt(i) should =1.0',
-                    'type': 'Real',
-                    'req': True},
-        'bdistyp': {'default': None,
-                    'desc': 'Beam distribution type {1:Gaussian 2:uniform circular segment}',
-                    'type': 'Distribution',
-                    'req': True}}
+        'fractbt':       {'desc': 'Fraction of beam of this type {0-1} The sum of all fracbt(i) should =1.0',
+                          'doc': '',
+                          'type': 'Real',
+                          'req': True,
+                          'default': None},
+
+        'distribution':  {'desc': 'Beam distribution object',
+                          'doc': '',
+                          'type': 'Distribution',
+                          'req': True,
+                          'default': None},
+
+        'nbcorr':        {'desc': '# of beam correlations {0-10}',
+                          'doc': '',
+                          'type': 'Integer',
+                          'req': True,
+                          'default': 0,
+                          'min': 0,
+                          'max': 10},
+
+        'corr_list':     {'desc': 'List of correlation objects',
+                          'doc': '',
+                          'type': 'List[Correlation]',
+                          'req': False,
+                          'default':  None}}
 
     def __init__(self, **kwargs):
         if self.check_variables_init(kwargs) is False:
