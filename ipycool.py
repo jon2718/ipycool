@@ -997,50 +997,122 @@ class Cont(ICoolObject):
                            'default': 0,
                            'min': 19,
                            'max': 100},
-           
+
         'rfphase':        {'desc': 'If PHASEMODEL=5 => reads rf phases, frequencies and gradients '
                                    'for the cavities from file FOR0mn.DAT, where RFPHASE=mn '
                                    'and 19 < mn < 100 (0)',
                            'doc': '',
                            'type': 'Integer',
+                           'req': False,
                            'default': 0,
                            'min': 19,
                            'max': 100},
-        
-        'rnseed': {},
-        
-        'rtuple': {},
-        
-        'rtuplen': {},
-        
-        'run_env': {},
-        
-        'scalestep': {},
-        
-        'spin': {},
 
-        'spinmatter': {},
-                
-        'spintrk': {},
-                
-        'stepmax': {},
-                
-        'stepmin': {},
-                
-        'steprk': {}, 
-        
-        'summary': {},
-                
-        'termout':{},
-                
-        'timelim': {},
-                
-        'varstep': {}
+        'rnseed':          {'desc': 'Random number seed (-1) Set to a negative integer',
+                            'doc': '',
+                            'type': 'Integer',
+                            'req': False,
+                            'default': -1},
+
+        'rtuple':           {'desc': 'If .true. => particle information in file FOR009.DAT is generated after '
+                                     'every RTUPLEN steps.',
+                             'doc': '',
+                             'type': 'Logical',
+                             'req': False,
+                             'default': False},
+
+        'rtuplen':          {'desc': '# of steps to skip between RTUPLE generated outputs',
+                             'doc': '',
+                             'type': 'Integer',
+                             'req': False,
+                             'default': 5},
+
+        'run_env':          {'desc': 'If true => run ICOOL in beam envelope mode, i.e. no tracking',
+                             'doc': 'For solenoidal channels only.',
+                             'type': 'Logical',
+                             'req': False,
+                             'default': False},
+
+        'scalestep':        {'desc': 'Factor that modifies all step sizes in a problem simultaneously.',
+                             'doc': 'Only works in fixed stepsize mode.',
+                             'type': 'Real',
+                             'req': False,
+                             'default':  1.0},
+
+        'spin':             {'desc': 'If .true. => include calculation of polarization',
+                             'doc': '',
+                             'type': 'Logical',
+                             'req': False,
+                             'default': False},
+
+        'spinmatter':       {'desc': 'Controls whether muon depolarization effects in matter are simulated',
+                             'doc':  '0: no depolarization simulation '
+                                     '1: depolarization simulation using Rossmanith model'
+                                     '2: depolarization simulation using spin flip probabilities',
+                             'type': 'Integer',
+                             'req': False,
+                             'default': 0,
+                             'min': 0,
+                             'max': 3},
+
+        'spintrk':          {'desc': 'Controls whether spin variables are tracked',
+                             'doc': '0: no spin tracking '
+                                    '1: track spin in muon rest frame using BMT equations',
+                             'type': 'Integer',
+                             'req': False,
+                             'default': 0,
+                             'min': 0,
+                             'max': 1},
+
+        'stepmax':          {'desc': 'maximum step size that can be used for variable stepping [m]',
+                             'doc': '',
+                             'type': 'Real',
+                             'req': False,
+                             'default': 1},
+
+        'stepmin':          {'desc': 'minimum step size that can be used for variable stepping [m]',
+                             'doc': '',
+                             'type': 'Real',
+                             'req': False,
+                             'default': 1E-5},
+
+        'steprk':           {'desc': 'If .true. => use 4th order Runge-Kutta integrator for tracking. '
+                                     'Otherwise it uses the Boris push method in straight regions',
+                             'doc': '',
+                             'type': 'Logical',
+                             'req': False,
+                             'default': True},
+
+        'summary':          {'desc': 'if true => writes region summary table to for007.dat',
+                             'doc': '',
+                             'type': 'Logical',
+                             'req': False,
+                             'default': True},
+
+        'termout':          {'desc': 'If .true. => write output to terminal screen',
+                             'doc': '',
+                             'type': 'Logical',
+                             'req': False,
+                             'default': True},
+
+        'timelim':          {'desc': 'Time limit for simulation [min]',
+                             'doc': '',
+                             'type': 'Real',
+                             'req': False,
+                             'default': 1E9},
+
+        'varstep':         {'desc': 'If .true. => use adaptive step size; otherwise use fixed step ZSTEP '
+                                    '(until reaching the last step in a region).',
+                            'doc': 'This variable is forced to be false (1) in wedge material '
+                                   'regions, (2) when the number of radial regions is greater than 1, and (3) when '
+                                   'PHASEMODEL=2.',
+                            'type': 'Logical',
+                            'req': False,
+                            'default': True}
     }
 
     def __init__(self, **kwargs):
         ICoolObject.__init__(self, kwargs)
-
 
     def __str__(self):
         defined_cont = display_commands(cont_commands)
@@ -1061,9 +1133,8 @@ class Cont(ICoolObject):
         file.write("/")
 
 
-
 class Bmt(ICoolVariablesSet, Container):
-    
+
     allowed_enclosed_commands = ['Distribution', 'Correlation']
 
     variables = {
