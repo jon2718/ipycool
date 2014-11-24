@@ -361,7 +361,7 @@ class ICoolObject(ICoolType):
                 return False
 
 
-class Container(object):
+class Container(ICoolObject):
     """Abstract class container for other commands.
     """
     def __init__(self, enclosed_commands=None):
@@ -444,7 +444,7 @@ class ICoolGen(object):
             self.sp()
 
 
-class ICoolInput(ICoolObject, Container):
+class ICoolInput(ICoolObject):
     """This is the actual generated ICoolInput from command objects
     Command objects include:
     Title, Cont, Bmt, Ints, Nhs, Nsc, Nzh, Nrh, Nem, Ncv and region command objects.
@@ -472,34 +472,81 @@ class ICoolInput(ICoolObject, Container):
     sec is a region definition variables object, which contains all region definitions.
     """
 
-    def __init__(
-        self, title=None, cont=None, bmt=None, ints=None,
-        nhs=None, nsc=None, nzh=None, nrh=None, nem=None, ncv=None,
-        section=None, name=None, metadata=None
-    ):
+    command_params = {
+        'title':      {'desc': 'Title of ICOOL simulation',
+                       'doc': '',
+                       'type': 'Title',
+                       'req': True,
+                       'default': None},
 
-        if ie.check_input_args(
-            title, cont, bmt, ints, nhs, nsc, nzh, nrh, nem,
-            ncv, section, name, metadata
-        ) == -1:
-            sys.exit(0)
-        self.title = title
-        self.cont = cont
-        self.bmt = bmt
-        self.ints = ints
-        self.nhs = nhs
-        self.nsc = nsc
-        self.nzh = nzh
-        self.nrh = nrh
-        self.nem = nem
-        self.ncv = ncv
-        self.section = section
-        self.name = name
-        self.metadata = metadata
-# What is the minimum required set of commands?
+        'cont':       {'desc': 'ICOOL control variables',
+                       'doc': '',
+                       'type': 'Cont',
+                       'req': True,
+                       'default': None},
+
+        'bmt':       {'desc': 'ICOOL beam generation variables',
+                      'doc': '',
+                      'type': 'Bmt',
+                      'req': True,
+                      'default': None},
+
+        'ints':       {'desc': 'ICOOL interaction control variables',
+                       'doc': '',
+                       'type': 'Ints',
+                       'req': True,
+                       'default': None},
+        
+        'nhs':       {'desc': 'ICOOL histogram definition variables',
+                       'doc': '',
+                       'type': 'Nhs',
+                       'req': False,
+                       'default': None},
+
+         'nsc':       {'desc': 'ICOOL scatterplot defintion variables',
+                       'doc': '',
+                       'type': 'Nsc',
+                       'req': False,
+                       'default': None},
+
+        'nzh':       {'desc': 'ICOOL z history definition variables',
+                      'doc': '',
+                      'type': 'Nzh',
+                      'req': False,
+                      'default': None},
+
+        'nrh':       {'desc': 'ICOOL r history definition variables',
+                       'doc': '',
+                       'type': 'Nrh',
+                       'req': False,
+                       'default': None},
+
+        'nem':       {'desc': 'ICOOL emittance plane definition variables',
+                       'doc': '',
+                       'type': 'Nem',
+                       'req': False,
+                       'default': None},
+
+        'ncv':       {'desc': 'ICOOL covariance plane definition variables',
+                       'doc': '',
+                       'type': 'Ncv',
+                       'req': False,
+                       'default': None},
+
+        'section':       {'desc': 'ICOOL cooling section region definition ',
+                          'doc': '',
+                          'type': 'Section',
+                          'req': True,
+                          'default': None}}
+
+    def __init__(self, **kwargs):
+        ICoolObject.__init__(self, kwargs)
+
+    def __call__(self, kwargs):
+        ICoolObject.__call__(self, kwargs)
 
     def __str__(self):
-        return self.title.__str__()+self.section.__str__()
+        return ICoolObject.__str__(self, 'CONT')
 
     def add_title(self, title):
         self.title = title
@@ -972,7 +1019,7 @@ class Cont(ICoolObject):
         file.write("/")
 
 
-class Bmt(ICoolObject, Container):
+class Bmt(Container):
 
     allowed_enclosed_commands = ['BeamType']
 
@@ -1667,7 +1714,7 @@ class Distribution(ModeledCommandParameter):
 
         'model_descriptor': {'desc': 'Distribution type',
                              'name': 'bdistyp',
-                             'num_parms': 16},
+                             'num_parms': 13},
 
         'gaussian':
         {'desc': 'Gaussian beam distribution',
@@ -1717,7 +1764,7 @@ class Distribution(ModeledCommandParameter):
         ModeledCommandParameter.__setattr__(self, name, value)
 
     def __str__(self):
-        return self.dist + ':' + 'Distribution:' + ModeledCommandParameter.__str__(self)
+        return ModeledCommandParameter.__str__(self)
 
 
 class Correlation(ModeledCommandParameter):
@@ -1851,7 +1898,7 @@ class Correlation(ModeledCommandParameter):
         return self.corrtyp + ':' + 'Correlation:' + ModeledCommandParameter.__str__(self)
 
 
-class BeamType(ICoolObject, Container):
+class BeamType(Container):
     """
     A BeamType is a:
     (1) PARTNUM (I) particle number
