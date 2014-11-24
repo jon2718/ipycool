@@ -530,186 +530,6 @@ class Title(object):
         file.write(self.title)
 
 
-class ICoolVariablesSet(object):
-    """Variables Sets comprise:
-    CONT
-    BMT
-    INTS
-    NHS
-    NSC
-    NZH
-    NRH
-    NEM
-    NCV
-    """
-    def __init__(self, kwargs):
-        if self.check_variables_init(kwargs) is False:
-            sys.exit(0)
-        else:
-            self.setall(kwargs)
-
-    def __call__(self, **kwargs):
-        if self.check_variables_call(self, kwargs) is False:
-            sys.exit(0)
-        else:
-            self.setall(kwargs)
-
-    def __str__(self):
-        return '[ICoolVariablesSet.]'
-
-    def __repr__(self):
-        return '[ICoolVariablesSet.]'
-
-    def __setattr__(self, name, value):
-        if self.check_variable(name) and self.check_variable_type(name, value):
-            object.__setattr__(self, name, value)
-        else:
-            sys.exit(0)
-
-    def check_variable(self, variable):
-        """
-        Checks whether a parameter specified for command is valid.
-        """
-        variables_dict = self.variables
-        #Check command parameters are all valid
-        try:
-            if not variable in variables_dict:
-                raise ie.UnknownVariable(variable, variables_dict.keys())
-        except ie.UnknownVariable as e:
-            print e
-            return False
-        return True
-
-    def check_variables_valid(self, variables):
-        """Returns True if command_params are valid (correspond to the command)
-        Otherwise raises an exception and returns False"""
-        variables_dict = self.variables
-        try:
-            for key in variables:
-                if not key in variables_dict:
-                    raise ie.UnknownVariable(key, variables_dict)
-        except ie.UnknownVariable as e:
-            print e
-            return False
-        return True
-
-    def check_variables_type(self, variables):
-        """Checks to see whether all variables specified were of the correct type"""
-        variables_dict = self.variables
-        try:
-            for key in variables:
-                if self.check_type(variables_dict[key]['type'], variables[key]) is False:
-                    raise ie.InvalidType(variables_dict[key]['type'], variables[key].__class__.__name__)
-        except ie.InvalidType as e:
-            print e
-            return False
-        return True
-
-    def check_variable_type(self, name, value):
-        """Checks to see whether a particular variable of name with value is of the correct type"""
-        variables_dict = self.variables
-        try:
-            if self.check_type(variables_dict[name]['type'], value) is False:
-                raise ie.InvalidType(variables_dict[name]['type'], value.__class__.__name__)
-        except ie.InvalidType as e:
-            print e
-            return False
-        return True
-
-    def check_all_required_variables_specified(self, variables):
-        """Returns True if all required variables were specified
-        Otherwise raises an exception and returns False"""
-        variables_dict = self.variables
-        try:
-            for key in variables_dict:
-                if variables_dict[key]['req'] is True:
-                    if not key in variables:
-                        raise ie.MissingCommandParameter(key, variables)
-        except ie.MissingCommandParameter as e:
-            print e
-            return False
-        return True
-    
-    def check_variables_init(self, variables):
-        """
-        Checks whether the variables specified for a VariablesSet are valid,
-        and all variables are of correct type.  If not, raises an exception.
-        If all variables are valid, sets the variables.
-        """
-        if not self.check_variables_valid(variables)\
-                or not self.check_variables_type(variables)\
-                or not self.check_all_required_variables_specified(variables):
-            return False
-
-        #Now set the command parameters
-        for key in variables:
-            self.__setattr__(key, variables[key])
-        return True
-
-    def check_variables_call(self, variables):
-        """
-        Checks whether the parameters specified for command are valid and all required parameters exist.
-        """
-        variables_dict = self.variables
-        #Check command parameters are all valid
-        try:
-            for key in variables:
-                if not key in variables_dict:
-                    raise ie.UnknownVariable(key, variables_dict.keys())
-        except ie.UnknownVariable as e:
-            print e
-            return False
-        return True
-
-    def setall(self, variables):
-        for key in variables:
-            self.__setattr__(key, variables[key])
-
-    def check_type(self, icool_type, provided_type):
-        """Takes provided python object and compares with required icool type name.
-        Returns True if the types match and False otherwise.
-        """
-        provided_type_name = provided_type.__class__.__name__
-        print icool_type, provided_type_name
-        if icool_type == 'Real':
-            if provided_type_name == 'int' or provided_type_name == 'long' or provided_type_name == 'float':
-                return True
-            else:
-                return False
-
-        if icool_type == 'Integer':
-            if provided_type_name == 'int' or provided_type_name == 'long':
-                return True
-            else:
-                return False
-
-        if icool_type == 'Logical':
-            if provided_type_name == 'bool':
-                return True
-            else:
-                return False
-
-        if icool_type == 'Field':
-            if isinstance(provided_type, Field):
-                return True
-            else:
-                return False
-
-        if icool_type == 'Material':
-            if isinstance(provided_type, Material):
-                return True
-            else:
-                return False
-
-        if icool_type == 'Distribution':
-            if isinstance(provided_type, Distribution):
-                return True
-            else:
-                return False
-
-#desc, doc, type, min, max, req, default
-
-
 class Cont(ICoolObject):
     command_params = {
         'betaperp':  {'desc': '(R) beta value to use in calculating amplitude variable A^2',
@@ -1133,27 +953,23 @@ class Cont(ICoolObject):
 
 class Bmt(ICoolObject, Container):
 
-    allowed_enclosed_commands = ['Distribution', 'Correlation']
+    allowed_enclosed_commands = ['BeamType']
 
     variables = {
-        'nbeamtyp':  {'desc': '# of beam types, e.g., particles of different masses.',
-                      'type': 'Integer',
-                      'default': 1,
-                      'req': True},
+        'nbeamtyp':     {'desc': '# of beam types, e.g., particles of different masses.',
+                         'doc': '',
+                         'type': 'Integer',
+                         'req': True,
+                         'default': 1},
 
-        'bmalt':   {'desc': 'if true => flip sign of alternate particles when BGEN = true.',
-                    'type': 'Logical',
-                    'default': False,
-                    'req': False},
-
-        'beamtype_list':   {'desc': 'List of distribution objects',
-                    'type': 'List[BeamType]',
-                    'default':  None,
-                    'req': False}
-        }
+        'bmalt':         {'desc': 'if true => flip sign of alternate particles when BGEN = true.',
+                          'doc': '',
+                          'type': 'Logical',
+                          'req': False,
+                          'default': False}}
 
     def __init__(self, **kwargs):
-        if self.check_variables_init(kwargs) is False:
+        if self.check_command_params_init(kwargs) is False:
             sys.exit(0)
         Container.__init__(self)
 
@@ -1175,7 +991,7 @@ class Bmt(ICoolObject, Container):
             self.correlation_list.append(correlation)
 
 
-class Ints(ICoolVariablesSet):
+class Ints(ICoolObject):
     def __init__(self, **kwargs):
         pass
 
@@ -1667,13 +1483,7 @@ class SRegion(RegularRegion, Container):
         'zstep':   {'desc': 'Step for tracking particles [m]',
                     'doc': '',
                     'type': 'Real',
-                    'req': True},
-
-        'subregions':     {'desc': 'List of SubRegion objects',
-                           'doc': '',
-                           'type': 'List[SubRegion]',
-                           'req': False},
-        }
+                    'req': True}}
 
     def __init__(self, **kwargs):
         if self.check_command_params_init(kwargs) is False:
@@ -2010,11 +1820,8 @@ class ModeledCommandParameter(ICoolType):
 class Distribution(ModeledCommandParameter):
     """
     A Distribution is a:
-    (1) partnum (particle number);
-    (2) bmtype Innter radius of this r subregion;
-    (3) fracbt (R) fraction of beam of this type {0-1} The sum of all fracbt(i) should =1.0
-    (4) bdistyp (I) beam distribution type {1:Gaussian 2:uniform circular segment}
-    (5-16) 12 Parameters for bdistyp
+    (1) bdistyp (I) beam distribution type {1:Gaussian 2:uniform circular segment}
+    (2-13) 12 Parameters for bdistyp
     """
 
     models = {
@@ -2027,43 +1834,37 @@ class Distribution(ModeledCommandParameter):
         {'desc': 'Gaussian beam distribution',
          'doc': '',
          'parms':
-                 {'partnum': {'pos': 1, 'type': 'Int', 'doc': '', 'min': 1, 'max': 5},
-                  'bmtype': {'pos': 2, 'type': 'Int', 'doc': '', 'min': 1, 'max': 7},
-                  'fractbt': {'pos': 3, 'type': 'Real', 'doc': '', 'min': 0, 'max': 1},
-                  'bdistyp': {'pos': 4, 'type': 'String', 'doc': ''},
-                  'x_mean': {'pos': 5, 'type': 'Real', 'doc': ''},
-                  'y_mean': {'pos': 6, 'type': 'Real', 'doc': ''},
-                  'z_mean': {'pos': 7, 'type': 'Real', 'doc': ''},
-                  'px_mean': {'pos': 8, 'type': 'Real', 'doc': ''},
-                  'py_mean': {'pos': 9, 'type': 'Real', 'doc': ''},
-                  'pz_mean': {'pos': 10, 'type': 'Real', 'doc': ''},
-                  'x_std': {'pos': 11, 'type': 'Real', 'doc': ''},
-                  'y_std': {'pos': 12, 'type': 'Real', 'doc': ''},
-                  'z_std': {'pos': 13, 'type': 'Real', 'doc': ''},
-                  'px_std': {'pos': 14, 'type': 'Real', 'doc': ''},
-                  'py_std': {'pos': 15, 'type': 'Real', 'doc': ''},
-                  'pz_std': {'pos': 16, 'type': 'Real', 'doc': ''}}},
+                 {'bdistyp': {'pos': 1, 'type': 'String', 'doc': ''},
+                  'x_mean': {'pos': 2, 'type': 'Real', 'doc': ''},
+                  'y_mean': {'pos': 3, 'type': 'Real', 'doc': ''},
+                  'z_mean': {'pos': 4, 'type': 'Real', 'doc': ''},
+                  'px_mean': {'pos': 5, 'type': 'Real', 'doc': ''},
+                  'py_mean': {'pos': 6, 'type': 'Real', 'doc': ''},
+                  'pz_mean': {'pos': 7, 'type': 'Real', 'doc': ''},
+                  'x_std': {'pos': 8, 'type': 'Real', 'doc': ''},
+                  'y_std': {'pos': 9, 'type': 'Real', 'doc': ''},
+                  'z_std': {'pos': 10, 'type': 'Real', 'doc': ''},
+                  'px_std': {'pos': 11, 'type': 'Real', 'doc': ''},
+                  'py_std': {'pos': 12, 'type': 'Real', 'doc': ''},
+                  'pz_std': {'pos': 13, 'type': 'Real', 'doc': ''}}},
 
         'uniform':
         {'desc': 'Uniform circular segment beam distribution',
          'doc': '',
          'parms':
-                 {'partnum': {'pos': 1, 'type': 'Int', 'doc': '', 'min': 1, 'max': 5},
-                  'bmtype': {'pos': 2, 'type': 'Int', 'doc': '', 'min': 1, 'max': 7},
-                  'fractbt': {'pos': 3, 'type': 'Real', 'doc': '', 'min': 0, 'max': 1},
-                  'bdistyp': {'pos': 4, 'type': 'String', 'doc': ''},
-                  'r_low': {'pos': 5, 'type': 'Real', 'doc': ''},
-                  'r_high': {'pos': 6, 'type': 'Real', 'doc': ''},
-                  'phi_low': {'pos': 7, 'type': 'Real', 'doc': ''},
-                  'phi_high': {'pos': 8, 'type': 'Real', 'doc': ''},
-                  'z_low': {'pos': 9, 'type': 'Real', 'doc': ''},
-                  'z_high': {'pos': 10, 'type': 'Real', 'doc': ''},
-                  'pr_low': {'pos': 11, 'type': 'Real', 'doc': ''},
-                  'pr_high': {'pos': 12, 'type': 'Real', 'doc': ''},
-                  'pphi_low': {'pos': 13, 'type': 'Real', 'doc': ''},
-                  'pphi_high': {'pos': 14, 'type': 'Real', 'doc': ''},
-                  'pz_low': {'pos': 15, 'type': 'Real', 'doc': ''},
-                  'pz_high': {'pos': 16, 'type': 'Real', 'doc': ''}}},
+                 {'bdistyp': {'pos': 1, 'type': 'String', 'doc': ''},
+                  'r_low': {'pos': 2, 'type': 'Real', 'doc': ''},
+                  'r_high': {'pos': 3, 'type': 'Real', 'doc': ''},
+                  'phi_low': {'pos': 4, 'type': 'Real', 'doc': ''},
+                  'phi_high': {'pos': 5, 'type': 'Real', 'doc': ''},
+                  'z_low': {'pos': 6, 'type': 'Real', 'doc': ''},
+                  'z_high': {'pos': 7, 'type': 'Real', 'doc': ''},
+                  'pr_low': {'pos': 8, 'type': 'Real', 'doc': ''},
+                  'pr_high': {'pos': 9, 'type': 'Real', 'doc': ''},
+                  'pphi_low': {'pos': 10, 'type': 'Real', 'doc': ''},
+                  'pphi_high': {'pos': 11, 'type': 'Real', 'doc': ''},
+                  'pz_low': {'pos': 12, 'type': 'Real', 'doc': ''},
+                  'pz_high': {'pos': 13, 'type': 'Real', 'doc': ''}}},
 
         }
 
@@ -2214,8 +2015,8 @@ class Correlation(ModeledCommandParameter):
 class BeamType(ICoolObject, Container):
     """
     A BeamType is a:
-    PARTNUM (I) particle number
-    BMTYPE (I) beam type {magnitude = mass code; sign = charge}
+    (1) PARTNUM (I) particle number
+    (2) BMTYPE (I) beam type {magnitude = mass code; sign = charge}
         1: e
         2: μ
         3: π
@@ -2224,9 +2025,15 @@ class BeamType(ICoolObject, Container):
         6: d
         7: He3
         8: Li7
-    FRACBT (R) fraction of beam of this type {0-1} The sum of all fracbt(i) should =1.0
+    (3) FRACBT (R) fraction of beam of this type {0-1} The sum of all fracbt(i) should =1.0
+    (4) Distribution
+    (5) NBCORR # of beam correlations {0-10}
+    (6) From 0-10 enclosed Correlation objects as specified by NBCORR (5)
+
     """
-    variables = {
+    allowed_enclosed_commands = ['Correlation']
+
+    command_params = {
         'partnum':      {'desc': 'Particle number',
                          'doc': '',
                          'type': 'Integer',
@@ -2258,17 +2065,15 @@ class BeamType(ICoolObject, Container):
                           'req': True,
                           'default': 0,
                           'min': 0,
-                          'max': 10},
-
-        'corr_list':     {'desc': 'List of correlation objects',
-                          'doc': '',
-                          'type': 'List[Correlation]',
-                          'req': False,
-                          'default':  None}}
+                          'max': 10}}
 
     def __init__(self, **kwargs):
-        if self.check_variables_init(kwargs) is False:
+        if self.check_command_params_init(kwargs) is False:
             sys.exit(0)
+        Container.__init__(self)
+
+    def __setattr__(self, name, value):
+        Container.__setattr__(self, name, value)
 
     def __str__(self):
         return 'BeamType: \n'
@@ -2390,7 +2195,7 @@ class Material(ModeledCommandParameter):
                  {'mtag': {'pos': 1, 'type': 'String', 'doc': ''},
                   'geom': {'pos': 2, 'type': 'String', 'doc': ''}}},
 
-         'aspw':
+        'aspw':
         {'desc': 'Azimuthally Symmetric Polynomial Wedge absorber region',
          'doc': 'Edge shape given by '
                 'r(dz) = a0 + a1*dz + a2*dz^2 + a3*dz^3 in the 1st quadrant and '
@@ -2411,7 +2216,7 @@ class Material(ModeledCommandParameter):
                   'a2': {'pos': 7, 'type': 'Real', 'doc': ''},
                   'a3': {'pos': 8, 'type': 'Real', 'doc': ''}}},
 
-         'asrw':
+        'asrw':
         {'desc': 'Azimuthally Symmetric Polynomial Wedge absorber region',
          'doc': 'Edge shape given by '
                 'r(dz) = a0 + a1*dz + a2*dz^2 + a3*dz^3 in the 1st quadrant and '
