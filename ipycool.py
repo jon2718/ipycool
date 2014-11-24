@@ -159,6 +159,18 @@ class ICoolType(object):
             else:
                 return False
 
+        if icool_type == 'Correlation':
+            if isinstance(provided_type, Correlation):
+                return True
+            else:
+                return False
+
+        if icool_type == 'BeamType':
+            if isinstance(provided_type, BeamType):
+                return True
+            else:
+                return False
+
 
 class ICoolObject(ICoolType):
     """Generic ICOOL object providing methods for"""
@@ -174,8 +186,15 @@ class ICoolObject(ICoolType):
         else:
             self.setall(kwargs)
 
-    def __str__(self):
-        return '[ICool Object]'
+    def __str__(self, return_str):
+        command_parameters_dict = self.command_params
+        for key in command_parameters_dict:
+            if hasattr(self, key):
+                return_str += '\n'
+                return_str += key
+                return_str += ': '
+                return_str += str(getattr(self, key))
+        return return_str
 
     def __repr__(self):
         return '[ICool Object]'
@@ -425,7 +444,7 @@ class ICoolGen(object):
             self.sp()
 
 
-class ICoolInput(object):
+class ICoolInput(ICoolObject, Container):
     """This is the actual generated ICoolInput from command objects
     Command objects include:
     Title, Cont, Bmt, Ints, Nhs, Nsc, Nzh, Nrh, Nem, Ncv and region command objects.
@@ -932,9 +951,11 @@ class Cont(ICoolObject):
     def __init__(self, **kwargs):
         ICoolObject.__init__(self, kwargs)
 
+    def __call__(self, kwargs):
+        ICoolObject.__call__(self, kwargs)
+
     def __str__(self):
-        defined_cont = display_commands(cont_commands)
-        return 'Control variables: \n'
+        return ICoolObject.__str__(self, 'CONT')
 
     def __repr__(self):
         return '[Control variables: ]'
@@ -955,7 +976,7 @@ class Bmt(ICoolObject, Container):
 
     allowed_enclosed_commands = ['BeamType']
 
-    variables = {
+    command_params = {
         'nbeamtyp':     {'desc': '# of beam types, e.g., particles of different masses.',
                          'doc': '',
                          'type': 'Integer',
@@ -1010,188 +1031,6 @@ class Region(ICoolObject):
 
     def __setattr__(self, name, value):
         ICoolObject.__setattr__(self, name, value)
-
-
-
-class Region_Old(object):
-    def __init__(self, kwargs):
-        if self.check_command_params_init(kwargs) is False:
-            sys.exit(0)
-        else:
-            self.setall(kwargs)
-
-    def __call__(self, **kwargs):
-        if self.check_command_params_call(self, kwargs) is False:
-            sys.exit(0)
-        else:
-            self.setall(kwargs)
-
-    def __str__(self):
-        return '[A Region can be either a RegularRegion or PseudoRegion.]'
-
-    def __repr__(self):
-        return '[A Region can be either a RegularRegion or PseudoRegion.]'
-
-    """Checks whether all required command parameters specified in __init__ are provided are valid
-    for Region command.
-    Valid means the parameters are recognized for the command, all required parameters are provided
-    and the parameters are the correct type."""
-
-    def __setattr__(self, name, value):
-        if self.check_command_param(name):
-            object.__setattr__(self, name, value)
-        else:
-            sys.exit(0)
-
-    def check_command_param(self, command_param):
-        """
-        Checks whether a parameter specified for command is valid.
-        """
-        command_parameters_dict = self.command_params
-        #Check command parameters are all valid
-        try:
-            if not command_param in command_parameters_dict:
-                raise ie.InvalidCommandParameter(command_param, command_parameters_dict.keys())
-        except ie.InvalidCommandParameter as e:
-            print e
-            return False
-        except ie.InvalidType as e:
-            print e
-            return False
-        return True
-
-    def check_command_params_valid(self, command_params):
-        """Returns True if command_params are valid (correspond to the command)
-        Otherwise raises an exception and returns False"""
-        command_parameters_dict = self.command_params
-        try:
-            for key in command_params:
-                if not key in command_parameters_dict:
-                    raise ie.InvalidCommandParameter(key, command_parameters_dict)
-        except ie.InvalidCommandParameter as e:
-            print e
-            return False
-        return True
-
-    def check_all_required_command_params_specified(self, command_params):
-        """Returns True if all required command parameters were specified
-        Otherwise raises an exception and returns False"""
-        command_parameters_dict = self.command_params
-        try:
-            for key in command_parameters_dict:
-                if command_parameters_dict[key]['req'] is True:
-                    if not key in command_params:
-                        raise ie.MissingCommandParameter(key, command_params)
-        except ie.MissingCommandParameter as e:
-            print e
-            return False
-        return True
-
-    def check_command_params_type(self, command_params):
-        """Checks to see whether all required command parameters specified were of the correct type"""
-        command_params_dict = self.command_params
-        try:
-            for key in command_params:
-                if self.check_type(command_params_dict[key]['type'], command_params[key]) is False:
-                    raise ie.InvalidType(command_params_dict[key]['type'], command_params[key].__class__.__name__)
-        except ie.InvalidType as e:
-            print e
-            return False
-        return True
-
-    def check_command_param_type(self, name, value):
-        """Checks to see whether a particular command parameter of name with value is of the correct type"""
-        command_params_dict = self.command_params
-        try:
-            if self.check_type(command_params_dict[name]['type'], value) is False:
-                raise ie.InvalidType(command_params_dict[name]['type'], value.__class__.__name__)
-        except ie.InvalidType as e:
-            print e
-            return False
-        return True
-
-    def check_command_params_init(self, command_params):
-        """
-        Checks whether the parameters specified for command are valid, all required parameters are
-        specified and all parameters are of correct type.  If not, raises an exception.
-        """
-        check_params = not self.check_command_params_valid(command_params)\
-            or not self.check_all_required_command_params_specified(command_params)\
-                or not self.check_command_params_type(command_params)
-
-        if check_params:
-            return False
-        
-        #if not self.check_command_params_valid(command_params)
-        #    or not self.check_all_required_command_params_specified(command_params)\
-         #       or not self.check_command_params_type(command_params):
-         #           return False
-
-        #Now set the command parameters
-        for key in command_params:
-            self.__setattr__(key, command_params[key])
-        return True
-
-    def check_command_params_call(self, cls, command_params):
-        """
-        Checks whether the parameters specified for command are valid and all required parameters exist.
-        """
-        command_parameters_dict = cls.command_params
-        #Check command parameters are all valid
-        try:
-            for key in command_params:
-                if not key in command_parameters_dict:
-                    raise ie.InvalidCommandParameter(key, command_parameters_dict.keys())
-        except ie.InvalidCommandParameter as e:
-            print e
-            return False
-        return True
-
-    def setall(self, command_params):
-        for key in command_params:
-            self.__setattr__(key, command_params[key])
-
-    def check_type(self, icool_type, provided_type):
-        """Takes provided python object and compares with required icool type name.
-        Returns True if the types match and False otherwise.
-        """
-        provided_type_name = provided_type.__class__.__name__
-        print icool_type, provided_type_name
-        if icool_type == 'Real':
-            if provided_type_name == 'int' or provided_type_name == 'long' or provided_type_name == 'float':
-                return True
-            else:
-                return False
-
-        if icool_type == 'Integer':
-            if provided_type_name == 'int' or provided_type_name == 'long':
-                return True
-            else:
-                return False
-
-        if icool_type == 'Logical':
-            if provided_type_name == 'bool':
-                return True
-            else:
-                return False
-
-        if icool_type == 'Field':
-            if isinstance(provided_type, Field):
-                return True
-            else:
-                return False
-
-        if icool_type == 'Material':
-            if isinstance(provided_type, Material):
-                return True
-            else:
-                return False
-
-        if icool_type == 'SubRegion':
-            if isinstance(provided_type, SubRegion):
-                return True
-            else:
-                return False
 
 
 class RegularRegion(Region):
