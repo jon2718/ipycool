@@ -1518,6 +1518,10 @@ class ModeledCommandParameter(ICoolType):
         self.set_keyword_args_model_not_specified(kwargs)
 
     def __setattr__(self, name, value):
+        #Check to see whether it is the parm attribute
+        if name == 'parm':
+            object.__setattr__(self, name, value)
+            return
         #Check whether the attribute being set is the model
         if name == self.get_model_descriptor_name():
             if self.check_valid_model(value) is False:
@@ -1653,6 +1657,9 @@ class ModeledCommandParameter(ICoolType):
         """
         return self.get_model_dict(getattr(self, self.get_model_descriptor_name()))
 
+    def get_num_params(self):
+        return self.models['model_descriptor']['num_parms']
+
     def get_model_dict(self, model):
         return self.models[str(model)]['parms']
 
@@ -1675,6 +1682,8 @@ class ModeledCommandParameter(ICoolType):
         return True
 
     def get_icool_model_name(self):
+        #Check to see whether there is an alternate icool_model_name from the common name.
+        #If so return that.  Otherwise, just return the common name.
         return self.models[getattr(self, self.get_model_descriptor_name())]['icool_model_name']
 
     def check_type(self, icool_type, provided_type):
@@ -1720,9 +1729,26 @@ class ModeledCommandParameter(ICoolType):
             if key['pos'] > high_pos:
                 high_pos = key['pos']
         self.parms = [0]*high_pos
+  
+    def gen_parm(self):
+        models = self.models
+        self.parm = [0] * self.get_num_params()
+        cur_model = self.get_model_parms_dict()
+        for key in cur_model:
+            pos = int(cur_model[key]['pos'])-1
+            if key == self.get_model_descriptor_name():
+                val = self.get_icool_model_name()
+            else:
+                val = getattr(self, key)
+            self.parm[pos] = val
+        print self.parm
 
     def gen(self, file):
-        pass
+        self.gen_parm()
+        for i in self.parm:
+            file.write(str(i))
+            file.write(' ')
+        file.write('\n')
 
 
 class Distribution(ModeledCommandParameter):
@@ -1988,6 +2014,20 @@ class BeamType(Container):
 
     def __repr__(self):
         return '[BeamType: ]'
+
+    def gen(self, file):
+        file.write(str(self.partnum))
+        file.write(' ')
+        file.write(str(self.bmtype))
+        file.write(' ')
+        file.write(str(self.fractbt))
+        file.write('\n')
+        self.distribution.gen(file)
+        file.write('\n')
+        file.write(self.nbcorr)
+        file.write('\n')
+        for c in self.enclosed_commands:
+            c.gen(file)
 
 
 class Field(ModeledCommandParameter):
