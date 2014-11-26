@@ -361,6 +361,25 @@ class ICoolObject(ICoolType):
                 return False
 
 
+class ICoolNameList(object):
+    def gen(self, name, file):
+            file.write('&')
+            file.write(name)
+            file.write(' ')
+            count = 0
+            items_per_line = 5
+            for key in self.command_params:
+                if hasattr(self, key):
+                    file.write(str(key))
+                    file.write('=')
+                    file.write(str(getattr(self, key)))
+                    file.write(' ')
+                    count = count + 1
+                    if count % items_per_line == 0:
+                        file.write('\n')
+            file.write('/')
+            file.write('\n')
+
 class Container(ICoolObject):
     """Abstract class container for other commands.
     """
@@ -596,7 +615,7 @@ class Title(object):
         file.write(self.title)
 
 
-class Cont(ICoolObject):
+class Cont(ICoolObject, ICoolNameList):
     command_params = {
         'betaperp':  {'desc': '(R) beta value to use in calculating amplitude variable A^2',
                       'doc': '',
@@ -1007,16 +1026,16 @@ class Cont(ICoolObject):
     def __repr__(self):
         return '[Control variables: ]'
 
-    def gen(self, file):
-        file.write("\n")
-        file.write("&cont")
-        file.write("\n")
-        for key, value in self.cont_commands.items():
-            file.write(key)
-            file.write('=')
-            file.write(str(value))
-            file.write("\n")
-        file.write("/")
+    #def gen(self, file):
+    #    file.write("\n")
+    #    file.write("&cont")
+    #    file.write("\n")
+    #    for key, value in self.cont_commands.items():
+    #        file.write(key)
+    #        file.write('=')
+    #        file.write(str(value))
+    #        file.write("\n")
+    #    file.write("/")
 
 
 class Bmt(Container):
@@ -1701,6 +1720,9 @@ class ModeledCommandParameter(ICoolType):
             if key['pos'] > high_pos:
                 high_pos = key['pos']
         self.parms = [0]*high_pos
+
+    def gen(self, file):
+        pass
 
 
 class Distribution(ModeledCommandParameter):
