@@ -94,6 +94,15 @@ def ipycool(self, arg):
     args = parse_argstring(ipycool, arg)
 
 class ICoolType(object):
+
+    icool_types = {
+                      'namelist': {'Cont': {'name': 'cont'},
+                      'Bmt': {'name': 'bmt'}},
+                      'regularregion': {},
+                      'pseudoregion': {}
+
+
+    }
     def check_variables_type(self, variables):
         """Checks to see whether all variables specified were of the correct type"""
         variables_dict = self.variables
@@ -437,6 +446,10 @@ class Container(ICoolObject):
     def check_allowed_enclosed_commands(self, enclosed_commands):
         pass
 
+    def gen(self, file):
+        for command in self.enclosed_commands:
+            command.gen(file)
+
 class ICoolGen(object):
     """Generate ICOOL for001.dat
     Takes an ICoolInput object and generates an ICOOL for001.dat file.
@@ -510,17 +523,17 @@ class ICoolInput(ICoolObject):
                       'req': True,
                       'default': None},
 
-        'ints':       {'desc': 'ICOOL interaction control variables',
-                       'doc': '',
-                       'type': 'Ints',
-                       'req': True,
-                       'default': None},
-        
+        'ints':      {'desc': 'ICOOL interaction control variables',
+                      'doc': '',
+                      'type': 'Ints',
+                      'req': True,
+                      'default': None},
+    
         'nhs':       {'desc': 'ICOOL histogram definition variables',
-                       'doc': '',
-                       'type': 'Nhs',
-                       'req': False,
-                       'default': None},
+                      'doc': '',
+                      'type': 'Nhs',
+                      'req': False,
+                      'default': None},
 
          'nsc':       {'desc': 'ICOOL scatterplot defintion variables',
                        'doc': '',
@@ -1038,7 +1051,7 @@ class Cont(ICoolObject, ICoolNameList):
     #    file.write("/")
 
 
-class Bmt(Container):
+class Bmt(Container, ICoolNameList):
 
     allowed_enclosed_commands = ['BeamType']
 
@@ -1062,21 +1075,10 @@ class Bmt(Container):
 
     def __setattr__(self, name, value):
         Container.__setattr__(self, name, value)
-        
-    def add_beamtype(self, beamtype):
-        self.beamtype_list.append(beamtype)
 
-    def add_beamtypes(self, beamtype_list):
-        for beamtype in beamtype_list:
-            self.beamtype_list.append(beamtype)
-
-    def add_correlation(self, correlation):
-        self.correlation_list.append(correlation)
-
-    def add_correlations(self, correlation_list):
-        for correlation in correlation_list:
-            self.correlation_list.append(correlation)
-
+    def gen(self, file):
+        ICoolNameList.gen(file)
+        Container.gen(file)
 
 class Ints(ICoolObject):
     def __init__(self, **kwargs):
@@ -1684,7 +1686,10 @@ class ModeledCommandParameter(ICoolType):
     def get_icool_model_name(self):
         #Check to see whether there is an alternate icool_model_name from the common name.
         #If so return that.  Otherwise, just return the common name.
-        return self.models[getattr(self, self.get_model_descriptor_name())]['icool_model_name']
+        if 'icool_model_name' not in self.models[getattr(self, self.get_model_descriptor_name())]:
+            return getattr(self, self.get_model_descriptor_name())
+        else:
+            return self.models[getattr(self, self.get_model_descriptor_name())]['icool_model_name']
 
     def check_type(self, icool_type, provided_type):
         """Takes provided python object and compares with required icool type name.
@@ -1767,6 +1772,7 @@ class Distribution(ModeledCommandParameter):
         'gaussian':
         {'desc': 'Gaussian beam distribution',
          'doc': '',
+         'icool_model_name': 1,
          'parms':
                  {'bdistyp': {'pos': 1, 'type': 'String', 'doc': ''},
                   'x_mean': {'pos': 2, 'type': 'Real', 'doc': ''},
@@ -1785,6 +1791,7 @@ class Distribution(ModeledCommandParameter):
         'uniform':
         {'desc': 'Uniform circular segment beam distribution',
          'doc': '',
+         'icool_model_name': 2,
          'parms':
                  {'bdistyp': {'pos': 1, 'type': 'String', 'doc': ''},
                   'r_low': {'pos': 2, 'type': 'Real', 'doc': ''},
@@ -1977,6 +1984,7 @@ class BeamType(Container):
         'bmtype':       {'desc': 'beam type {magnitude = mass code; sign = charge}: 1: e, 2: μ, 3: π, 4: K, 5: p. '
                                  '6: d, 7: He3, 8: Li7',
                          'doc': '',
+                         'out_dict': {'e': 1, 'mu': 2, 'pi': 3, 'k': 4, 'p': 5, 'd': 6, 'he3': 7, 'li7': 8},
                          'type': 'Integer',
                          'req': True,
                          'default': None},
@@ -2024,7 +2032,7 @@ class BeamType(Container):
         file.write('\n')
         self.distribution.gen(file)
         file.write('\n')
-        file.write(self.nbcorr)
+        file.write(str(self.nbcorr))
         file.write('\n')
         for c in self.enclosed_commands:
             c.gen(file)
