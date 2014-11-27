@@ -95,14 +95,13 @@ def ipycool(self, arg):
 
 class ICoolType(object):
 
-    icool_types = {
-                      'namelist': {'Cont': {'name': 'cont'},
-                      'Bmt': {'name': 'bmt'}},
-                      'regularregion': {},
-                      'pseudoregion': {}
-
-
-    }
+   # icool_types = {
+   #                   'Cont': {'type': '}
+   #                   'namelist': {'Cont': {'name': 'cont'},
+   #                  'Bmt': {'name': 'bmt'}},
+   #                   'regularregion': {},
+   #                   'pseudoregion': {}
+    #}
     def check_variables_type(self, variables):
         """Checks to see whether all variables specified were of the correct type"""
         variables_dict = self.variables
@@ -368,6 +367,23 @@ class ICoolObject(ICoolType):
                 return True
             else:
                 return False
+
+    def get_base_classes(self):
+        base_tuple = self.__class__.__bases__
+        bases_names = tuple()
+        for c in base_tuple:
+            bases_names += tuple([c.__name__])
+        return bases_names
+
+    def gen(self, file):
+        base_classes = self.get_base_classes()
+        if 'ICoolNameList' in base_classes:
+            ICoolNameList.gen(self, self.__class__.__name__.lower(), file)
+        if 'Container' in base_classes:
+            for command in self.enclosed_commands:
+                command.gen(file)
+
+
 
 
 class ICoolNameList(object):
@@ -1039,6 +1055,9 @@ class Cont(ICoolObject, ICoolNameList):
     def __repr__(self):
         return '[Control variables: ]'
 
+    def gen(self, file):
+        ICoolObject.gen(self, file)
+
     #def gen(self, file):
     #    file.write("\n")
     #    file.write("&cont")
@@ -1077,8 +1096,8 @@ class Bmt(Container, ICoolNameList):
         Container.__setattr__(self, name, value)
 
     def gen(self, file):
-        ICoolNameList.gen(file)
-        Container.gen(file)
+       ICoolObject.gen(self, file)
+
 
 class Ints(ICoolObject):
     def __init__(self, **kwargs):
