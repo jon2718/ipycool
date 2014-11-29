@@ -93,6 +93,7 @@ def ipycool(self, arg):
     """
     args = parse_argstring(ipycool, arg)
 
+
 class ICoolType(object):
 
    # icool_types = {
@@ -368,6 +369,7 @@ class ICoolObject(ICoolType):
             else:
                 return False
 
+class Gen(object):
     def get_base_classes(self):
         base_tuple = self.__class__.__bases__
         bases_names = tuple()
@@ -375,19 +377,16 @@ class ICoolObject(ICoolType):
             bases_names += tuple([c.__name__])
         return bases_names
 
-    def gen(self, file):
+    def gen_for001(self, file):
         base_classes = self.get_base_classes()
         if 'ICoolNameList' in base_classes:
-            ICoolNameList.gen(self, self.__class__.__name__.lower(), file)
+            ICoolNameList.gen_for001(self, self.__class__.__name__.lower(), file)
         if 'Container' in base_classes:
             for command in self.enclosed_commands:
                 command.gen(file)
 
-
-
-
-class ICoolNameList(object):
-    def gen(self, name, file):
+class ICoolNameList(Gen):
+    def gen_for001(self, name, file):
             file.write('&')
             file.write(name)
             file.write(' ')
@@ -405,7 +404,7 @@ class ICoolNameList(object):
             file.write('/')
             file.write('\n')
 
-class Container(ICoolObject):
+class Container(object):
     """Abstract class container for other commands.
     """
     def __init__(self, enclosed_commands=None):
@@ -644,7 +643,7 @@ class Title(object):
         file.write(self.title)
 
 
-class Cont(ICoolObject, ICoolNameList):
+class Cont(ICoolObject, ICoolNameLIst):
     command_params = {
         'betaperp':  {'desc': '(R) beta value to use in calculating amplitude variable A^2',
                       'doc': '',
@@ -1070,7 +1069,7 @@ class Cont(ICoolObject, ICoolNameList):
     #    file.write("/")
 
 
-class Bmt(Container, ICoolNameList):
+class Bmt(ICoolObject, Container, ICoolNameList):
 
     allowed_enclosed_commands = ['BeamType']
 
@@ -1103,6 +1102,7 @@ class Ints(ICoolObject):
     def __init__(self, **kwargs):
         pass
 
+
 class Region(ICoolObject):
     def __init__(self, kwargs):
         ICoolObject.__init__(self, kwargs)
@@ -1118,6 +1118,19 @@ class Region(ICoolObject):
 
     def __setattr__(self, name, value):
         ICoolObject.__setattr__(self, name, value)
+
+    def gen(self, file):
+        pass
+
+    def gen_parm(self):
+        command_params = self.command_params
+        parm = [None] * len(command_params)
+        for key in command_params:
+            pos = int(command_params[key]['pos'])-1
+            val = getattr(self, key)
+            parm[pos] = val
+        print parm
+
 
 
 class RegularRegion(Region):
@@ -1192,12 +1205,10 @@ class Section(RegularRegion, Container):
     #    region.gen('SECTION')
 
     def gen(self, file):
-        file.write('\n')
         file.write('SECTION')
-        for command in self.commands:
-            command.gen(file)
-        file.write('\n')
+        Container.gen(self, file)
         file.write('ENDSECTION')
+        file.write('\n')
 
 
 class Begs(RegularRegion):
@@ -1205,7 +1216,8 @@ class Begs(RegularRegion):
         RegularRegion.__init(self, None, None)
 
     def gen(self, file):
-        pass
+        file.write('\n')
+        file.write('BEGS')
 
 
 class Repeat(RegularRegion, Container):
@@ -1218,8 +1230,10 @@ class Repeat(RegularRegion, Container):
     """
     command_params = {
         'nrep':  {'desc': '# of times to repeat following region commands',
+                  'doc': '',
                   'type': 'Integer',
-                  'req': True}
+                  'req': True,
+                  'pos': 1}
         }
 
     allowed_enclosed_commands = [
@@ -1242,7 +1256,10 @@ class Repeat(RegularRegion, Container):
         return 'Repeat\n'
 
     def gen(self, file):
-        pass
+        file.write('REPEAT')
+        Container.gen(self, file)
+        file.write('ENDREPEAT')
+        file.write('/n')
 
 
 class Background(PseudoRegion):
@@ -1322,17 +1339,23 @@ class Cell(RegularRegion, Container):
 
     command_params = {
         'ncells':  {'desc': 'Number of times to repeat this command in this cell block',
+                    'doc': '',
                     'type': 'Integer',
-                    'req': True},
+                    'req': True,
+                    'pos': 1},
 
         'flip':      {'desc': 'if .true. => flip cell field for alternate cells',
+                      'doc': '',
                       'type': 'Logical',
-                      'req': False},
+                      'req': True,
+                      'pos': 2},
 
 
         'field':      {'desc': 'Field object',
+                       'doc': '',
                        'type': 'Field',
-                       'req': True},
+                       'req': True,
+                       'pos': 3},
 
         }
 
@@ -1353,7 +1376,10 @@ class Cell(RegularRegion, Container):
         return 'Cell\n'
 
     def gen(self, file):
-        region.gen('CELL')
+        file.write('CELL')
+        Container.gen(self, file)
+        file.write('ENDCELL')
+        file.write('/n')
 
 
 class SRegion(RegularRegion, Container):
@@ -1397,19 +1423,22 @@ class SRegion(RegularRegion, Container):
         'slen':  {'desc': 'Length of this s region [m]',
                   'doc': '',
                   'type': 'Real',
-                  'req': True},
+                  'req': True,
+                  'pos': 1},
 
         'nrreg':   {'desc': '# of radial subregions of this s region {1-4}',
                     'doc': '',
                     'type': 'Int',
                     'min': 1,
                     'max': 4,
-                    'req': True},
+                    'req': True,
+                    'pos': 2},
 
         'zstep':   {'desc': 'Step for tracking particles [m]',
                     'doc': '',
                     'type': 'Real',
-                    'req': True}}
+                    'req': True,
+                    'pos': 3}}
 
     def __init__(self, **kwargs):
         if self.check_command_params_init(kwargs) is False:
@@ -1474,24 +1503,34 @@ class SubRegion(Region):
 
     command_params = {
         'irreg':  {'desc': 'R-Region Number',
+                   'doc': '',
                    'type': 'Integer',
-                   'req': True},
+                   'req': True,
+                   'pos': 1},
 
         'rlow':   {'desc': 'Inner radius of this r subregion',
+                   'doc': '',
                    'type': 'Real',
-                   'req': True},
+                   'req': True,
+                   'pos': 2},
 
         'rhigh':   {'desc': 'Outer radius of this r subregion',
+                    'doc': '',
                     'type': 'Real',
-                    'req': True},
+                    'req': True,
+                    'pos': 3},
 
         'field':   {'desc': 'Field object',
+                    'doc': '',
                     'type': 'Field',
-                    'req': True},
+                    'req': True,
+                    'pos': 'None'},
 
         'material': {'desc': 'Material object',
+                     'doc': '',
                      'type': 'Material',
-                     'req': True}
+                     'req': True,
+                     'pos': 'None'}
         }
 
     def __init__(self, **kwargs):
@@ -1972,7 +2011,7 @@ class Correlation(ModeledCommandParameter):
         return self.corrtyp + ':' + 'Correlation:' + ModeledCommandParameter.__str__(self)
 
 
-class BeamType(Container):
+class BeamType(ICoolObject, Container):
     """
     A BeamType is a:
     (1) PARTNUM (I) particle number
