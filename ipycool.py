@@ -94,6 +94,40 @@ def ipycool(self, arg):
     args = parse_argstring(ipycool, arg)
 
 
+class ICoolGenerator(object):
+    def get_base_classes(self):
+        base_tuple = self.__class__.__bases__
+        bases_names = tuple()
+        for c in base_tuple:
+            bases_names += tuple([c.__name__])
+        return bases_names
+
+    def icoolgenerate_for001(self, file):
+        base_classes = self.get_base_classes()
+        if 'ICoolNameList' in base_classes:
+            ICoolNameList.gen_for001(self, file)
+            if 'Container' in base_classes:
+                Container.gen_for001(self, file)
+        else:
+            if 'RegularRegion' or 'PseudoRegion' in base_classes:
+                Region.gen_begtag(self, file)
+                Region.gen_for001(self, file)
+                if 'Container' in base_classes:
+                    Container.gen_for001(self, file)
+                Region.gen_endtag(self, file)
+
+
+    def gen_begtag(self, file):
+        if hasattr(self, 'begtag'):
+            file.write(self.begtag)
+            file.write('\n')
+
+    def gen_endtag(self, file):
+        if hasattr(self, 'endtag'):
+            file.write(self.endtag)
+            file.write('\n')
+
+
 class ICoolType(object):
 
    # icool_types = {
@@ -181,7 +215,7 @@ class ICoolType(object):
                 return False
 
 
-class ICoolObject(ICoolType):
+class ICoolObject(ICoolGenerator, ICoolType):
     """Generic ICOOL object providing methods for"""
     def __init__(self, kwargs):
         if self.check_command_params_init(kwargs) is False:
@@ -369,24 +403,10 @@ class ICoolObject(ICoolType):
             else:
                 return False
 
-class Gen(object):
-    def get_base_classes(self):
-        base_tuple = self.__class__.__bases__
-        bases_names = tuple()
-        for c in base_tuple:
-            bases_names += tuple([c.__name__])
-        return bases_names
 
+class ICoolNameList(ICoolObject):
     def gen_for001(self, file):
-        base_classes = self.get_base_classes()
-        if 'ICoolNameList' in base_classes:
-            ICoolNameList.gen_for001(self, self.__class__.__name__.lower(), file)
-        if 'Container' in base_classes:
-            for command in self.enclosed_commands:
-                command.gen(file)
-
-class ICoolNameList(Gen):
-    def gen_for001(self, name, file):
+            name = self.__class__.__name__.lower()
             file.write('&')
             file.write(name)
             file.write(' ')
@@ -404,7 +424,7 @@ class ICoolNameList(Gen):
             file.write('/')
             file.write('\n')
 
-class Container(object):
+class Container(ICoolObject):
     """Abstract class container for other commands.
     """
     def __init__(self, enclosed_commands=None):
@@ -461,9 +481,19 @@ class Container(object):
     def check_allowed_enclosed_commands(self, enclosed_commands):
         pass
 
-    def gen(self, file):
+    def gen_for001(self, file):
+        #base_classes = self.get_base_classes()
+        print 'Here here...'
         for command in self.enclosed_commands:
-            command.gen(file)
+            print 'Looping'
+            print 'Command is: ', command
+            ICoolGenerator.gen_begtag(self, file)
+            if hasattr(command, 'gen_for001'):
+                command.gen_for001(file)
+            else:
+                file.write(str(command))
+            ICoolGenerator.gen_endtag(self, file)
+
 
 class ICoolGen(object):
     """Generate ICOOL for001.dat
@@ -643,7 +673,7 @@ class Title(object):
         file.write(self.title)
 
 
-class Cont(ICoolObject, ICoolNameLIst):
+class Cont(ICoolNameList):
     command_params = {
         'betaperp':  {'desc': '(R) beta value to use in calculating amplitude variable A^2',
                       'doc': '',
@@ -1069,7 +1099,7 @@ class Cont(ICoolObject, ICoolNameLIst):
     #    file.write("/")
 
 
-class Bmt(ICoolObject, Container, ICoolNameList):
+class Bmt(Container, ICoolNameList):
 
     allowed_enclosed_commands = ['BeamType']
 
@@ -1094,8 +1124,8 @@ class Bmt(ICoolObject, Container, ICoolNameList):
     def __setattr__(self, name, value):
         Container.__setattr__(self, name, value)
 
-    def gen(self, file):
-       ICoolObject.gen(self, file)
+    #def gen(self, file):
+    #   ICoolObject.gen(self, file)
 
 
 class Ints(ICoolObject):
@@ -1119,8 +1149,22 @@ class Region(ICoolObject):
     def __setattr__(self, name, value):
         ICoolObject.__setattr__(self, name, value)
 
-    def gen(self, file):
-        pass
+    def gen_for001(self, file):
+        parm = self.gen_parm()
+        for command in parm:
+            if hasattr(command, 'begtag'):
+                command.gen_begtag(file)
+                print 'Begtag is', command.begtag
+            print 'Command is: ', command
+            if hasattr(command, 'gen_for001'):
+                command.gen_for001(file)
+            else:
+                file.write(str(command))
+            file.write(' ')
+            if hasattr(command, 'endtag'):
+                command.gen_endtag(file)
+        file.write('\n')
+
 
     def gen_parm(self):
         command_params = self.command_params
@@ -1130,6 +1174,7 @@ class Region(ICoolObject):
             val = getattr(self, key)
             parm[pos] = val
         print parm
+        return parm
 
 
 
@@ -1167,7 +1212,21 @@ class PseudoRegion(Region):
                 OUTPUT, REFP, REF2, RESET, RKICK, ROTATE, TAPER, TILT, TRANSPORT, BACKGROUND, BFIELD, ENDB, ! or &]'
 
 
-class Section(RegularRegion, Container):
+class RegularRegionContainer(RegularRegion, Container):
+    def gen_for001(self, file):
+        self.gen_begtag(file)
+        RegularRegion.gen_for001(self, file)
+        for command in self.enclosed_commands:
+            print 'Looping'
+            print 'Command is: ', command
+            if hasattr(command, 'gen_for001'):
+                command.gen_for001(file)
+            else:
+                file.write(str(command))
+        self.gen_endtag(file)
+
+
+class Section(RegularRegionContainer):
     """
     SECTION Start of cooling section region definition.
     The data must end with an ENDSECTION.   It can enclose any number of other commands.
@@ -1181,12 +1240,19 @@ class Section(RegularRegion, Container):
         'Repeat'
         ]
 
-    command_params = {}
-
+    command_params = {
+        'nsections':  {'desc': '# of times to repeat enclosed command parameters',
+                  'doc': '',
+                  'type': 'Integer',
+                  'req': False,
+                  'pos': 1}
+        }
     def __init__(self, **kwargs):
         RegularRegion.__init__(self, kwargs)
         Container.__init__(self)
-
+        object.__setattr__(self, 'begtag', 'SECTION')
+        object.__setattr__(self, 'endtag', 'ENDSECTION')
+    
     def __setattr__(self, name, value):
         Container.__setattr__(self, name, value)
 
@@ -1220,7 +1286,7 @@ class Begs(RegularRegion):
         file.write('BEGS')
 
 
-class Repeat(RegularRegion, Container):
+class Repeat(RegularRegionContainer):
     """
     Start of a repeating group of region commands; the data must end with an ENDREPEAT
     command. This can be used to repeat regions inside a cell. The repeat loop can enclose any
@@ -1244,6 +1310,8 @@ class Repeat(RegularRegion, Container):
     def __init__(self, **kwargs):
         RegularRegion.__init__(self, kwargs)
         Container.__init__(self)
+        object.__setattr__(self, 'begtag', 'REPEAT')
+        object.__setattr__(self, 'endtag', 'ENDREPEAT')
 
     def __setattr__(self, name, value):
         Container.__setattr__(self, name, value)
@@ -1326,7 +1394,7 @@ class Edge(PseudoRegion):
         self.model_parameters = model_parameters
 
 
-class Cell(RegularRegion, Container):
+class Cell(RegularRegionContainer):
     """CELL Start of a repeating group of region commands; the data must end with an ENDCELL command.
     The cell loop can enclose any number of commands under REPEAT plus REPEAT and ENDREPEAT commands.
     It has an associated cell field, which is superimposed on the individual region fields. Cell sections cannot
@@ -1362,6 +1430,8 @@ class Cell(RegularRegion, Container):
     def __init__(self, **kwargs):
         RegularRegion.__init__(self, kwargs)
         Container.__init__(self)
+        object.__setattr__(self, 'begtag', 'CELL')
+        object.__setattr__(self, 'endtag', 'ENDCELL')
 
     def __setattr__(self, name, value):
         Container.__setattr__(self, name, value)
@@ -1382,7 +1452,7 @@ class Cell(RegularRegion, Container):
         file.write('/n')
 
 
-class SRegion(RegularRegion, Container):
+class SRegion(RegularRegionContainer):
     """
     SREGION - Start of new s-region. Describes field and material properties.
 
@@ -1441,12 +1511,10 @@ class SRegion(RegularRegion, Container):
                     'pos': 3}}
 
     def __init__(self, **kwargs):
-        if self.check_command_params_init(kwargs) is False:
-            sys.exit(0)
+        RegularRegion.__init__(self, kwargs)
         Container.__init__(self)
-        #if not 'subregions' in kwargs:
-        #    self.subregions = []
-
+        object.__setattr__(self, 'begtag', 'SREGION')
+      
     def __str__(self):
         ret_str = 'SRegion:\n'+'slen='+str(self.slen) + '\n' + 'nrreg=' + str(self.nrreg) + '\n' + \
                'zstep=' + str(self.zstep)+'\n' + str(Container.__str__(self))
@@ -1806,7 +1874,7 @@ class ModeledCommandParameter(ICoolType):
             self.parm[pos] = val
         print self.parm
 
-    def gen(self, file):
+    def gen_for001(self, file):
         self.gen_parm()
         for i in self.parm:
             file.write(str(i))
@@ -2011,7 +2079,7 @@ class Correlation(ModeledCommandParameter):
         return self.corrtyp + ':' + 'Correlation:' + ModeledCommandParameter.__str__(self)
 
 
-class BeamType(ICoolObject, Container):
+class BeamType(Container):
     """
     A BeamType is a:
     (1) PARTNUM (I) particle number
@@ -2081,19 +2149,19 @@ class BeamType(ICoolObject, Container):
     def __repr__(self):
         return '[BeamType: ]'
 
-    def gen(self, file):
+    def gen_for001(self, file):
         file.write(str(self.partnum))
         file.write(' ')
         file.write(str(self.bmtype))
         file.write(' ')
         file.write(str(self.fractbt))
         file.write('\n')
-        self.distribution.gen(file)
+        self.distribution.gen_for001(file)
         file.write('\n')
         file.write(str(self.nbcorr))
         file.write('\n')
         for c in self.enclosed_commands:
-            c.gen(file)
+            c.gen_for001(file)
 
 
 class Field(ModeledCommandParameter):
@@ -2685,7 +2753,8 @@ class Accel(Field):
     models = {
 
         'model_descriptor': {'desc': 'Name of model parameter descriptor',
-                             'name': 'model'},
+                             'name': 'model',
+                             'num_parms': 15},
 
         'ez': {'desc': 'Ez only with no transverse variation',
                'doc': '',
