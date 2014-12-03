@@ -1559,7 +1559,7 @@ class SRegion(RegularRegionContainer):
             subregion.gen(file)
 
 
-class SubRegion(Region):
+class SubRegion(RegularRegion):
     """
     A SubRegion is a:
     (1) IRREG r-region number;
@@ -1592,18 +1592,17 @@ class SubRegion(Region):
                     'doc': '',
                     'type': 'Field',
                     'req': True,
-                    'pos': 'None'},
+                    'pos': 4},
 
         'material': {'desc': 'Material object',
                      'doc': '',
                      'type': 'Material',
                      'req': True,
-                     'pos': 'None'}
+                     'pos': 5}
         }
 
     def __init__(self, **kwargs):
-        if self.check_command_params_init(kwargs) is False:
-            sys.exit(0)
+        RegularRegion.__init__(self, kwargs)
 
     def __str__(self):
         return 'SubRegion:\n'+'irreg='+str(self.irreg) + '\n' + 'rlow=' + str(self.rlow) + '\n' + \
@@ -1617,7 +1616,271 @@ class SubRegion(Region):
         Region.__setattr__(self, name, value)
 
 
-class ModeledCommandParameter(ICoolType):
+class ModeledCommandParameter_Old(ICoolType):
+
+    def __init__(self, kwargs):
+        """
+        Checks to see whether all required parameters are specified.  If not, raises exception and exits.
+        """
+        if self.check_model_keyword_args(kwargs) is False:
+            sys.exit(0)
+        self.set_keyword_args_model_specified(kwargs)
+
+    def __call__(self, kwargs):
+        """
+        Checks to see whether new model specified in call.
+        If so, checks that the parameters specified correspond to that model and raises an exception if they dont.
+        Does NOT require all parameters specified for new model.  Unspecified parameters are set to 0.
+        If model is not specified, checks whether the parameters specified correspond to the current model and
+        raises an exception otherwise.
+        """
+        if self.check_model_specified(kwargs) is True:
+            if self.check_partial_keywords_for_new_model(kwargs) is False:
+                sys.exit(0)
+            self.set_keyword_args_model_specified(kwargs)
+            return
+        """Model not specified"""
+        if self.check_partial_keywords_for_current_model(kwargs) is False:
+                sys.exit(0)
+        self.set_keyword_args_model_not_specified(kwargs)
+
+    def __setattr__(self, name, value):
+        #Check to see whether it is the parm attribute
+        if name == 'parm':
+            object.__setattr__(self, name, value)
+            return
+        #Check whether the attribute being set is the model
+        if name == self.get_model_descriptor_name():
+            if self.check_valid_model(value) is False:
+                return
+            new_model = False
+            #Check whether this is a new model (i.e. model was previously defined)
+            if hasattr(self, self.get_model_descriptor_name()):
+                new_model = True
+                #Delete all attributes of the current model
+                print 'Resetting model to ', value
+                for key in self.get_model_dict(getattr(self, self.get_model_descriptor_name())):
+                    if hasattr(self, key):
+                        delattr(self, key)
+            object.__setattr__(self, self.get_model_descriptor_name(), value)
+            #If new model, set all attributes of new model to 0.
+            if new_model is True:
+                for key in self.get_model_dict(value):
+                    if key is not self.get_model_descriptor_name():
+                        setattr(self, key, 0)
+            return
+        try:
+            if self.check_keyword_in_model(name):
+                if self.check_model_variable_type(name, value):
+                    object.__setattr__(self, name, value)
+            else:
+                raise ie.SetAttributeError('', self, name)
+        except ie.InvalidType as e:
+            print e
+        except ie.SetAttributeError as e:
+            print e
+
+    def __str__(self):
+        desc = 'ModeledCommandParameter\n'
+        for key in self.get_model_dict(getattr(self, self.get_model_descriptor_name())):
+            desc = desc + key + ': ' + str(getattr(self, key)) + '\n'
+        return desc
+
+    def set_keyword_args_model_specified(self, kwargs):
+        setattr(self, self.get_model_descriptor_name(), kwargs[self.get_model_descriptor_name()])
+        for key in kwargs:
+            if not key == self.get_model_descriptor_name():
+                setattr(self, key, kwargs[key])
+
+    def set_keyword_args_model_not_specified(self, kwargs):
+        for key in kwargs:
+            object.__setattr__(self, key, kwargs[key])
+
+    def reset_model(self):
+        for key in self.get_model_dict(self.model):
+            if hasattr(self, key):
+                delattr(self, key)
+
+    def check_model_keyword_args(self, input_dict):
+        """
+        Checks if ALL keywords for a model are specified.  If not, raises InputArgumentsError.
+        If model is not specified, raises ModelNotSpecifiedError.
+        Initialization of a model (e.g., Accel, SOL, etc. requires all keywords specified)
+        """
+        try:
+            if not self.check_model_specified(input_dict):
+                actual_dict = {'Unknown': 0}
+                raise ie.InputArgumentsError('Model most be specified', input_dict, actual_dict)
+            model = input_dict[self.get_model_descriptor_name()]
+            if not str(model) in self.models.keys():
+                raise ie.InvalidCommandParameter(str(model), self.models.keys())
+            actual_dict = self.models[str(model)]['parms']
+            if sorted(input_dict.keys()) != sorted(actual_dict.keys()):
+                raise ie.InputArgumentsError('Model parameter specification error', input_dict, actual_dict)
+        except ie.InputArgumentsError as e:
+            print e
+            return False
+        except ie.InvalidCommandParameter as e:
+            print e
+            return False
+        return True
+
+    def check_valid_model(self, model):
+        """
+        Checks whether model specified is valid.
+        If model is not valid, raises an exception and returns False.  Otherwise returns True.
+        """
+        try:
+            if not str(model) in self.models.keys():
+                raise ie.InvalidModel(str(model), self.models.keys())
+        except ie.InvalidModel as e:
+            print e
+            return False
+        return True
+
+    def check_keyword_in_model(self, keyword):
+        """
+        Checks if given keyword specified is in the model associated with self.  If not, raises InputArgumentsError
+        """
+        if keyword in self.get_model_dict(getattr(self, self.get_model_descriptor_name())):
+            return True
+        else:
+            return False
+
+    def check_partial_keywords_for_current_model(self, input_dict):
+        """
+        Checks whether the keywords specified for a current model correspond to that model.
+        """
+        actual_dict = self.get_model_dict(getattr(self, self.get_model_descriptor_name()))
+        for key in input_dict:
+            if not key in actual_dict:
+                raise ie.InputArgumentsError('Input Arguments Error', input_dict, actual_dict)
+        return True
+
+    def check_partial_keywords_for_new_model(self, input_dict):
+        """
+        Checks whether the keywords specified for a new model correspond to that model.
+        """
+        model = input_dict[self.get_model_descriptor_name()]
+        actual_dict = self.get_model_dict(model)
+        for key in input_dict:
+            if not key in actual_dict:
+                raise ie.InputArgumentsError('Input Arguments Error', input_dict, actual_dict)
+        return True
+
+    def check_model_specified(self, input_dict):
+        """
+        Check whether the user specified a model in specifying parameters to Init or Call.
+        if so, returns True.  Otherwise, returns False.
+        """
+        if self.get_model_descriptor_name() in input_dict.keys():
+            return True
+        else:
+            return False
+
+    def get_model_parms_dict(self):
+        """
+        Returns the parameter dictionary for the current model.
+        """
+        return self.get_model_dict(getattr(self, self.get_model_descriptor_name()))
+
+    def get_num_params(self):
+        return self.models['model_descriptor']['num_parms']
+
+    def get_model_dict(self, model):
+        return self.models[str(model)]['parms']
+
+    def get_model_descriptor_name(self):
+        """
+        The model descriptor name is an alias name for the term 'model', which is specified for each descendent class.
+        Returns the model descriptor name.
+        """
+        return self.models['model_descriptor']['name']
+
+    def check_model_variable_type(self, name, value):
+        """Checks to see whether a particular variable for a model of name with value is of the correct type"""
+        parms_dict = self.get_model_parms_dict()
+        try:
+            if self.check_type(parms_dict[name]['type'], value) is False:
+                raise ie.InvalidType(parms_dict[name]['type'], value.__class__.__name__)
+        except ie.InvalidType as e:
+            print e
+            return False
+        return True
+
+    def get_icool_model_name(self):
+        #Check to see whether there is an alternate icool_model_name from the common name.
+        #If so return that.  Otherwise, just return the common name.
+        if 'icool_model_name' not in self.models[getattr(self, self.get_model_descriptor_name())]:
+            return getattr(self, self.get_model_descriptor_name())
+        else:
+            return self.models[getattr(self, self.get_model_descriptor_name())]['icool_model_name']
+
+    def check_type(self, icool_type, provided_type):
+        """Takes provided python object and compares with required icool type name.
+        Returns True if the types match and False otherwise.
+        """
+        provided_type_name = provided_type.__class__.__name__
+        print icool_type, provided_type_name
+        if icool_type == 'Real':
+            if provided_type_name == 'int' or provided_type_name == 'long' or provided_type_name == 'float':
+                return True
+            else:
+                return False
+
+        if icool_type == 'Integer':
+            if provided_type_name == 'int' or provided_type_name == 'long':
+                return True
+            else:
+                return False
+
+        if icool_type == 'Logical':
+            if provided_type_name == 'bool':
+                return True
+            else:
+                return False
+
+        if icool_type == 'Field':
+            if isinstance(provided_type, Field):
+                return True
+            else:
+                return False
+
+        if icool_type == 'String':
+            if isinstance(provided_type, str):
+                return True
+            else:
+                return False
+    
+    def set_model_parameters(self):
+        parms_dict = self.get_model_parms_dict()
+        high_pos = 0
+        for key in parms_dict:
+            if key['pos'] > high_pos:
+                high_pos = key['pos']
+        self.parms = [0]*high_pos
+  
+    def gen_parm(self):
+        models = self.models
+        self.parm = [0] * self.get_num_params()
+        cur_model = self.get_model_parms_dict()
+        for key in cur_model:
+            pos = int(cur_model[key]['pos'])-1
+            if key == self.get_model_descriptor_name():
+                val = self.get_icool_model_name()
+            else:
+                val = getattr(self, key)
+            self.parm[pos] = val
+        print self.parm
+
+    def gen_for001(self, file):
+        self.gen_parm()
+        for i in self.parm:
+            file.write(str(i))
+            file.write(' ')
+        file.write('\n')
+
+class ModeledCommandParameter(ICoolObject):
 
     def __init__(self, kwargs):
         """
