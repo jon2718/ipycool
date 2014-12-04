@@ -257,7 +257,7 @@ class ICoolObject(ICoolGenerator, ICoolType):
         """
         Checks whether a parameter specified for command is valid.
         """
-        command_parameters_dict = self.command_params
+        command_parameters_dict = self.get_command_params()
         #Check command parameters are all valid
         try:
             if not command_param in command_parameters_dict:
@@ -273,7 +273,7 @@ class ICoolObject(ICoolGenerator, ICoolType):
     def check_command_params_valid(self, command_params):
         """Returns True if command_params are valid (correspond to the command)
         Otherwise raises an exception and returns False"""
-        command_parameters_dict = self.command_params
+        command_parameters_dict = self.get_command_params()
         try:
             for key in command_params:
                 if not key in command_parameters_dict:
@@ -286,10 +286,11 @@ class ICoolObject(ICoolGenerator, ICoolType):
     def check_all_required_command_params_specified(self, command_params):
         """Returns True if all required command parameters were specified
         Otherwise raises an exception and returns False"""
-        command_parameters_dict = self.command_params
+        command_parameters_dict = self.get_command_params()
         try:
             for key in command_parameters_dict:
-                if command_parameters_dict[key]['req'] is True:
+                #if command_parameters_dict[key]['req'] is True:
+                if self.is_required(key):
                     if not key in command_params:
                         raise ie.MissingCommandParameter(key, command_params)
         except ie.MissingCommandParameter as e:
@@ -299,7 +300,7 @@ class ICoolObject(ICoolGenerator, ICoolType):
 
     def check_command_params_type(self, command_params):
         """Checks to see whether all required command parameters specified were of the correct type"""
-        command_params_dict = self.command_params
+        command_params_dict = self.get_command_params()
         try:
             for key in command_params:
                 if self.check_type(command_params_dict[key]['type'], command_params[key]) is False:
@@ -311,7 +312,7 @@ class ICoolObject(ICoolGenerator, ICoolType):
 
     def check_command_param_type(self, name, value):
         """Checks to see whether a particular command parameter of name with value is of the correct type"""
-        command_params_dict = self.command_params
+        command_params_dict = self.get_command_params()
         try:
             if self.check_type(command_params_dict[name]['type'], value) is False:
                 raise ie.InvalidType(command_params_dict[name]['type'], value.__class__.__name__)
@@ -331,11 +332,6 @@ class ICoolObject(ICoolGenerator, ICoolType):
 
         if check_params:
             return False
-        
-        #if not self.check_command_params_valid(command_params)
-        #    or not self.check_all_required_command_params_specified(command_params)\
-         #       or not self.check_command_params_type(command_params):
-         #           return False
 
         #Now set the command parameters
         for key in command_params:
@@ -346,7 +342,7 @@ class ICoolObject(ICoolGenerator, ICoolType):
         """
         Checks whether the parameters specified for command are valid and all required parameters exist.
         """
-        command_parameters_dict = cls.command_params
+        command_parameters_dict = cls.get_command_params()
         #Check command parameters are all valid
         try:
             for key in command_params:
@@ -402,6 +398,17 @@ class ICoolObject(ICoolGenerator, ICoolType):
                 return True
             else:
                 return False
+    
+    def get_command_params(self):
+        return self.command_params
+
+    def is_required(self, command_param):
+        command_parameters_dict = self.get_command_params()
+        if 'req' not in command_parameters_dict[command_param]:
+            return True
+        else:
+            return command_parameters_dict[command_param]['req']
+
 
 
 class ICoolNameList(ICoolObject):
@@ -941,13 +948,13 @@ class Cont(ICoolNameList):
         'prnmax':         {'desc': 'Sets maximum number of steps to generate print out inside a region',
                            'doc': '',
                            'type': 'Integer',
-                           'req': 'False',
+                           'req': False,
                            'default': 300},
 
         'pzmintrk':       {'desc': 'Sets the value of Pz below which tracking stops. [GeV/c]',
                            'doc': '',
                            'type': 'Real',
-                           'req': 'False',
+                           'req': False,
                            'default': 0.001},
 
         'rfdiag':         {'desc': 'if 19 < RFDIAG=mn < 100 => writes rf diagnostic information at the '
@@ -1880,15 +1887,16 @@ class ModeledCommandParameter_Old(ICoolType):
             file.write(' ')
         file.write('\n')
 
+
 class ModeledCommandParameter(ICoolObject):
 
     def __init__(self, kwargs):
         """
         Checks to see whether all required parameters are specified.  If not, raises exception and exits.
         """
-        if self.check_model_keyword_args(kwargs) is False:
+        if self.check_command_params_init(kwargs) is False:
             sys.exit(0)
-        self.set_keyword_args_model_specified(kwargs)
+        #self.set_keyword_args_model_specified(kwargs)
 
     def __call__(self, kwargs):
         """
@@ -1965,29 +1973,18 @@ class ModeledCommandParameter(ICoolObject):
             if hasattr(self, key):
                 delattr(self, key)
 
-    def check_model_keyword_args(self, input_dict):
+    def check_command_params_init(self, command_params):
         """
         Checks if ALL keywords for a model are specified.  If not, raises InputArgumentsError.
         If model is not specified, raises ModelNotSpecifiedError.
         Initialization of a model (e.g., Accel, SOL, etc. requires all keywords specified)
         """
-        try:
-            if not self.check_model_specified(input_dict):
-                actual_dict = {'Unknown': 0}
-                raise ie.InputArgumentsError('Model most be specified', input_dict, actual_dict)
-            model = input_dict[self.get_model_descriptor_name()]
-            if not str(model) in self.models.keys():
-                raise ie.InvalidCommandParameter(str(model), self.models.keys())
-            actual_dict = self.models[str(model)]['parms']
-            if sorted(input_dict.keys()) != sorted(actual_dict.keys()):
-                raise ie.InputArgumentsError('Model parameter specification error', input_dict, actual_dict)
-        except ie.InputArgumentsError as e:
-            print e
+        if not self.check_model_specified(command_params)\
+                or not self.check_valid_model(self.get_model_name_in_dict(command_params)):
             return False
-        except ie.InvalidCommandParameter as e:
-            print e
-            return False
-        return True
+        else:
+            return True
+
 
     def check_valid_model(self, model):
         """
@@ -1995,8 +1992,8 @@ class ModeledCommandParameter(ICoolObject):
         If model is not valid, raises an exception and returns False.  Otherwise returns True.
         """
         try:
-            if not str(model) in self.models.keys():
-                raise ie.InvalidModel(str(model), self.models.keys())
+            if not str(model) in self.get_model_names():
+                raise ie.InvalidModel(str(model), self.get_model_names())
         except ie.InvalidModel as e:
             print e
             return False
@@ -2035,31 +2032,78 @@ class ModeledCommandParameter(ICoolObject):
     def check_model_specified(self, input_dict):
         """
         Check whether the user specified a model in specifying parameters to Init or Call.
-        if so, returns True.  Otherwise, returns False.
+        if so, returns True.  Otherwise, raises an exception and returns False.
         """
-        if self.get_model_descriptor_name() in input_dict.keys():
-            return True
-        else:
+        try:
+            if not self.get_model_descriptor_name() in input_dict.keys():
+                raise ie.ModelNotSpecified(self.get_model_names())
+        except ie.ModelNotSpecified as e:
+            print e
             return False
+        return True
 
-    def get_model_parms_dict(self):
-        """
-        Returns the parameter dictionary for the current model.
-        """
-        return self.get_model_dict(getattr(self, self.get_model_descriptor_name()))
-
-    def get_num_params(self):
-        return self.models['model_descriptor']['num_parms']
-
-    def get_model_dict(self, model):
-        return self.models[str(model)]['parms']
+    #Helper functions
+    ##################################################
+    def get_model_descriptor(self):
+        """Returns the model descriptor dictionary"""
+        return self.models['model_descriptor']
 
     def get_model_descriptor_name(self):
         """
         The model descriptor name is an alias name for the term 'model', which is specified for each descendent class.
         Returns the model descriptor name.
         """
-        return self.models['model_descriptor']['name']
+        return self.get_model_descriptor()['name']
+
+    def get_current_model_name(self):
+        """Returns the name of the current model"""
+        return getattr(self, self.get_model_descriptor_name())
+  
+    def get_model_parms_dict(self):
+        """
+        Returns the parameter dictionary for the current model.
+        """
+        return self.get_model_dict(self.get_current_model_name())
+
+    def get_model_dict(self, model):
+        """
+        Returns the parameter dictionary for model.
+        """
+        return self.models[str(model)]['parms']
+
+    def get_num_params(self):
+        """
+        Returns the number of parameters for model.
+        """
+        return self.get_model_descriptor()['num_parms']
+
+    def get_icool_model_name(self):
+        """Check to see whether there is an alternate icool_model_name from the common name.
+        If so return that.  Otherwise, just return the common name."""
+        if 'icool_model_name' not in self.get_model_parms_dict():
+            return self.get_current_model_name()
+        else:
+            return self.get_model_descriptor()['icool_model_name']
+  
+    def get_model_names(self):
+        """Returns a list of all model names"""
+        ret_list = self.models.keys()
+        pos = ret_list.index('model_descriptor')
+        del ret_list[pos]
+        return ret_list
+
+    def get_model_name_in_dict(self, dict):
+        """Returns the model name in a provided dictionary if it exists.  Otherwise returns None"""
+        if self.get_model_descriptor_name() not in dict:
+            return None
+        else:
+            return dict[self.get_model_descriptor_name()]
+
+    def get_command_params(self):
+        return self.get_model_parms_dict()
+
+    ##################################################
+
 
     def check_model_variable_type(self, name, value):
         """Checks to see whether a particular variable for a model of name with value is of the correct type"""
@@ -2072,13 +2116,8 @@ class ModeledCommandParameter(ICoolObject):
             return False
         return True
 
-    def get_icool_model_name(self):
-        #Check to see whether there is an alternate icool_model_name from the common name.
-        #If so return that.  Otherwise, just return the common name.
-        if 'icool_model_name' not in self.models[getattr(self, self.get_model_descriptor_name())]:
-            return getattr(self, self.get_model_descriptor_name())
-        else:
-            return self.models[getattr(self, self.get_model_descriptor_name())]['icool_model_name']
+  
+
 
     def check_type(self, icool_type, provided_type):
         """Takes provided python object and compares with required icool type name.

@@ -255,6 +255,15 @@ class InvalidCommandParameter(InputError):
         return msg
 
 
+class ModelNotSpecified(InputError):
+    def __init__(self, models):
+        self.allowed_models = models
+
+    def __str__(self):
+        msg = '\nModel not specified. ' + '\nAllowed models are:\n' + ' '.join(self.allowed_models)
+        return msg
+
+
 class InvalidModel(InputError):
     def __init__(self, model, allowed_models):
         self.model = model
