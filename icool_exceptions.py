@@ -244,6 +244,16 @@ class SetAttributeError(InputError):
         msg = 'Illegal attempt to set attribute ' + self.attribute + ' on object ' + str(type(self.cls))
         return msg
 
+class InvalidCommandParameters(InputError):
+    def __init__(self, specified_parameters, allowed_parameters):
+        self.specified_parameters = specified_parameters
+        self.allowed_parameters = allowed_parameters
+
+    def __str__(self):
+        specified = ' '.join(self.specified_parameters)
+        allowed = ' '.join(self.allowed_parameters)
+        msg = '\nInvalid command parameter(s).\nYou specified: ' + specified + '\nAllowed command parameters are:\n' + allowed
+        return msg
 
 class InvalidCommandParameter(InputError):
     def __init__(self, command_parameter, allowed_parameters):
