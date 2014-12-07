@@ -1067,7 +1067,7 @@ class Region(ICoolObject):
     def __init__(self, kwargs):
         ICoolObject.__init__(self, kwargs)
 
-    def __call__(self, kwargs):
+    def __call__(self, **kwargs):
         ICoolObject.__call__(self, kwargs)
 
     def __str__(self):
@@ -2051,6 +2051,7 @@ class BeamType(Container):
     def __init__(self, **kwargs):
         if self.check_command_params_init(kwargs) is False:
             sys.exit(0)
+        ICoolObject.__init__(self, kwargs)
         Container.__init__(self)
 
     def __setattr__(self, name, value):
