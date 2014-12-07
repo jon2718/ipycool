@@ -1939,7 +1939,7 @@ class Correlation(ModeledCommandParameter):
                 'emittance. For uniform distributions it specifies the limiting ellipse.',
          'icool_model_name': 7,
          'parms':
-                 {'corrtyp': {'pos': 1, 'type': 'Real', 'doc': ''},
+                 {'corrtyp': {'pos': 1, 'type': 'String', 'doc': ''},
                   'alpha': {'pos': 2, 'type': 'Real', 'doc': 'Twiss alpha parameter [m]'},
                   'beta': {'pos': 3, 'type': 'Real', 'doc': 'Twiss beta parameter [m]'},
                   'epsilon': {'pos': 4, 'type': 'Real', 'doc': 'Twiss epsilon parameter [m]'}}},
@@ -1952,7 +1952,7 @@ class Correlation(ModeledCommandParameter):
                  'If parameter 3 is 0, the azimuthal angle is chosen randomly.',
          'icool_model_name': 9,
          'parms':
-                 {'corrtyp': {'pos': 1, 'type': 'Real', 'doc': ''},
+                 {'corrtyp': {'pos': 1, 'type': 'String', 'doc': ''},
                   'axial_beta': {'pos': 2, 'type': 'Real', 'doc': 'desired axial beta (=v/c) value βo'},
                   'az_ang_mom': {'pos': 3, 'type': 'Real', 'doc': 'azimuthal angle of transverse momentum [deg]'}}},
 
