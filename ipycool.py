@@ -136,9 +136,8 @@ class ICoolObject(ICoolGenerator):
         else:
             self.setall(kwargs)
 
-    def __call__(self, **kwargs):
-        print 'In Call...'
-        if self.check_command_params_call(self, kwargs) is False:
+    def __call__(self, kwargs):
+        if self.check_command_params_call(kwargs) is False:
             sys.exit(0)
         else:
             self.setall(kwargs)
@@ -246,15 +245,15 @@ class ICoolObject(ICoolGenerator):
 
         if check_params:
             return False
-        
-        #Now set the command parameters
-        self.setall(command_params)
+        else:
+            return True
 
-    def check_command_params_call(self, cls, command_params):
+
+    def check_command_params_call(self, command_params):
         """
         Checks whether the parameters specified for command are valid and all required parameters exist.
         """
-        command_parameters_dict = cls.get_command_params()
+        command_parameters_dict = self.get_command_params()
         return self.check_command_params_valid(command_params, command_parameters_dict) and\
             self.check_command_params_type(command_params, command_parameters_dict)
 
@@ -1544,26 +1543,22 @@ class ModeledCommandParameter(ICoolObject):
         """
         if self.check_command_params_init(kwargs) is False:
             sys.exit(0)
-        #self.set_keyword_args_model_specified(kwargs)
+        else:
+            setattr(self, self.get_model_descriptor_name(), self.get_model_name_in_dict(kwargs))
+            del kwargs[self.get_model_descriptor_name()]
+            self.setall(kwargs)
 
     def __call__(self, kwargs):
-        """
-        Checks to see whether new model specified in call.
-        If so, checks that the parameters specified correspond to that model and raises an exception if they dont.
-        Does NOT require all parameters specified for new model.  Unspecified parameters are set to 0.
-        If model is not specified, checks whether the parameters specified correspond to the current model and
-        raises an exception otherwise.
-        """
-        if self.check_model_specified(kwargs) is True:
-            if self.check_partial_keywords_for_new_model(kwargs) is False:
-                sys.exit(0)
-            self.set_keyword_args_model_specified(kwargs)
-            return
-        """Model not specified"""
-        if self.check_partial_keywords_for_current_model(kwargs) is False:
-                sys.exit(0)
-        self.set_keyword_args_model_not_specified(kwargs)
-
+        if self.check_command_params_call(kwargs) is False:
+            sys.exit(0)
+        else:
+            if not self.get_model_descriptor_name() in kwargs.keys():
+                ICoolObject.__call__(self, kwargs)
+            else:
+                setattr(self, self.get_model_descriptor_name(), self.get_model_name_in_dict(kwargs))
+                del kwargs[self.get_model_descriptor_name()]
+                self.setall(kwargs)
+          
     def __setattr__(self, name, value):
         #Check whether the attribute being set is the model
         if name == self.get_model_descriptor_name():
@@ -1625,19 +1620,39 @@ class ModeledCommandParameter(ICoolObject):
         If model is not specified, raises ModelNotSpecifiedError.
         Initialization of a model (e.g., Accel, SOL, etc. requires all keywords specified)
         """
-        command_params_dict = self.get_command_params_for_specified_input_model(command_params)
-        if not self.check_model_specified(command_params)\
-            or not self.check_command_params_valid(command_params, command_params_dict)\
-            or not self.check_all_required_command_params_specified(command_params, command_params_dict)\
-            or not self.check_command_params_type(command_params, command_params_dict):
+        if not self.check_model_specified(command_params):
             return False
         else:
-            
-            setattr(self, self.get_model_descriptor_name(), self.get_model_name_in_dict(command_params))
-            del command_params[self.get_model_descriptor_name()]
-            self.setall(command_params)
-            return True
+            if not self.check_valid_model(self.get_model_name_in_dict(command_params)):
+                return False
+            else:
+                command_params_dict = self.get_command_params_for_specified_input_model(command_params)
+                if not self.check_command_params_valid(command_params, command_params_dict)\
+                    or not self.check_all_required_command_params_specified(command_params, command_params_dict)\
+                        or not self.check_command_params_type(command_params, command_params_dict):
+                    return False
+                else:
+                    return True
  
+    def check_command_params_call(self, command_params):
+        """
+        Checks to see whether new model specified in call.
+        If so, checks that the parameters specified correspond to that model and raises an exception if they dont.
+        Does NOT require all parameters specified for new model.  Unspecified parameters are set to 0.
+        If model is not specified, checks whether the parameters specified correspond to the current model and
+        raises an exception otherwise.
+        """
+        if not self.get_model_descriptor_name() in command_params.keys():
+            command_params_dict = self.get_model_parms_dict()
+            if not self.check_command_params_valid(command_params, command_params_dict)\
+                    or not self.check_command_params_type(command_params, command_params_dict):
+                        return False
+            else:
+                return True
+        else:
+            return self.check_command_params_init(command_params)
+
+
     def check_valid_model(self, model):
         """
         Checks whether model specified is valid.
