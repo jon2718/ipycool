@@ -438,32 +438,6 @@ class ICoolNameListContainer(ICoolNameList, Container):
         Container.gen_for001(self, file)
 
 
-class ICoolGen(object):
-    """Generate ICOOL for001.dat
-    Takes an ICoolInput object and generates an ICOOL for001.dat file.
-    """
-
-    def __init__(self, icool_input, path='.'):
-        self.file = path + '/' + 'for001.dat'
-        self.icool_input = icool_input
-
-    def gen(self):
-        f = open(self.file, 'w')
-        self.icool_input.gen(f)
-        f.close()
-
-    def cr(f):
-        f.write('\n')
-
-    def sp(f):
-        f.write(" ")
-
-    def list_line(self, f, list):
-        for item in list:
-            f.write(item)
-            self.sp()
-
-
 class ICoolInput(ICoolObject):
     """This is the actual generated ICoolInput from command objects
     Command objects include:
@@ -602,7 +576,7 @@ class ICoolInput(ICoolObject):
             self.sec.gen(file)
 
 
-class Title(object):
+class Title(ICoolObject):
     def __init__(self, title):
         self.title = title
 
@@ -1027,17 +1001,6 @@ class Cont(ICoolNameList):
     def gen(self, file):
         ICoolObject.gen(self, file)
 
-    #def gen(self, file):
-    #    file.write("\n")
-    #    file.write("&cont")
-    #    file.write("\n")
-    #    for key, value in self.cont_commands.items():
-    #        file.write(key)
-    #        file.write('=')
-    #        file.write(str(value))
-    #        file.write("\n")
-    #    file.write("/")
-
 
 class Bmt(ICoolNameListContainer):
 
@@ -1062,9 +1025,6 @@ class Bmt(ICoolNameListContainer):
 
     def __setattr__(self, name, value):
         Container.__setattr__(self, name, value)
-
-    #def gen(self, file):
-    #   ICoolObject.gen(self, file)
 
 
 class Ints(ICoolObject):
@@ -1145,13 +1105,6 @@ class RegularRegionContainer(RegularRegion, Container):
         self.gen_begtag(file)
         RegularRegion.gen_for001(self, file)
         Container.gen_for001(self, file)
-        #for command in self.enclosed_commands:
-        #    print 'Looping'
-        #    print 'Command is: ', command
-        #    if hasattr(command, 'gen_for001'):
-        #        command.gen_for001(file)
-        #    else:
-        #        file.write(str(command))
         self.gen_endtag(file)
 
 
@@ -1176,6 +1129,7 @@ class Section(RegularRegionContainer):
                   'req': False,
                   'pos': 1}
         }
+
     def __init__(self, **kwargs):
         RegularRegion.__init__(self, kwargs)
         Container.__init__(self)
@@ -1188,22 +1142,12 @@ class Section(RegularRegionContainer):
     def __str__(self):
         return_str = 'SECTION\n'
         return_str += str(Container.__str__(self))
-        #for command in self.enclosed_commands:
-        #    return_str += str(command)
         return_str += 'END_SECTION\n'
         return return_str
 
     def __repr__(self):
         return 'Section\n'
 
-    #def gen(self, file):
-    #    region.gen('SECTION')
-
-    def gen(self, file):
-        file.write('SECTION')
-        Container.gen(self, file)
-        file.write('ENDSECTION')
-        file.write('\n')
 
 
 class Begs(RegularRegion):
@@ -1447,16 +1391,12 @@ class SRegion(RegularRegionContainer):
     def __str__(self):
         ret_str = 'SRegion:\n'+'slen='+str(self.slen) + '\n' + 'nrreg=' + str(self.nrreg) + '\n' + \
                'zstep=' + str(self.zstep)+'\n' + str(Container.__str__(self))
-        return ret_str
-        #for element in self.subregions:
-        #    ret_str += str(element)
-        #return ret_str
+        return ret_str    
 
     def __repr__(self):
         return 'SRegion:\n '+'slen='+str(self.slen)+'\n'+'nrreg='+str(self.nrreg)+'\n'+'zstep='+str(self.zstep)
 
     def __setattr__(self, name, value):
-        #Region.__setattr__(self, name, value)
         Container.__setattr__(self, name, value)
 
     def add_subregion(self, subregion):
@@ -1473,19 +1413,6 @@ class SRegion(RegularRegionContainer):
     def add_subregions(self, subregion_list):
         for subregion in subregion_list:
             self.subregions.append(subregion)
-
-    def gen(self, file):
-        file.write('\n')
-        file.write('SREGION')
-        file.write('\n')
-        file.write(self.slen)
-        file.write(' ')
-        file.write(self.nrreg)
-        file.write(' ')
-        file.write(self.zstep)
-        file.write('\n')
-        for subregion in self.subregions:
-            subregion.gen(file)
 
 
 class SubRegion(RegularRegion):
@@ -1783,19 +1710,6 @@ class ModeledCommandParameter(ICoolObject):
             if key['pos'] > high_pos:
                 high_pos = key['pos']
         self.parms = [0]*high_pos
-  
-    #def gen_parm(self):
-    #    models = self.models
-    #    self.parm = [0] * self.get_num_params()
-    #    cur_model = self.get_model_parms_dict()
-     #   for key in cur_model:
-     #       pos = int(cur_model[key]['pos'])-1
-     #       if key == self.get_model_descriptor_name():
-     #           val = self.get_icool_model_name()
-     #       else:
-     #           val = getattr(self, key)
-     #       self.parm[pos] = val
-    #  print self.parm
 
     def gen_parm(self):
         command_params = self.get_command_params()
@@ -2138,14 +2052,6 @@ class Field(ModeledCommandParameter):
                 val = getattr(self, key)
             self.fparm[pos] = val
         print self.fparm
-
-    def gen(self, file):
-        file.write('\n')
-        file.write(self.ftag)
-        file.write('\n')
-        for s in self.fparm:
-            file.write(s)
-            file.write(" ")
 
 
 class Material(ModeledCommandParameter):
