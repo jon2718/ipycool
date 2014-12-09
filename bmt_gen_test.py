@@ -26,7 +26,7 @@ def bmt_gen_test():
   
     s.add_enclosed_command(cell)
 
-    mat = Material(geom='cblock', mtag='lh')
+    mat = Material(geom='CBLOCK', mtag='LH')
     subr = SubRegion(material=mat, rlow=0, rhigh=1, irreg=1, field=ac)
     sreg.add_enclosed_command(subr)
 
@@ -34,8 +34,10 @@ def bmt_gen_test():
 
     file = './' + 'for001.dat'
     f = open(file, 'w')
-    co.icoolgenerate_for001(f)
-    bmt.icoolgenerate_for001(f)
+    #co.icoolgenerate_for001(f)
+    #bmt.icoolgenerate_for001(f)
+    co.gen_for001(f)
+    bmt.gen_for001(f)
     s.gen_for001(f)
 
     f.close()

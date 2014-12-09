@@ -335,6 +335,14 @@ class ICoolObject(ICoolGenerator):
         print parm
         return parm
 
+    def for001_str_gen(self, value):
+        if value.__class__.__name__ == 'bool':
+            if value is True:
+                return '.true.'
+            else:
+                return '.false.'
+        else:
+            return str(value)
 
 
 class ICoolNameList(ICoolObject):
@@ -349,7 +357,7 @@ class ICoolNameList(ICoolObject):
                 if hasattr(self, key):
                     file.write(str(key))
                     file.write('=')
-                    file.write(str(getattr(self, key)))
+                    file.write(self.for001_str_gen(getattr(self, key)))
                     file.write(' ')
                     count = count + 1
                     if count % items_per_line == 0:
@@ -415,17 +423,19 @@ class Container(ICoolObject):
         pass
 
     def gen_for001(self, file):
-        #base_classes = self.get_base_classes()
-        print 'Here here...'
         for command in self.enclosed_commands:
             print 'Looping'
             print 'Command is: ', command
-            ICoolGenerator.gen_begtag(self, file)
             if hasattr(command, 'gen_for001'):
                 command.gen_for001(file)
             else:
-                file.write(str(command))
-            ICoolGenerator.gen_endtag(self, file)
+                file.write(self.for001_str_gen(command))
+
+
+class ICoolNameListContainer(ICoolNameList, Container):
+    def gen_for001(self, file):
+        ICoolNameList.gen_for001(self, file)
+        Container.gen_for001(self, file)
 
 
 class ICoolGen(object):
@@ -1029,7 +1039,7 @@ class Cont(ICoolNameList):
     #    file.write("/")
 
 
-class Bmt(Container, ICoolNameList):
+class Bmt(ICoolNameListContainer):
 
     allowed_enclosed_commands = ['BeamType']
 
@@ -1047,8 +1057,7 @@ class Bmt(Container, ICoolNameList):
                           'default': False}}
 
     def __init__(self, **kwargs):
-        if self.check_command_params_init(kwargs) is False:
-            sys.exit(0)
+        ICoolObject.__init__(self, kwargs)
         Container.__init__(self)
 
     def __setattr__(self, name, value):
@@ -1089,7 +1098,7 @@ class Region(ICoolObject):
             if hasattr(command, 'gen_for001'):
                 command.gen_for001(file)
             else:
-                file.write(str(command))
+                file.write(self.for001_str_gen(command))
             file.write(' ')
             if hasattr(command, 'endtag'):
                 command.gen_endtag(file)
@@ -1135,13 +1144,14 @@ class RegularRegionContainer(RegularRegion, Container):
     def gen_for001(self, file):
         self.gen_begtag(file)
         RegularRegion.gen_for001(self, file)
-        for command in self.enclosed_commands:
-            print 'Looping'
-            print 'Command is: ', command
-            if hasattr(command, 'gen_for001'):
-                command.gen_for001(file)
-            else:
-                file.write(str(command))
+        Container.gen_for001(self, file)
+        #for command in self.enclosed_commands:
+        #    print 'Looping'
+        #    print 'Command is: ', command
+        #    if hasattr(command, 'gen_for001'):
+        #        command.gen_for001(file)
+        #    else:
+        #        file.write(str(command))
         self.gen_endtag(file)
 
 
@@ -1738,10 +1748,10 @@ class ModeledCommandParameter(ICoolObject):
     def get_icool_model_name(self):
         """Check to see whether there is an alternate icool_model_name from the common name.
         If so return that.  Otherwise, just return the common name."""
-        if 'icool_model_name' not in self.get_model_parms_dict():
+        if 'icool_model_name' not in self.models[str(self.get_current_model_name())]:
             return self.get_current_model_name()
         else:
-            return self.get_model_descriptor()['icool_model_name']
+            return self.models[str(self.get_current_model_name())]['icool_model_name']
   
     def get_model_names(self):
         """Returns a list of all model names"""
@@ -1786,6 +1796,20 @@ class ModeledCommandParameter(ICoolObject):
      #           val = getattr(self, key)
      #       self.parm[pos] = val
     #  print self.parm
+
+    def gen_parm(self):
+        command_params = self.get_command_params()
+        parm = [None] * len(command_params)
+        for key in command_params:
+            pos = int(command_params[key]['pos'])-1
+            if key == self.get_model_descriptor_name():
+                val = self.get_icool_model_name()
+                print 'Using icool name', val
+            else:
+                val = getattr(self, key)
+            parm[pos] = val
+        print parm
+        return parm
 
     def gen_for001(self, file):
         parm = self.gen_parm()
@@ -2155,22 +2179,22 @@ class Material(ModeledCommandParameter):
 
     """
     materials = {
-        'vac': {'desc': 'Vacuum (no material)'},
-        'gh':  {'desc': 'Gaseous hydrogen'},
-        'ghe': {'desc': 'Gaseous helium'},
-        'lh':  {'desc': 'Liquid hydrogen'},
-        'lhe': {'desc': 'Liquid helium'},
-        'Li':  {'desc': 'Lithium'},
-        'Be':  {'desc': 'Berylliyum'},
+        'VAC': {'desc': 'Vacuum (no material)', 'icool_material_name': ''},
+        'GH':  {'desc': 'Gaseous hydrogen'},
+        'GHE': {'desc': 'Gaseous helium'},
+        'LH':  {'desc': 'Liquid hydrogen'},
+        'LHE': {'desc': 'Liquid helium'},
+        'LI':  {'desc': 'Lithium'},
+        'BE':  {'desc': 'Berylliyum'},
         'B':   {'desc': 'Boron'},
         'C':   {'desc': 'Carbon'},
-        'Al':  {'desc': 'Aluminum'},
-        'Ti':  {'desc': 'Titanium'},
-        'Fe':  {'desc': 'Iron'},
-        'Cu':  {'desc': 'Copper'},
+        'AL':  {'desc': 'Aluminum'},
+        'TI':  {'desc': 'Titanium'},
+        'FE':  {'desc': 'Iron'},
+        'CU':  {'desc': 'Copper'},
         'W':   {'desc': 'Tungsten'},
-        'Hg':  {'desc:': 'Mercury'},
-        'Pb':  {'desc:': 'Lead'}
+        'HG':  {'desc:': 'Mercury'},
+        'PB':  {'desc:': 'Lead'}
         }
     
     models = {
@@ -2178,20 +2202,20 @@ class Material(ModeledCommandParameter):
         'model_descriptor': {'desc': 'Geometry',
                              'name': 'geom',
                              'num_parms': 12},
-        'vac':
+        'VAC':
         {'desc': 'Vacuum',
          'doc': 'Vacuum region.  Specify vacuum for mtag.  Geom will be set to NONE.',
          'parms':
                  {'mtag': {'pos': 1, 'type': 'String', 'doc': ''}}},
 
-        'cblock':
+        'CBLOCK':
         {'desc': 'Cylindrical block',
          'doc': 'Cylindrical block',
          'parms':
                  {'mtag': {'pos': 1, 'type': 'String', 'doc': ''},
                   'geom': {'pos': 2, 'type': 'String', 'doc': ''}}},
 
-        'aspw':
+        'ASPW':
         {'desc': 'Azimuthally Symmetric Polynomial Wedge absorber region',
          'doc': 'Edge shape given by '
                 'r(dz) = a0 + a1*dz + a2*dz^2 + a3*dz^3 in the 1st quadrant and '
@@ -2212,7 +2236,7 @@ class Material(ModeledCommandParameter):
                   'a2': {'pos': 7, 'type': 'Real', 'doc': ''},
                   'a3': {'pos': 8, 'type': 'Real', 'doc': ''}}},
 
-        'asrw':
+        'ASRW':
         {'desc': 'Azimuthally Symmetric Polynomial Wedge absorber region',
          'doc': 'Edge shape given by '
                 'r(dz) = a0 + a1*dz + a2*dz^2 + a3*dz^3 in the 1st quadrant and '
@@ -2234,7 +2258,7 @@ class Material(ModeledCommandParameter):
                   'a3': {'pos': 8, 'type': 'Real', 'doc': ''}}},
 
 
-        'hwin':
+        'HWIN':
         {'desc': 'Hemispherical absorber end region',
          'doc': '1 end flag {-1: entrance, +1: exit} '
                 '2 inner radius of window[m] '
@@ -2249,7 +2273,7 @@ class Material(ModeledCommandParameter):
                   'offset': {'pos': 6, 'type': 'Real', 'doc': 'Axial offset of center of spherical '
                              'window from start of end region [m]'}}},
 
-        'nia':
+        'NIA':
         {'desc': 'Non-isosceles absorber',
          'doc': '1 zV distance of wedge “center” from start of region [m] '
                 '2 z0 distance from center to left edge [m] '
@@ -2269,7 +2293,7 @@ class Material(ModeledCommandParameter):
                   'θ1': {'pos': 8, 'type': 'Real', 'doc': 'Polar angle from vertex of right edge [deg] '},
                   'φ1': {'pos': 9, 'type': 'Real', 'doc': 'Azimuthal angle of right face [deg]'}}},
                              
-        'pwedge':
+        'PWEDGE':
         {'desc': 'Asymmetric polynomial wedge absorber region',
          'doc': 'Imagine the wedge lying with its narrow end along the x axis. The wedge is symmetric about the '
                 'x-y plane. The edge shape is given by dz(x) = a0 + a1*x + a2*x^2 + a3*x^3 '
@@ -2289,7 +2313,7 @@ class Material(ModeledCommandParameter):
                   'a2': {'pos': 10, 'type': 'Real', 'doc': 'Polar angle from vertex of right edge [deg] '},
                   'a3': {'pos': 11, 'type': 'Real', 'doc': 'Azimuthal angle of right face [deg]'}}},
 
-        'ring':
+        'RING':
         {'desc': 'Annular ring of material',
          'doc': 'This is functionally equivalent to defining a region with two radial subregions, the first of '
                  'which has vacuum as the material type. However, the boundary crossing algorithm used for RING is '
@@ -2300,7 +2324,7 @@ class Material(ModeledCommandParameter):
                   'inner': {'pos': 3, 'type': 'Real', 'doc': 'Inner radius (R) [m]'},
                   'outer': {'pos': 4, 'type': 'Real', 'doc': 'Outer radius (R) [m]'}}},
 
-        'wedge':
+        'WEDGE':
         {'desc': 'Asymmetric wedge absorber region',
          'doc': 'We begin with an isosceles triangle, sitting on its base, vertex at the top. '
          'The base-to-vertex distance is W. The full opening angle at the vertex is A. Using '
