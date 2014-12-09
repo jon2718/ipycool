@@ -344,6 +344,13 @@ class ICoolObject(ICoolGenerator):
         else:
             return str(value)
 
+    def get_begtag(self):
+        return self.begtag
+       
+    def get_endtag(self):
+        return self.endtag
+        
+
 
 class ICoolNameList(ICoolObject):
     def gen_for001(self, file):
@@ -1027,10 +1034,264 @@ class Bmt(ICoolNameListContainer):
         Container.__setattr__(self, name, value)
 
 
-class Ints(ICoolObject):
+class Ints(ICoolNameList):
+    command_params = {
+        'ldedx':      {'desc': 'If .true. => simulate mean ionization energy loss dE/dx (true)',
+                       'doc': '',
+                       'type': 'Logical',
+                       'req': False,
+                       'default': True},
+
+        'lscatter':   {'desc': 'if .true. => simulate multiple scattering',
+                       'doc': '',
+                       'type': 'Logical',
+                       'req': False,
+                       'default': True},
+
+        'lstrag':     {'desc': 'If .true. => simulate energy straggling',
+                       'doc': '',
+                       'type': 'Logical',
+                       'req': False,
+                       'default': True},
+
+        'ldecay':     {'desc': 'If .true. => simulate particle decays',
+                       'doc': '',
+                       'type': 'Logical',
+                       'req': False,
+                       'default': True},
+
+        'ldray':     {'desc': 'If .true. => simulate discrete energy loss from delta rays',
+                      'doc': 'When LDRAY is true, the program forces the parameters DELEV=2 and STRAGLEV=5.',
+                      'type': 'Logical',
+                      'req': False,
+                      'default': True},
+
+        'lspace':    {'desc': 'If .true. => consider effects of space charge',
+                      'doc': '',
+                      'type': 'Logical',
+                      'req': False,
+                      'default': False},
+
+        'lelms':      {'desc': 'If .true. => use ELMS model2 for energy loss and scattering',
+                       'doc': 'When this command is true an external file ELMSCOM.TXT must be provided. '
+                              'This file consists of two lines giving (1) the ELMS run directory including path '
+                              'and (2) the root part of the path name to the ELMS database files. For example, '
+                              '\muon\elmsdb\rundirectory.txt\n'
+                              '\muon\elmsdb\elmsfv3run\n'
+                              'ELMS only works in regions containing hydrogen (the SCATLEV model is used in other '
+                              'regions). '
+                              'For hydrogen regions use a stepsize around 5 mm for maximum accuracy. A stepsize of '
+                              '1 mm gives significantly worse results.',
+                       'type': 'Logical',
+                       'req': False,
+                       'default': False},
+
+        'lsamcs':     {'desc': 'If .true. => use SAMCS model3 of correlated straggling and scattering',
+                       'doc': '',
+                       'type': 'Logical',
+                       'req': False,
+                       'default': False},
+
+        'delev':   {'desc': 'Model level for dEdx (2)',
+                    'doc': '1: Bethe-Bloch\n'
+                            '2: Bethe-Bloch with density effect\n'
+                            '3: restricted Bethe-Bloch with density effect\n'
+                            '4: test mode with dE = const * dz, independent of velocity and angle',
+                    'type': 'Integer',
+                    'req': False,
+                    'default': 2,
+                    'min': 1,
+                    'max': 4},
+
+        'scatlev':  {'desc': '(L) if .true. => continue tracking daughter particle following decay',
+                     'doc': '',
+                     'type': 'Logical',
+                     'req': False,
+                     'default': False},
+
+        'epsf':     {'desc': '(R) desired tolerance on fractional field variation, energy loss, and multiple '
+                     'scattering per step',
+                     'doc': '',
+                     'type': 'Real',
+                     'req': False,
+                     'default': False},
+
+        'epsreq':   {'desc': '(R) required tolerance on error in tracking parameters (1E-3) This parameter is '
+                     'only used if varstep = true',
+                     'doc': '',
+                     'type': 'Real',
+                     'req': False,
+                     'default': None},
+
+        'epsstep':  {'desc': '(R) desired tolerance in spatial stepping to reach each destination plane [m]',
+                     'type': 'Real',
+                     'doc': '',
+                     'req': False,
+                     'default': 1E-6},
+
+        'ffcr':     {'desc': '(L) if .true. => inserts form feed and carriage returns in the output log file so there '
+                     'are two plots per page starting at the top of a page',
+                     'doc': '',
+                     'type': 'Logical',
+                     'req': False,
+                     'default': False},
+
+        'forcerp':  {'desc': '(L) if .true. => set x, y, Px, and Py for reference particle to 0 for each new REFP '
+                     'command and for each ACCEL region with phasemodel=4.',
+                     'doc': '',
+                     'type': 'Logical',
+                     'req': False,
+                     'default': True},
+
+        'fsav':     {'desc': '(L) if .true. => store particle info at plane IZFILE into file FOR004.DAT. (false). '
+                     'It is possible to get the initial distribution of particles that get a given error flag be '
+                     'setting the plane=IFAIL . It is possible to get the initial distribution of particles that '
+                     'successfully make it to the end of the simulation by setting the plane= -1.',
+                     'doc': '',
+                     'type': 'Logical',
+                     'req': False,
+                     'default': None},
+
+        'fsavset':  {'desc': '(L) if .true. => modify data stored using FSAV in FOR004.DAT to have z=0 and '
+                     'times relative to reference particle at plane IZFILE.',
+                     'doc': '',
+                     'type': 'Logical',
+                     'req': False,
+                     'default': False},
+
+        'f9dp':     {'desc': '(I) number of digits after the decimal point for floating point variables in FOR009.DAT '
+                     '{4,6,8,10,12,14,16,17} (4) F9DP=17 gives 16 digits after the decimal point and 3 digits in the '
+                     'exponent',
+                     'doc': '',
+                     'type': 'Integer',
+                     'req': False,
+                     'default': None},
+
+        'goodtrack': {'desc': '(L) if .true. and BGEN=.false. => only accepts input data from file FOR003.DAT if '
+                      'IPFLG=0.; if .false. => resets IPFLG of bad input tracks to 0 (this allows processing a '
+                      'file of bad tracks for diagnostic purposes)',
+                      'doc': '',
+                      'type': 'Logical',
+                      'req': False,
+                      'default': True},
+
+        'izfile':    {'desc': '(I) z-plane where particle info is desired when using FSAV. Use 1 to store beam at '
+                      'production. Saves initial particle properties for bad tracks if IZFILE=IFAIL #.  Saves initial '
+                      'particle properties for tracks that get to the end of the simulation if IZFILE=-1.  IZFILE '
+                      'should point to the end of a REGION or to an APERTURE , ROTATE or TRANSPORT pseudoregion '
+                      'command.',
+                      'doc': '',
+                      'type': 'Integer',
+                      'req': False,
+                      'default': None},
+
+        'magconf':    {'desc': '(I) if 19 < MAGCONF=mn < 100 => reads in file FOR0mn.DAT, which contains data on '
+                       'solenoidal magnets. Used with SHEET, model 4.',
+                       'doc': '',
+                       'type': 'Integer',
+                       'req': False,
+                       'default': 0},
+
+        'mapdef':     {'desc': '(I) if 19 < MAPDEF=mn < 100 => reads in file FOR0mn.DAT, which contains data on how '
+                       'to set up field grid. Used with SHEET, model 4.',
+                       'doc': '',
+                       'type': 'Integer',
+                       'req': False,
+                       'default': 0},
+
+        'neighbor':   {'desc': "(L) if .true. => include fields from previous and following regions when calculating "
+                       "field.  This parameter can be used with soft-edge fields when the magnitude of the "
+                       "field doesn't fall to 0 at the region boundary. A maximum of 100 region can be used "
+                       "with this feature.",
+                       'doc': '',
+                       'type': 'Logical',
+                       'req': False,
+                       'default': False},
+
+        'neutrino':    {'desc': '(I) if 19 < NEUTRINO=mn < 100 => writes out file FOR0mn.DAT, which contains '
+                        'neutrino production data. See section 5.2 for the format.',
+                        'doc': '',
+                        'type': 'Integer',
+                        'req': False,
+                        'default': 0},
+
+        'nnudk':       {'desc': '(I) # of neutrinos to produce at each muon, pion and kaon decay.',
+                        'doc': '',
+                        'type': 'Integer',
+                        'req': False,
+                        'default': 1},
+
+        'npart':       {'desc': '(I) # of particles in simulation. The first 300,000 particles are stored in memory. '
+                        'Larger numbers are allowed in principle since ICOOL writes the excess particle '
+                        'information to disc. However, there can be a large space and speed penalty in doing '
+                        'so.',
+                        'doc': '',
+                        'type': 'Integer',
+                        'req': False,
+                        'default': None},
+
+        'nprnt':        {'desc': ' Number of diagnostic events to print out to log file.',
+                         'doc': '',
+                         'type': 'Integer',
+                         'req': False,
+                         'default': -1},
+
+        'npskip':       {'desc': 'Number of input particles in external beam file to skip before processing starts',
+                         'doc': '',
+                         'type': 'Integer',
+                         'req': False,
+                         'default': 0},
+
+        'nsections':    {'desc': '(I) # of times to repeat basic cooling section (1).  This parameter can be used to '
+                         'repeat all the commands between the SECTION and ENDSECTION commands in the problem '
+                         'definition. If a REFP command immediately follows the SECTION command, it is not '
+                         'repeated',
+                         'doc': '',
+                         'type': 'Integer',
+                         'req': False,
+                         'default': 1},
+
+        'ntuple':        {'desc': '(L) if .true. => store information about each particle after every region in file '
+                          'FOR009.DAT. This variable is forced to be false if RTUPLE= true.(false)}',
+                          'doc': '',
+                          'type': 'Logical',
+                          'req': False,
+                          'default': False},
+
+        'nuthmin':      {'desc': '(R) Minimum polar angle to write neutrino production data to file. [radians]',
+                         'doc': '',
+                         'type': 'Real',
+                         'req': False,
+                         'default': 0}
+                         }
+
+
     def __init__(self, **kwargs):
         pass
 
+
+class Nhs(ICoolNameListContainer):
+    pass
+
+
+class Nsc(ICoolNameListContainer):
+        pass
+
+
+class Nzh(ICoolNameListContainer):
+    pass
+
+
+class Nrh(ICoolNameListContainer):
+    pass
+
+
+class Nem(ICoolNameListContainer):
+    pass
+
+
+class Ncv(ICoolNameListContainer):
+    pass
 
 class Region(ICoolObject):
     def __init__(self, kwargs):
@@ -1051,19 +1312,13 @@ class Region(ICoolObject):
     def gen_for001(self, file):
         parm = self.gen_parm()
         for command in parm:
-            if hasattr(command, 'begtag'):
-                command.gen_begtag(file)
-                print 'Begtag is', command.begtag
             print 'Command is: ', command
             if hasattr(command, 'gen_for001'):
                 command.gen_for001(file)
             else:
                 file.write(self.for001_str_gen(command))
             file.write(' ')
-            if hasattr(command, 'endtag'):
-                command.gen_endtag(file)
         file.write('\n')
-
 
 
 class RegularRegion(Region):
@@ -1102,10 +1357,17 @@ class PseudoRegion(Region):
 
 class RegularRegionContainer(RegularRegion, Container):
     def gen_for001(self, file):
-        self.gen_begtag(file)
-        RegularRegion.gen_for001(self, file)
+        #self.gen_begtag(file)
+        if hasattr(self, 'begtag'):
+            print 'Writing begtag'
+            file.write(self.get_begtag())
+            file.write('\n')
+        Region.gen_for001(self, file)
         Container.gen_for001(self, file)
-        self.gen_endtag(file)
+        #self.gen_endtag(file)
+        if hasattr(self, 'endtag'):
+            file.write(self.get_endtag())
+        file.write('\n')
 
 
 class Section(RegularRegionContainer):
@@ -1116,6 +1378,9 @@ class Section(RegularRegionContainer):
     set >1 and a BEGS command is used to define where to start repeating.
     """
 
+    begtag = 'SECTION'
+    endtag = 'ENDSECTION'
+
     allowed_enclosed_commands = [
         'Begs', 'Repeat', 'Cell', 'Background', 'SRegion', 'Aperture', 'Cutv', 'Dens', 'Disp', 'Dummy', 'DVar',
         'Edge', 'Output', 'Refp', 'Ref2', 'Reset', 'RKick', 'Rotate', 'Tilt', 'Transport', 'Comment'
@@ -1123,18 +1388,16 @@ class Section(RegularRegionContainer):
         ]
 
     command_params = {
-        'nsections':  {'desc': '# of times to repeat enclosed command parameters',
-                  'doc': '',
-                  'type': 'Integer',
-                  'req': False,
-                  'pos': 1}
+        #'nsections':  {'desc': '# of times to repeat enclosed command parameters',
+        #          'doc': '',
+        #          'type': 'Integer',
+        #          'req': False,
+        #          'pos': 1}
         }
 
     def __init__(self, **kwargs):
         RegularRegion.__init__(self, kwargs)
         Container.__init__(self)
-        object.__setattr__(self, 'begtag', 'SECTION')
-        object.__setattr__(self, 'endtag', 'ENDSECTION')
     
     def __setattr__(self, name, value):
         Container.__setattr__(self, name, value)
@@ -1167,6 +1430,9 @@ class Repeat(RegularRegionContainer):
     ROTATE, TILT, TRANSPORT} commands. Repeat sections cannot be nested in other repeat sections.
     (see parameters below)
     """
+    begtag = 'REPEAT'
+    endtag = 'ENDREPEAT'
+
     command_params = {
         'nrep':  {'desc': '# of times to repeat following region commands',
                   'doc': '',
@@ -1183,9 +1449,7 @@ class Repeat(RegularRegionContainer):
     def __init__(self, **kwargs):
         RegularRegion.__init__(self, kwargs)
         Container.__init__(self)
-        object.__setattr__(self, 'begtag', 'REPEAT')
-        object.__setattr__(self, 'endtag', 'ENDREPEAT')
-
+        
     def __setattr__(self, name, value):
         Container.__setattr__(self, name, value)
 
@@ -1273,6 +1537,9 @@ class Cell(RegularRegionContainer):
     It has an associated cell field, which is superimposed on the individual region fields. Cell sections cannot
     be nested in other cell sections. (see parameters below)
     """
+    begtag = 'CELL'
+    endtag = 'ENDCELL'
+
     allowed_enclosed_commands = [
         'SRegion', 'Aperture', 'Dens', 'Disp', 'Dummy', 'DVar', 'Edge', 'Output',
         'Refp', 'Ref2', 'Reset', 'RKick', 'Rotate', 'Tilt', 'Transport', 'Repeat'
@@ -1303,8 +1570,6 @@ class Cell(RegularRegionContainer):
     def __init__(self, **kwargs):
         RegularRegion.__init__(self, kwargs)
         Container.__init__(self)
-        object.__setattr__(self, 'begtag', 'CELL')
-        object.__setattr__(self, 'endtag', 'ENDCELL')
 
     def __setattr__(self, name, value):
         Container.__setattr__(self, name, value)
@@ -1317,13 +1582,6 @@ class Cell(RegularRegionContainer):
 
     def __repr__(self):
         return 'Cell\n'
-
-    def gen(self, file):
-        file.write('CELL')
-        Container.gen(self, file)
-        file.write('ENDCELL')
-        file.write('/n')
-
 
 class SRegion(RegularRegionContainer):
     """
@@ -1362,7 +1620,11 @@ class SRegion(RegularRegionContainer):
 
     allowed_enclosed_commands =  ['SubRegion']
 
+    begtag = 'SREGION'
+    endtag = ''
+
     command_params = {
+       
         'slen':  {'desc': 'Length of this s region [m]',
                   'doc': '',
                   'type': 'Real',
@@ -1386,7 +1648,6 @@ class SRegion(RegularRegionContainer):
     def __init__(self, **kwargs):
         RegularRegion.__init__(self, kwargs)
         Container.__init__(self)
-        object.__setattr__(self, 'begtag', 'SREGION')
       
     def __str__(self):
         ret_str = 'SRegion:\n'+'slen='+str(self.slen) + '\n' + 'nrreg=' + str(self.nrreg) + '\n' + \
@@ -1712,8 +1973,9 @@ class ModeledCommandParameter(ICoolObject):
         self.parms = [0]*high_pos
 
     def gen_parm(self):
+        num_parms = self.get_num_params()
         command_params = self.get_command_params()
-        parm = [None] * len(command_params)
+        parm = [0] * num_parms
         for key in command_params:
             pos = int(command_params[key]['pos'])-1
             if key == self.get_model_descriptor_name():
@@ -1726,11 +1988,21 @@ class ModeledCommandParameter(ICoolObject):
         return parm
 
     def gen_for001(self, file):
+        if hasattr(self, 'begtag'):
+            print 'Writing begtag'
+            file.write('\n')
+            file.write(self.get_begtag())
+            file.write('\n')
         parm = self.gen_parm()
         for i in parm:
             file.write(str(i))
             file.write(' ')
         file.write('\n')
+        if hasattr(self, 'endtag'):
+            print 'Writing endtag'
+            file.write('\n')
+            file.write(self.get_endtag())
+            file.write('\n')
 
 
 class Distribution(ModeledCommandParameter):
@@ -2594,6 +2866,9 @@ class Accel(Field):
         3: no edge focusing
 
 """
+    begtag = 'ACCEL'
+    endtag = ''
+
     models = {
 
         'model_descriptor': {'desc': 'Name of model parameter descriptor',
@@ -2780,7 +3055,6 @@ class Accel(Field):
 
     def __init__(self, **kwargs):
         Field.__init__(self, 'ACCEL', kwargs)
-        #self.ftag = 'ACCEL'
 
     def __call__(self, **kwargs):
         Field.__call__(self, kwargs)

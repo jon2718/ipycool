@@ -13,9 +13,9 @@ def bmt_gen_test():
     bm.add_enclosed_command(c)
     bmt = Bmt(nbeamtyp=1)
     bmt.add_enclosed_command(bm)
-    bmt.add_enclosed_command(bm)
+    #bmt.add_enclosed_command(bm)
 
-    s = Section(nsections=1)
+    s = Section()
     ac = Accel(model='sec_pill_rec', freq=1, grad=2, height=3, phase=4, rad_offset=5, width=6)
     cell = Cell(ncells=10, field=ac, flip=False)
 
@@ -24,13 +24,13 @@ def bmt_gen_test():
 
     sreg = SRegion(zstep=0.001, nrreg=1, slen=14)
   
-    s.add_enclosed_command(cell)
+    #s.add_enclosed_command(cell)
 
     mat = Material(geom='CBLOCK', mtag='LH')
     subr = SubRegion(material=mat, rlow=0, rhigh=1, irreg=1, field=ac)
     sreg.add_enclosed_command(subr)
 
-    rep.add_enclosed_command(sreg)
+    #rep.add_enclosed_command(sreg)
 
     file = './' + 'for001.dat'
     f = open(file, 'w')
