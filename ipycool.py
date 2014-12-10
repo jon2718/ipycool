@@ -472,6 +472,7 @@ class ICoolInput(ICoolObject):
     ncv is a covariance plane definition variables object.
     sec is a region definition variables object, which contains all region definitions.
     """
+    nhs_empty=Nhs()
 
     command_params = {
         'title':      {'desc': 'Title of ICOOL simulation',
@@ -502,9 +503,9 @@ class ICoolInput(ICoolObject):
                       'doc': '',
                       'type': 'Nhs',
                       'req': False,
-                      'default': None},
+                      'default': nhs_empty},
 
-         'nsc':       {'desc': 'ICOOL scatterplot defintion variables',
+        'nsc':       {'desc': 'ICOOL scatterplot defintion variables',
                        'doc': '',
                        'type': 'Nsc',
                        'req': False,
@@ -517,10 +518,10 @@ class ICoolInput(ICoolObject):
                       'default': None},
 
         'nrh':       {'desc': 'ICOOL r history definition variables',
-                       'doc': '',
-                       'type': 'Nrh',
-                       'req': False,
-                       'default': None},
+                      'doc': '',
+                      'type': 'Nrh',
+                      'req': False,
+                      'default': None},
 
         'nem':       {'desc': 'ICOOL emittance plane definition variables',
                        'doc': '',
@@ -560,30 +561,40 @@ class ICoolInput(ICoolObject):
 
     def gen(self, file):
         if self.title is not None:
-            self.title.gen(file)
+            self.title.gen_for001(file)
         if self.cont is not None:
-            self.cont.gen(file)
+            self.cont.gen_for001(file)
         if self.bmt is not None:
-            self.bmt.gen(file)
+            self.bmt.gen_for001(file)
         if self.ints is not None:
-            self.ints.gen(file)
+            self.ints.gen_for001(file)
         if self.nhs is not None:
-            self.nhs.gen(file)
+            self.nhs.gen_for001(file)
         if self.nsc is not None:
-            self.nsc.gen(file)
+            self.nsc.gen_for001(file)
         if self.nzh is not None:
-            self.nzh.gen(file)
+            self.nzh.gen_for001(file)
         if self.nrh is not None:
-            self.nrh.gen(file)
+            self.nrh.gen_for001(file)
         if self.nem is not None:
-            self.nem.gen(file)
+            self.nem.gen_for001(file)
         if self.ncv is not None:
-            self.ncv.gen(file)
+            self.ncv.gen_for001(file)
         if self.sec is not None:
-            self.sec.gen(file)
+            self.sec.gen_for001(file)
 
 
 class Title(ICoolObject):
+    
+    command_params = {
+                      'title': {'desc': 'Title of ICOOL simulation',
+                      'doc': '',
+                      'type': 'String',
+                      'req': True,
+                      'default': None},
+
+    }
+
     def __init__(self, title):
         self.title = title
 
@@ -593,7 +604,7 @@ class Title(ICoolObject):
     def __repr__(self):
         return 'Problem Title: ' + self.title + '\n'
 
-    def gen(self, file):
+    def gen_for001(self, file):
         file.write(self.title)
 
 
@@ -1103,79 +1114,116 @@ class Ints(ICoolNameList):
                     'min': 1,
                     'max': 4},
 
-        'scatlev':  {'desc': '(L) if .true. => continue tracking daughter particle following decay',
-                     'doc': '',
-                     'type': 'Logical',
-                     'req': False,
-                     'default': False},
-
-        'epsf':     {'desc': '(R) desired tolerance on fractional field variation, energy loss, and multiple '
-                     'scattering per step',
-                     'doc': '',
-                     'type': 'Real',
-                     'req': False,
-                     'default': False},
-
-        'epsreq':   {'desc': '(R) required tolerance on error in tracking parameters (1E-3) This parameter is '
-                     'only used if varstep = true',
-                     'doc': '',
-                     'type': 'Real',
-                     'req': False,
-                     'default': None},
-
-        'epsstep':  {'desc': '(R) desired tolerance in spatial stepping to reach each destination plane [m]',
-                     'type': 'Real',
-                     'doc': '',
-                     'req': False,
-                     'default': 1E-6},
-
-        'ffcr':     {'desc': '(L) if .true. => inserts form feed and carriage returns in the output log file so there '
-                     'are two plots per page starting at the top of a page',
-                     'doc': '',
-                     'type': 'Logical',
-                     'req': False,
-                     'default': False},
-
-        'forcerp':  {'desc': '(L) if .true. => set x, y, Px, and Py for reference particle to 0 for each new REFP '
-                     'command and for each ACCEL region with phasemodel=4.',
-                     'doc': '',
-                     'type': 'Logical',
-                     'req': False,
-                     'default': True},
-
-        'fsav':     {'desc': '(L) if .true. => store particle info at plane IZFILE into file FOR004.DAT. (false). '
-                     'It is possible to get the initial distribution of particles that get a given error flag be '
-                     'setting the plane=IFAIL . It is possible to get the initial distribution of particles that '
-                     'successfully make it to the end of the simulation by setting the plane= -1.',
-                     'doc': '',
-                     'type': 'Logical',
-                     'req': False,
-                     'default': None},
-
-        'fsavset':  {'desc': '(L) if .true. => modify data stored using FSAV in FOR004.DAT to have z=0 and '
-                     'times relative to reference particle at plane IZFILE.',
-                     'doc': '',
-                     'type': 'Logical',
-                     'req': False,
-                     'default': False},
-
-        'f9dp':     {'desc': '(I) number of digits after the decimal point for floating point variables in FOR009.DAT '
-                     '{4,6,8,10,12,14,16,17} (4) F9DP=17 gives 16 digits after the decimal point and 3 digits in the '
-                     'exponent',
-                     'doc': '',
+        'scatlev':  {'desc': '(I) model level for multiple scattering',
+                     'doc': '1: Gaussian( 0, Rossi-Greisen )\n'
+                            '2: Gaussian( 0, Highland )\n'
+                            '3: Gaussian( 0, Lynch-Dahl )\n'
+                            '4: Bethe version of Moliere distribution (with Rutherford limit)\n'
+                            '5: Rutherford\n'
+                            '6: Fano (with Rutherford limit)\n'
+                            '7: Tollestrup (with Rutherford limit)\n'
+                            'Level 2 contains a logarithm term in computing the Gaussian width, so\n'
+                            'it is not useful for general monte carlo work. It gives an accurate estimate of\n'
+                            'the width of the distribution when the step size is the same as the region size.\n'
+                            'In models 4, 6, and 7 when the effective number of scatters is less than 20 Rutherford\n'
+                            'scattering is used with the actual number of scatters in a given step taken from a\n'
+                            'Poisson distribution.',
                      'type': 'Integer',
                      'req': False,
-                     'default': None},
+                     'default': 6,
+                     'min': 1,
+                     'max': 6},
 
-        'goodtrack': {'desc': '(L) if .true. and BGEN=.false. => only accepts input data from file FOR003.DAT if '
-                      'IPFLG=0.; if .false. => resets IPFLG of bad input tracks to 0 (this allows processing a '
-                      'file of bad tracks for diagnostic purposes)',
+        'straglev':  {'desc': '(I) Model level for straggling ',
+                      'doc': '1: Gaussian( Bohr )\n'
+                             '2: Landau distribution\n'
+                             '3: (not used)\n'
+                             '4: Vavilov distribution (with appropriate Landau and Gaussian limits determined '
+                             'by the program)\n'
+                             '5: restricted energy fluctuations from continuous processes with energy below DCUTx.',
+                      'type': 'Integer',
+                      'req': False,
+                      'default': 4,
+                      'min': 1,
+                      'max': 5},
+
+        'declev':   {'desc': '(I) model level for particle decays (1)',
+                     'doc': '1: uniform polar decay angle for daughter particle in parent rest frame\n'
+                            '2: 90 degree polar decay angle for daughter particle in parent rest frame\n'
+                            '3: uniform polar decay angle for daughter particle in parent rest frame; '
+                            'no mu-->e decays.\n'
+                            '4: 90 degree polar decay angle for daughter particle in parent rest frame; '
+                            'no mu->e decays\n'
+                            '5: uniform polar decay angle for daughter particle in parent rest frame; '
+                            'no mu-->e decays;\n'
+                            'save accumulated fractional decay length in POL(1).',
+                     'type': 'Integer',
+                     'req': False,
+                     'default': 1,
+                     'min': 1,
+                     'max': 5},
+
+        'intlev':  {'desc': 'Model level for nuclear interactions (1)',
+                    'doc': '1: stop tracking after an interaction\n'
+                           '2: stop tracking after an interaction, except for protons which generate '
+                           'a pion from the Wang distribution.',
+                    'type': 'Integer',
+                    'req': False,
+                    'default': 1,
+                    'min': 1,
+                    'max': 2},
+
+        'spacelev':     {'desc': 'Model level for space charge (3)',
+                         'doc': '1: image charge of moving bunch in cylindrical, metallic can\n'
+                                '2: crude transverse space charge for free space applied to all regions\n'
+                                '3: Gaussian bunch space charge (transverse and longitudinal) for free space '
+                                'applied to all regions\n'
+                                '4: same as model 3 for single bunch in a bunch train. All the particles are '
+                                'superimposed\n'
+                                'on 1 bunch given by parameter FRFBUNSC. Adjust PARBUNSC accordingly.',
+                         'type': 'Integer',
+                         'req': False,
+                         'default': 3,
+                         'min': 1,
+                         'max': 4},
+
+        'dcute':        {'desc': 'Kinetic energy of electrons, above which delta rays are discretely '
+                                 'simulated [GeV] ',
+                         'doc': '',
+                         'type': 'Real',
+                         'req': False,
+                         'default': 0.003},
+
+        'elmscor':     {'desc': 'ELMS correlation ',
+                        'doc': '0: run ELMS without correlations (0)\n'
+                               '1: run ELMS with correlations',
+                        'type': 'Integer',
+                        'req': False,
+                        'default': 0,
+                        'min': 0,
+                        'max': 1},
+
+        'facfms':  {'desc': 'Factor to correct the Z(Z+1) term in the characteristic angle squared '
+                            'χC2 in Moliere multiple scattering theory '
+                            'times relative to reference particle at plane IZFILE.',
+                    'doc': '',
+                    'type': 'Real',
+                    'req': False,
+                    'default': 1.0},
+
+        'facmms':     {'desc': 'Factor to correct screening angle squared χA2 in Moliere multiple ',
+                       'doc': '',
+                       'type': 'Real',
+                       'req': False,
+                       'default': 1.0},
+
+        'fastdecay': {'desc': 'If true => use unphysical decay constants to make {μ,π,K} decay immediately. ',
                       'doc': '',
                       'type': 'Logical',
                       'req': False,
-                      'default': True},
+                      'default': False},
 
-        'izfile':    {'desc': '(I) z-plane where particle info is desired when using FSAV. Use 1 to store beam at '
+        'frbunsc':    {'desc': '(I) z-plane where particle info is desired when using FSAV. Use 1 to store beam at '
                       'production. Saves initial particle properties for bad tracks if IZFILE=IFAIL #.  Saves initial '
                       'particle properties for tracks that get to the end of the simulation if IZFILE=-1.  IZFILE '
                       'should point to the end of a REGION or to an APERTURE , ROTATE or TRANSPORT pseudoregion '

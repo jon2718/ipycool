@@ -3,6 +3,7 @@ from ipycool import *
 
 
 def bmt_gen_test():
+    title=Title(title='Test IPYCOOL')
     co = Cont(npart=10000)
     
     d = Distribution(bdistyp='gaussian', px_mean=0.1, px_std=8, py_mean=0.23, py_std=2.45,
@@ -14,6 +15,7 @@ def bmt_gen_test():
     bmt = Bmt(nbeamtyp=1)
     bmt.add_enclosed_command(bm)
     #bmt.add_enclosed_command(bm)
+    interactions=Ints()
 
     s = Section()
     ac = Accel(model='sec_pill_rec', freq=1, grad=2, height=3, phase=4, rad_offset=5, width=6)
@@ -31,14 +33,14 @@ def bmt_gen_test():
     sreg.add_enclosed_command(subr)
 
     #rep.add_enclosed_command(sreg)
-
+    input = ICoolInput(cont=co, bmt=bmt, ints=interactions, title=title, section=s)
     file = './' + 'for001.dat'
     f = open(file, 'w')
     #co.icoolgenerate_for001(f)
     #bmt.icoolgenerate_for001(f)
-    co.gen_for001(f)
-    bmt.gen_for001(f)
-    s.gen_for001(f)
-
+    #co.gen_for001(f)
+    #bmt.gen_for001(f)
+    #s.gen_for001(f)
+    input.gen(f)
     f.close()
 
