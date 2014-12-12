@@ -26,13 +26,13 @@ def bmt_gen_test():
 
     sreg = SRegion(zstep=0.001, nrreg=1, slen=14)
   
-    #s.add_enclosed_command(cell)
+    s.add_enclosed_command(cell)
 
     mat = Material(geom='CBLOCK', mtag='LH')
     subr = SubRegion(material=mat, rlow=0, rhigh=1, irreg=1, field=ac)
     sreg.add_enclosed_command(subr)
 
-    #rep.add_enclosed_command(sreg)
+    rep.add_enclosed_command(sreg)
     input = ICoolInput(cont=co, bmt=bmt, ints=interactions, title=title, section=s)
     file = './' + 'for001.dat'
     f = open(file, 'w')
