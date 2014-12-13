@@ -355,6 +355,9 @@ class ICoolObject(ICoolGenerator):
        
     def get_endtag(self):
         return self.endtag
+
+    def get_line_splits(self):
+        return self.for001_format['line_splits']
         
 
 
@@ -437,7 +440,6 @@ class Container(ICoolObject):
 
     def gen_for001(self, file):
         for command in self.enclosed_commands:
-            print 'Looping'
             print 'Command is: ', command
             if hasattr(command, 'gen_for001'):
                 command.gen_for001(file)
@@ -1280,13 +1282,23 @@ class Region(ICoolObject):
 
     def gen_for001(self, file):
         parm = self.gen_parm()
+        splits = self.get_line_splits()
+        count = 0
+        split_num = 0
+        cur_split = splits[split_num]
         for command in parm:
+            if count == cur_split:
+                file.write('\n')
+                count = 0
+                split_num = split_num+1
+                cur_split = splits[split_num]
             print 'Command is: ', command
             if hasattr(command, 'gen_for001'):
                 command.gen_for001(file)
             else:
                 file.write(self.for001_str_gen(command))
             file.write(' ')
+            count = count + 1
         file.write('\n')
 
 
@@ -1336,7 +1348,7 @@ class RegularRegionContainer(RegularRegion, Container):
         #self.gen_endtag(file)
         if hasattr(self, 'endtag'):
             file.write(self.get_endtag())
-        file.write('\n')
+            file.write('\n')
 
 
 class Section(RegularRegionContainer):
@@ -1349,6 +1361,9 @@ class Section(RegularRegionContainer):
 
     begtag = 'SECTION'
     endtag = 'ENDSECTION'
+    num_params = 0
+    for001_format = {'line_splits': [0]}
+
 
     allowed_enclosed_commands = [
         'Begs', 'Repeat', 'Cell', 'Background', 'SRegion', 'Aperture', 'Cutv', 'Dens', 'Disp', 'Dummy', 'DVar',
@@ -1357,11 +1372,7 @@ class Section(RegularRegionContainer):
         ]
 
     command_params = {
-        #'nsections':  {'desc': '# of times to repeat enclosed command parameters',
-        #          'doc': '',
-        #          'type': 'Integer',
-        #          'req': False,
-        #          'pos': 1}
+        
         }
 
     def __init__(self, **kwargs):
@@ -1401,6 +1412,8 @@ class Repeat(RegularRegionContainer):
     """
     begtag = 'REPEAT'
     endtag = 'ENDREPEAT'
+    num_params = 1
+    for001_format = {'line_splits': [1]}
 
     command_params = {
         'nrep':  {'desc': '# of times to repeat following region commands',
@@ -1508,6 +1521,7 @@ class Cell(RegularRegionContainer):
     """
     begtag = 'CELL'
     endtag = 'ENDCELL'
+    num_params = 4
     for001_format = {'line_splits': [1, 1, 1, 1]}
 
     allowed_enclosed_commands = [
@@ -1593,6 +1607,8 @@ class SRegion(RegularRegionContainer):
 
     begtag = 'SREGION'
     endtag = ''
+    num_params = 3
+    for001_format = {'line_splits': [3]}
 
     command_params = {
        
@@ -1656,6 +1672,8 @@ class SubRegion(RegularRegion):
     (4) Field object; and
     (5) Material object.
     """
+    num_params = 5
+    for001_format = {'line_splits': [3, 1, 1]}
 
     command_params = {
         'irreg':  {'desc': 'R-Region Number',
@@ -1964,7 +1982,7 @@ class ModeledCommandParameter(ICoolObject):
     def gen_for001(self, file):
         if hasattr(self, 'begtag'):
             print 'Writing begtag'
-            file.write('\n')
+            #file.write('\n')
             file.write(self.get_begtag())
             file.write('\n')
         parm = self.gen_parm()
@@ -2366,7 +2384,7 @@ class Material(ModeledCommandParameter):
         'model_descriptor': {'desc': 'Geometry',
                              'name': 'geom',
                              'num_parms': 12,
-                             'for001_format': {'line_splits': [12]}},
+                             'for001_format': {'line_splits': [1, 1, 10]}},
         'VAC':
         {'desc': 'Vacuum',
          'doc': 'Vacuum region.  Specify vacuum for mtag.  Geom will be set to NONE.',
