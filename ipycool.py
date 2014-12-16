@@ -1324,8 +1324,8 @@ class PseudoRegion(Region):
     PseudoRegion commands include: APERTURE, CUTV, DENP, DENS, DISP, DUMMY, DVAR, EDGE, GRID
     OUTPUT, REFP, REF2, RESET, RKICK, ROTATE, TAPER, TILT, TRANSPORT, BACKGROUND, BFIELD, ENDB, ! or &
     """
-    def __init__(self, name=None, metadata=None):
-        Region.__init__(self, name, metadata)
+    def __init__(self, kwargs):
+        Region.__init__(self, kwargs)
 
     def __str__(self):
         return '[A PseudoRegion can be either a APERTURE, CUTV, DENP, DENS, DISP, DUMMY, DVAR, EDGE, GRID\
@@ -3170,16 +3170,61 @@ class Sol(Field):
 
     """
 
+    begtag = 'SOL'
+    endtag = ''
+
     models = {
         'model_descriptor': {'desc': 'Name of model parameter descriptor',
-                             'name': 'model'},
-        '1': {'desc': 'Ez only with no transverse variation',
-              'parms': {'freq': 2, 'grad': 3, 'phase': 4, 'rect_cyn': 5, 'mode': 8}},
+                             'name': 'model',
+                             'num_parms': 15,
+                             'for001_format': {'line_splits': [15]}},
 
-        '2': {'desc': 'Cylindrical TM01p pillbox',
+        'bz': {'desc': 'Bz with constant central region + linear ends',
+               'doc': '',
+               'icool_model_name': 1,
+               'parms':
+                       {'model': {'pos': 1, 'type': 'String', 'doc': ''},
+                        'strength': {'pos': 2, 'type': 'Real', 'doc': 'Field strength [T] '},
+                        'clen': {'pos': 3, 'type': 'Real', 'doc': 'Length of central region, CLEN[m] '
+                                                                  '(You can use this to get a tapered field profile)'},
+                        'elen1': {'pos': 4, 'type': 'Real', 'doc': 'Length of entrance end region, ELEN1 [m]. '
+                                                                   'This is the displacement of the upstream end of '
+                                                                   'the solenoid from the start of the region'},
+                        'offset': {'pos': 5, 'type': 'Real', 'doc': 'Use parameter 5 to get an indefinitely long, '
+                                                                    'constant solenoidal field.'},
+                        'elen2': {'pos': 6, 'type': 'Real', 'doc': 'Length of exit end region, ELEN2 [m]. '
+                                                                   'For a symmetric field, set '
+                                                                   'SLEN =CLEN + ELEN1 + ELEN2. '
+                                                                   'Hard-edge field models can include the focusing '
+                                                                   'effects of the missing fringe field by using EDGE '
+                                                                   'commands before and after the hard-edge field '
+                                                                   'region'}}},
+
+        'dtanh': {'desc': 'dTANH(z) Bz dependence',
+                  'doc': '',
+                  'icool_model_name': 2,
+                  'parms':
+                         {'model': {'pos': 1, 'type': 'String', 'doc': ''},
+                          'strength': {'pos': 2, 'type': 'Real', 'doc': 'Field strength [T] '},
+                          'clen': {'pos': 3, 'type': 'Real', 'doc': 'Length of central region, CLEN[m] '
+                                                                    '(You can use this to get a tapered field '
+                                                                    'profile)'},
+                          'elen': {'pos': 4, 'type': 'Real', 'doc': 'Length for end region, ELEN [m] (This is the '
+                                                                    'displacement of the upstream end of the solenoid '
+                                                                    'from the start of the region; for a symmetric '
+                                                                    'field, set SLEN =CLEN + 2*ELEN.)'},
+                          'order': {'pos': 5, 'type': 'Real', 'doc': 'Order of vector potential expansion '
+                                                                     '{1, 3, 5, 7}'},
+                          'att_len': {'pos': 6, 'type': 'Real', 'doc': 'End attenuation length, [m] '
+                                                                       '(Set larger than '
+                                                                       'maximum beam size) '},
+                          'offset': {'pos': 7, 'type': 'Real', 'doc': 'Constant offset for Bs [T]'
+                                                                      'For a symmetric field, set'}}},
+
+        'circ_loop': {'desc': 'Cylindrical TM01p pillbox',
               'parms': {'freq': 2, 'grad': 3, 'phase': 4, 'rect_cyn': 5, 'longitudinal_mode': 8}},
 
-        '3': {'desc': 'Traveling wave cavity',
+        'annular': {'desc': 'Traveling wave cavity',
               'parms': {'freq': 2, 'grad': 3, 'phase': 4, 'rect_cyn': 5, 'x_offset': 6, 'y_offset': 7,
                         'phase_velocity': 8}},
 
@@ -3211,9 +3256,9 @@ class Sol(Field):
                          'g2': 10, 'phase_model': 12}}
         }
   
+
     def __init__(self, **kwargs):
-        Field.__init__(self, 'Accel', kwargs)
-        self.ftag = 'SOL'
+        Field.__init__(self, 'SOL', kwargs)
 
     def __call__(self, **kwargs):
         Field.__call__(self, kwargs)
@@ -3227,16 +3272,90 @@ class Sol(Field):
         else:
             Field.__setattr__(self, name, value)
 
+    def __str__(self):
+        return Field.__str__(self)
+
     def gen_fparm(self):
         Field.gen_fparm(self)
 
-    def gen(self, file):
-        Field.gen(self)
+
+class Edge(Field):
+    """
+    EDGE
+    1) edge type (A4) {SOL, DIP, HDIP,DIP3,QUAD,SQUA,SEX, BSOL,FACE}
+    2.1) model # (I) {1}
+    2.2-5) p1, p2, p3,p4 (R) model-dependent parameters
+    Edge type = SOL
+    p1: BS [T]
+    If the main solenoid field is B, use p1=-B for the entrance edge and p1=+B for the exit edge.
+    Edge type = DIP
+    p1: BY [T]
+    Edge type = HDIP
+    p1: BX [T]
+    Edge type = DIP3
+    p1: rotation angle [deg]
+    p2: BY0 [T]
+    p3: flag 1:in 2:out
+    Edge type = QUAD
+    p1: gradient [T/m]
+    Edge type = SQUA
+    p1: gradient [T/m]
+    Edge type = SEX
+    p1: b2 [T/m2] (cf. C. Wang & L. Teng, MC 207)
+    Edge type = BSOL
+    p1: BS [T]
+    p2: BY [T]
+    p3: 0 for entrance face, 1 for exit face
+    Edge type = FACE
+    This gives vertical focusing from rotated pole faces.
+    p1: pole face angle [deg]
+    p2: radius of curvature of reference particle [m]
+    p3: if not 0 => correct kick by the factor 1 / (1+δ)
+    p4: if not 0 => apply horizontal focus with strength = (-vertical strength)
+    If a FACE command is used before and after a sector dipole ( DIP ), you can approximate a rectangular dipole field.
+    The DIP, HDIP, QUAD, SQUA, SEX and BSOL edge types use Scott Berg’s HRDEND routine to find the change in
+    transverse position and transverse momentum due to the fringe field.
+    """
+
+    begtag = 'SOL'
+    endtag = ''
+
+    models = {}
+
+    def __init__(self, **kwargs):
+        Field.__init__(self, 'EDGE', kwargs)
+
+    def __call__(self, **kwargs):
+        Field.__call__(self, kwargs)
+
+    def __setattr__(self, name, value):
+        if name == 'ftag':
+            if value == 'EDGE':
+                object.__setattr__(self, name, value)
+            else:
+                print '\n Illegal attempt to set incorrect ftag.\n'  # Should raise exception here
+        else:
+            Field.__setattr__(self, name, value)
+
+    def __str__(self):
+        return Field.__str__(self)
+
+    def gen_fparm(self):
+        Field.gen_fparm(self)
  
+
+class Output(PseudoRegion):
+    begtag = 'OUTPUT'
+    endtag = ''
+
+    command_params = {}
+    
+    def __init__(self):
+        PseudoRegion.__init__(self, None)
 
 class Comment(PseudoRegion):
     def __init__(self, comment):
-        PseudoRegion.__init__(self, None, None)
+        PseudoRegion.__init__(self, None)
         self.comment = comment
 
 class ICoolInput(ICoolObject):

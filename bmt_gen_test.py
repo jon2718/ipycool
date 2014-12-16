@@ -18,11 +18,14 @@ def bmt_gen_test():
     #bmt.add_enclosed_command(bm)
     interactions=Ints(lstrag = False)
 
+    output=Output()
+
     s = Section()
     ac = Accel(model='sec_pill_rec', freq=1, grad=2, height=3, phase=4, rad_offset=5, width=6)
     cell = Cell(ncells=10, field=ac, flip=False)
 
     rep = Repeat(nrep=10)
+    rep.add_enclosed_command(out)
     cell.add_enclosed_command(rep)
 
     sreg = SRegion(zstep=0.001, nrreg=1, slen=14)
