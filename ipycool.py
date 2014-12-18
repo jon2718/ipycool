@@ -21,7 +21,7 @@ An ICOOl input file consists of:
 herein as commands.
 
 This program will use of following object definitions:
-Namelists.  Namelists in the for001.dat file are preceded by an '&' 
+Namelists.  Namelists in the for001.dat file are preceded by an '&'
 sign (e.g., &cont).
 
 Namelists include:
@@ -946,6 +946,13 @@ class Ints(ICoolNameList):
                       'req': False,
                       'default': True},
 
+        
+        'linteract':    {'desc': 'If .true. => simulate inelastic nuclear interactions of pions, kaons and protons',
+                         'doc': '',
+                         'type': 'Logical',
+                         'req': False,
+                         'default': False},
+
         'lspace':    {'desc': 'If .true. => consider effects of space charge',
                       'doc': '',
                       'type': 'Logical',
@@ -1063,6 +1070,14 @@ class Ints(ICoolNameList):
                          'req': False,
                          'default': 0.003},
 
+
+        'dcutm':        {'desc': 'Kinetic energy of muons and other heavy particles, above which delta '
+                                 'rays are discretely simulated [GeV] ',
+                         'doc': '',
+                         'type': 'Real',
+                         'req': False,
+                         'default': 0.003},
+
         'elmscor':     {'desc': 'ELMS correlation ',
                         'doc': '0: run ELMS without correlations (0)\n'
                                '1: run ELMS with correlations',
@@ -1092,94 +1107,61 @@ class Ints(ICoolNameList):
                       'req': False,
                       'default': False},
 
-        'frbunsc':    {'desc': '(I) z-plane where particle info is desired when using FSAV. Use 1 to store beam at '
-                      'production. Saves initial particle properties for bad tracks if IZFILE=IFAIL #.  Saves initial '
-                      'particle properties for tracks that get to the end of the simulation if IZFILE=-1.  IZFILE '
-                      'should point to the end of a REGION or to an APERTURE , ROTATE or TRANSPORT pseudoregion '
-                      'command.',
+        'frfbunsc':    {'desc': '(R) RF frequency used for space charge model 4. [MHz] (201.) ',
                       'doc': '',
-                      'type': 'Integer',
+                      'type': 'Real',
                       'req': False,
-                      'default': None},
+                      'default': 201},
 
-        'magconf':    {'desc': '(I) if 19 < MAGCONF=mn < 100 => reads in file FOR0mn.DAT, which contains data on '
-                       'solenoidal magnets. Used with SHEET, model 4.',
+        'parbunsc':    {'desc': 'Number of muons per bunch for space charge calculation ',
                        'doc': '',
-                       'type': 'Integer',
+                       'type': 'Real',
                        'req': False,
-                       'default': 0},
+                       'default': 4E12},
 
-        'mapdef':     {'desc': '(I) if 19 < MAPDEF=mn < 100 => reads in file FOR0mn.DAT, which contains data on how '
-                       'to set up field grid. Used with SHEET, model 4.',
+        'pdelev4':     {'desc': 'Momentum for DELEV=4 calculation',
                        'doc': '',
-                       'type': 'Integer',
+                       'type': 'Real',
                        'req': False,
-                       'default': 0},
+                       'default': 0.200},
 
-        'neighbor':   {'desc': "(L) if .true. => include fields from previous and following regions when calculating "
-                       "field.  This parameter can be used with soft-edge fields when the magnitude of the "
-                       "field doesn't fall to 0 at the region boundary. A maximum of 100 region can be used "
-                       "with this feature.",
-                       'doc': '',
-                       'type': 'Logical',
+        'wanga':   {'desc': 'Wang parameter A ',
+                       'doc': 'The Wang distribution is given by '
+                              'd2σ/dp dΩ = A pMAX x (1-x) exp{-BxC – DpT} where x = pL / pMAX',
+                       'type': 'Real',
                        'req': False,
-                       'default': False},
+                       'default': 90.1},
 
-        'neutrino':    {'desc': '(I) if 19 < NEUTRINO=mn < 100 => writes out file FOR0mn.DAT, which contains '
-                        'neutrino production data. See section 5.2 for the format.',
+        'wangb':    {'desc': 'Wang parameter B',
                         'doc': '',
-                        'type': 'Integer',
+                        'type': 'Real',
                         'req': False,
-                        'default': 0},
+                        'default': 3.35},
 
-        'nnudk':       {'desc': '(I) # of neutrinos to produce at each muon, pion and kaon decay.',
+        'wangc':       {'desc': 'Wang parameter C',
                         'doc': '',
-                        'type': 'Integer',
+                        'type': 'Real',
                         'req': False,
-                        'default': 1},
+                        'default': 1.22},
 
-        'npart':       {'desc': '(I) # of particles in simulation. The first 300,000 particles are stored in memory. '
-                        'Larger numbers are allowed in principle since ICOOL writes the excess particle '
-                        'information to disc. However, there can be a large space and speed penalty in doing '
-                        'so.',
+        'wangd':       {'desc': 'Wang parameter D',
                         'doc': '',
-                        'type': 'Integer',
+                        'type': 'Real',
                         'req': False,
-                        'default': None},
+                        'default': 4.66},
 
-        'nprnt':        {'desc': ' Number of diagnostic events to print out to log file.',
-                         'doc': '',
-                         'type': 'Integer',
-                         'req': False,
-                         'default': -1},
-
-        'npskip':       {'desc': 'Number of input particles in external beam file to skip before processing starts',
-                         'doc': '',
-                         'type': 'Integer',
-                         'req': False,
-                         'default': 0},
-
-        'nsections':    {'desc': '(I) # of times to repeat basic cooling section (1).  This parameter can be used to '
-                         'repeat all the commands between the SECTION and ENDSECTION commands in the problem '
-                         'definition. If a REFP command immediately follows the SECTION command, it is not '
-                         'repeated',
-                         'doc': '',
-                         'type': 'Integer',
-                         'req': False,
-                         'default': 1},
-
-        'ntuple':        {'desc': '(L) if .true. => store information about each particle after every region in file '
-                          'FOR009.DAT. This variable is forced to be false if RTUPLE= true.(false)}',
-                          'doc': '',
-                          'type': 'Logical',
-                          'req': False,
-                          'default': False},
-
-        'nuthmin':      {'desc': '(R) Minimum polar angle to write neutrino production data to file. [radians]',
+        'wangpmx':      {'desc': 'Wang parameter pMAX (1.500) The sign of this quantity is used to select '
+                                 'π+ or π- production.',
                          'doc': '',
                          'type': 'Real',
                          'req': False,
-                         'default': 0}
+                         'default': 1.5},
+
+        'wangfmx':       {'desc': 'The maximum value of the Wang differential cross section',
+                          'doc': '',
+                          'type': 'Real',
+                          'req': False,
+                          'default': 13.706},
                         }
 
     def __init__(self, **kwargs):
@@ -3221,42 +3203,128 @@ class Sol(Field):
                           'offset': {'pos': 7, 'type': 'Real', 'doc': 'Constant offset for Bs [T]'
                                                                       'For a symmetric field, set'}}},
 
-        'circ_loop': {'desc': 'Cylindrical TM01p pillbox',
-              'parms': {'freq': 2, 'grad': 3, 'phase': 4, 'rect_cyn': 5, 'longitudinal_mode': 8}},
 
-        'annular': {'desc': 'Traveling wave cavity',
-              'parms': {'freq': 2, 'grad': 3, 'phase': 4, 'rect_cyn': 5, 'x_offset': 6, 'y_offset': 7,
-                        'phase_velocity': 8}},
+        'circ':  {'desc': 'Field from sum of circular current loops',
+                  'doc': 'For a symmetric field with 1 loop, set ELEN=0.5 SLEN.',
+                  'icool_model_name': 3,
+                  'parms':
+                         {'model': {'pos': 1, 'type': 'String', 'doc': ''},
+                          'strength': {'pos': 2, 'type': 'Real', 'doc': 'Field strength [T] '},
+                          'clen': {'pos': 3, 'type': 'Real', 'doc': 'Length of central region, CLEN[m] '
+                                                                    '(This is the region over which the coils are '
+                                                                    'distributed))'},
+                          'elen': {'pos': 4, 'type': 'Real', 'doc': 'Length for end region, ELEN [m] (This is the '
+                                                                    'displacement of the upstream end of the solenoid '
+                                                                    'from the start of the region; for a symmetric '
+                                                                    'field, set SLEN =CLEN + 2*ELEN.)'},
+                          'loops': {'pos': 5, 'type': 'Real', 'doc': 'Number of coil loops'},
+                          'radius': {'pos': 6, 'type': 'Real', 'doc': 'Radius of coils [m]'}}},
 
-        '4': {'desc': 'Approximate fields for symmetric circular-nosed cavity',
-              'parms': {'freq': 2, 'grad': 3, 'phase': 4, 'length': 8, 'gap': 9, 'drift_tube_radius': 10,
-                        'nose_radius': 11}},
+        'sheet':    {'desc': 'Field from annular current sheet',
+                     'doc': '',
+                     'icool_model_name': 4,
+                     'parms':
+                             {'model': {'pos': 1, 'type': 'String', 'doc': ''},
+                              'strength': {'pos': 2, 'type': 'Real', 'doc': 'Field strength [T] '},
+                              'length': {'pos': 3, 'type': 'Real', 'doc': 'Length of sheet [m] '},
+                              'z_offset': {'pos': 4, 'type': 'Real', 'doc': 'z offset of center of sheet from start '
+                                                                            'of region [m]'},
+                              'radius': {'pos': 5, 'type': 'Real', 'doc': 'Radius of sheet [m]'}}},
 
-        '5': {'desc': 'User-supplied azimuthally-symmetric TM mode (SuperFish)',
-              'parms': {'freq': 2, 'phase': 4, 'file_no': 8, 'field_strength_norm': 9, 'rad_cut': 10, 'axial_dist': 11,
-                        'axial_sym': 12}},
+        'block':  {'desc': 'Field from thick annular current block',
+                   'doc': '',
+                   'icool_model_name': 5,
+                   'parms':
+                           {'model': {'pos': 1, 'type': 'String', 'doc': ''},
+                            'strength': {'pos': 2, 'type': 'Real', 'doc': 'Field strength [T] '},
+                            'length': {'pos': 3, 'type': 'Real', 'doc': 'Length of block [m] '},
+                            'z_offset': {'pos': 4, 'type': 'Real', 'doc': 'z offset of center of block from start of '
+                                                                          'of region [m]'},
+                            'inner': {'pos': 5, 'type': 'Real', 'doc': 'Inner radius of block [m]'},
+                            'outer': {'pos': 6, 'type': 'Real', 'doc': 'Outer radius of block [m]'}}},
 
-        '6': {'desc': 'Induction linac model - waveform from user-supplied polynomial coefficients',
-              'parms': {'time_offset': 2, 'gap': 3, 'time_reset': 4, 'V0': 5, 'V1': 6, 'V2': 7, 'V3': 8, 'V4': 9,
-                        'V5': 10, 'V6': 11, 'V7': 12, 'V8': 13}},
 
-        '7': {'desc': 'Induction linac model - waveform from internally generated waveform',
-              'parms': {'num_gaps': 2, 'start_volt': 3, 'volt_swing': 4, 'time_offset': 5, 'kin_en': 6, 'pulse_dur': 7,
-                        'slope': 8, 'bins': 9, 'gap_len': 10, 'file_num': 11, 'kill_flag': 12, 'restart_flag': 13}},
+        'interp':  {'desc': 'Interpolate field from predefined USER r-z grid',
+                    'doc': 'The required format of the field map is:\n'
+                            'title (A80)\n'
+                            '# of z grid points (I) {1-5000}\n'
+                            '# of r grid points (I) {1-100}\n'
+                            'i, j, zi, rj, BZi,j, BRi,j (I, R)',
+                    'icool_model_name': 6,
+                    'parms':
+                            {'model': {'pos': 1, 'type': 'String', 'doc': ''},
+                             'grid': {'pos': 2, 'type': 'Real', 'doc': 'Grid ##of user-supplied field {1-4} '},
+                             'level': {'pos': 3, 'type': 'Int', 'doc': 'Interpolation level {1-3}:\n'
+                                                                       '1: bi-linear\n'
+                                                                       '2: bi-quadratic polynomial\n'
+                                                                       '3: bi-cubic polynomial ',
+                                       'min': 1, 'max': 3}}},
 
-        '8': {'desc': 'Induction linac model - Waveform from user-supplied file',
-              'parms': {'time_offset': 2, 'gap': 3, 'time_reset': 4, 'file_num_wav': 5, 'poly_order': 6,
-                        'file_num_out': 7, 'time_inc': 8}},
+        'tapered':  {'desc': 'Tapered radius',
+                     'doc': 'This model applies a geometry cut on particles whose radius exceeds the '
+                            'specified radial taper.',
+                     'icool_model_name': 7,
+                     'parms':
+                            {'model': {'pos': 1, 'type': 'String', 'doc': ''},
+                             'bc': {'pos': 2, 'type': 'Real', 'doc': 'Bc [T] (flat central field strength) '},
+                             'rc': {'pos': 3, 'type': 'Real', 'doc': 'Rc [m] (flat central coil radius) '},
+                             'lc': {'pos': 4, 'type': 'Real', 'doc': 'Lc [m] (central field length) '},
+                             'b1': {'pos': 5, 'type': 'Real', 'doc': 'B1 [T] (starting field strength)'},
+                             'r1': {'pos': 6, 'type': 'Real', 'doc': 'R1 [m] (starting coil radius)'},
+                             'l1': {'pos': 7, 'type': 'Real', 'doc': 'L1 [m] (length of entrance transition region)'},
+                             'b2': {'pos': 8, 'type': 'Real', 'doc': 'B2 [T] (ending field strength)'},
+                             'r2': {'pos': 9, 'type': 'Real', 'doc': 'R2 [m] (ending coil radius)'},
+                             'l2': {'pos': 10, 'type': 'Real', 'doc': 'L2 [m] (length of exit transition region)'}}},
 
-        '9': {'desc': 'Sector-shaped pillbox cavity (circular cross section)',
-              'parms': {'freq': 2, 'grad': 3, 'phase': 4}},
+        'edge':     {'desc': 'Hard-edge with adjustable end fields',
+                     'doc': 'The focusing deficit is B2L - ∫B2 ds. The deficit is independent of the focusing effect '
+                            'chosen with parameter 3.',
+                     'icool_model_name': 8,
+                     'parms':
+                            {'model': {'pos': 1, 'type': 'String', 'doc': ''},
+                             'bs': {'pos': 2, 'type': 'Real', 'doc': 'Bc [T] (flat central field strength) '},
+                             'foc_flag': {'pos': 3, 'type': 'Integer', 'doc':
+                                          'Flag on whether to include end focusing:\n'
+                                          '0: both entrance and exit focusing\n'
+                                          '1: exit focusing only\n'
+                                          '2: entrance focusing only\n'
+                                          '3: no edge focusing ',
+                               'min': 0,
+                               'max': 3},
+                               'ent_def': {'pos': 4, 'type': 'Real', 'doc': 'Focusing deficit at entrance [T2 m] '},
+                               'ex_def': {'pos': 5, 'type': 'Real', 'doc': 'focusing deficit at exit [T2 m]'}}},
+                          
+        'fourier':  {'desc': 'Determine field from file of Fourier coefficients',
+                     'doc': 'The contents of the input file for0JK.dat is\n'
+                            '1 title (A80)\n'
+                            '2.1 period, λ (R)\n'
+                            '2.2 field strength, S (R)\n'
+                            '3 maximum Fourier order (I)\n'
+                            '(4 repeated for each order)\n'
+                            '4.1 order, m (I) {0 – 199}\n'
+                            '4.2 cm (R)\n'
+                            '4.3 dm (R)\n'
+                            'The on-axis field is given by:\n'
+                            'f (s) = S Σ ( cm COS(u) + dm SIN(u) )\n'
+                            'where u = 2πms / λ.',
+                     'icool_model_name': 9,
+                     'parms':
+                    {'model': {'pos': 1, 'type': 'String', 'doc': ''},
+                     'order': {'pos': 2, 'type': 'Integer', 'doc': 'Order of off-axis expansion (I) {1, 3, 5, 7} '},
+                     'scale': {'pos': 3, 'type': 'Real', 'doc': '(R) Multiplies field strength '}}},
 
-        '10': {'desc': 'Variable {frequency gradient} pillbox cavity',
-               'parms': {'phase': 4, 'num_wavelengths': 5, 'reset_parm': 6, 'buncher_length': 7, 'g0': 8, 'g1': 9,
-                         'g2': 10, 'phase_model': 12}}
+
+        'on_axis':  {'desc': 'Determine field from file of on-axis field',
+                     'doc': '',
+                     'icool_model_name': 10,
+                     'parms':
+                    {'model': {'pos': 1, 'type': 'String', 'doc': ''},
+                     'file_num': {'pos': 2, 'type': 'Integer', 'doc': 'File number JK for input data (I) File name is '
+                                                                      'for0JK.dat'},
+                     'order': {'pos': 3, 'type': 'Integer', 'doc': 'Order of off-axis expansion (I) {1, 3, 5, 7} '},
+                     'scale': {'pos': 4, 'type': 'Real', 'doc': '(R) Multiplies field strength '}}},
         }
-  
-
+    
     def __init__(self, **kwargs):
         Field.__init__(self, 'SOL', kwargs)
 
@@ -3317,10 +3385,24 @@ class Edge(Field):
     transverse position and transverse momentum due to the fringe field.
     """
 
-    begtag = 'SOL'
+    begtag = 'EDGE'
     endtag = ''
 
-    models = {}
+    models = {
+        'model_descriptor': {'desc': 'Name of model parameter descriptor',
+                             'name': 'model',
+                             'num_parms': 6,
+                             'for001_format': {'line_splits': [1, 5]}},
+
+        'sol': {'desc': 'Solenoid',
+                'doc': '',
+                'icool_model_name': 'SOL',
+                'parms':
+                {'model': {'pos': 1, 'type': 'String', 'doc': ''},
+                 'bs': {'pos': 3, 'type': 'Real', 'doc': 'p1: BS [T] '
+                       'If the main solenoid field is B, use p1=-B for the entrance edge and p1=+B for the '
+                       'exit edge. (You can use this to get a tapered field profile)'}}},
+    }
 
     def __init__(self, **kwargs):
         Field.__init__(self, 'EDGE', kwargs)
