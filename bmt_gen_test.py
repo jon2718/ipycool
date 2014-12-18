@@ -10,15 +10,15 @@ def bmt_gen_test():
                      pz_mean=0.0076, pz_std=0.0020, x_mean=0, x_std=0.00486, y_mean=0.34, y_std=0.00486,
                      z_mean=0, z_std=0.86)
     #d(y_std=4)
-    c = Correlation(corrtyp='palmer', beta_eff=1, strength=1)
-    bm = BeamType(nbcorr=1, fractbt=1, distribution=d, bmtype=2, partnum=1)
-    bm.add_enclosed_command(c)
+    c = Correlation(corrtyp='ang_mom', sol_field=1.29)
+    bm = BeamType(nbcorr=0, fractbt=1, distribution=d, bmtype=2, partnum=1)
+    #bm.add_enclosed_command(c)
     bmt = Bmt(nbeamtyp=1)
     bmt.add_enclosed_command(bm)
     #bmt.add_enclosed_command(bm)
     interactions=Ints(lstrag = True)
 
-    #output=Output()
+    output=Output()
     
     background_sol=Sol(model='bz', strength=0, elen2=4, elen1=4, clen=8, offset=4)
     s = Section()
@@ -26,15 +26,15 @@ def bmt_gen_test():
     so=Sol(model='edge', ent_def =1 , ex_def=2, foc_flag=1, bs=40)
     cell = Cell(ncells=10, field=background_sol, flip=False)
    
-    rep = Repeat(nrep=1)
+    rep = Repeat(nrep=10)
     cell.add_enclosed_command(rep)
-
+    rep.add_enclosed_command(output)
     sreg = SRegion(zstep=0.001, nrreg=1, slen=0.001)
   
     s.add_enclosed_command(cell)
 
     mat = Material(geom='CBLOCK', mtag='VAC')
-    subr = SubRegion(material=mat, rlow=0, rhigh=10, irreg=1, field=so)
+    subr = SubRegion(material=mat, rlow=0, rhigh=10, irreg=1, field=ac)
     sreg.add_enclosed_command(subr)
 
     rep.add_enclosed_command(sreg)
