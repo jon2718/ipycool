@@ -93,6 +93,12 @@ def ipycool(self, arg):
     """
     args = parse_argstring(ipycool, arg)
 
+@magic_arguments()
+@register_line_magic
+def icool():
+    "ICOOL"
+    exec('!icool')
+
 
 class ICoolGenerator(object):
     def get_base_classes(self):
@@ -1713,9 +1719,12 @@ class ModeledCommandParameter(ICoolObject):
         if self.check_command_params_init(kwargs) is False:
             sys.exit(0)
         else:
-            setattr(self, self.get_model_descriptor_name(), self.get_model_name_in_dict(kwargs))
-            del kwargs[self.get_model_descriptor_name()]
-            self.setall(kwargs)
+            if self.check_no_model():
+                return
+            else:
+                setattr(self, self.get_model_descriptor_name(), self.get_model_name_in_dict(kwargs))
+                del kwargs[self.get_model_descriptor_name()]
+                self.setall(kwargs)
 
     def __call__(self, kwargs):
         if self.check_command_params_call(kwargs) is False:
@@ -1789,6 +1798,8 @@ class ModeledCommandParameter(ICoolObject):
         If model is not specified, raises ModelNotSpecifiedError.
         Initialization of a model (e.g., Accel, SOL, etc. requires all keywords specified)
         """
+        if self.check_no_model():
+            return True
         if not self.check_model_specified(command_params):
             return False
         else:
@@ -1869,6 +1880,11 @@ class ModeledCommandParameter(ICoolObject):
             return False
         return True
 
+    def check_no_model(self):
+        if self.get_model_descriptor_name() is None:
+            return True
+        else:
+            return False
     #Helper functions
     ##################################################
     def get_model_descriptor(self):
@@ -1890,7 +1906,10 @@ class ModeledCommandParameter(ICoolObject):
         """
         Returns the parameter dictionary for the current model.
         """
-        return self.get_model_dict(self.get_current_model_name())
+        if self.get_model_descriptor_name() is None:
+            return {}
+        else:
+            return self.get_model_dict(self.get_current_model_name())
 
     def get_model_dict(self, model):
         """
@@ -2278,7 +2297,7 @@ class Field(ModeledCommandParameter):
     """
     A Field is a:
     FTAG - A tag identifying the field.  Valid FTAGS are:
-    ACCEL, BLOCK, BROD, BSOL, COIL, DIP, EFLD, FOFO, HDIP, HELI(X), HORN, KICK, QUAD,
+    NONE, ACCEL, BLOCK, BROD, BSOL, COIL, DIP, EFLD, FOFO, HDIP, HELI(X), HORN, KICK, QUAD,
     ROD, SEX, SHEE(T), SOL, SQUA, STUS, WIG
 
     FPARM - 15 parameters describing the field.  The first parameter is the model.
@@ -2613,6 +2632,41 @@ class Material(ModeledCommandParameter):
         for s in mparm:
             file.write(s)
             file.write(" ")
+
+
+class NoField(Field):
+    """No Field"""
+    begtag = 'NONE'
+    endtag = ''
+
+    models = {
+                'model_descriptor': {'desc': 'Name of model parameter descriptor',
+                    'name': None,
+                    'num_parms': 15,
+                    'for001_format': {'line_splits': [15]}},
+                }
+
+    def __init__(self, **kwargs):
+        Field.__init__(self, 'NONE', kwargs)
+
+    def __call__(self, **kwargs):
+        Field.__call__(self, kwargs)
+
+    def __setattr__(self, name, value):
+        if name == 'ftag':
+            if value == 'NONE':
+                object.__setattr__(self, name, value)
+            else:
+                print '\n Illegal attempt to set incorrect ftag.\n'  # Should raise exception here
+        else:
+            Field.__setattr__(self, name, value)
+
+    def __str__(self):
+        #return Field.__str__(self)
+        return 'NONE'
+
+    def gen_fparm(self):
+        Field.gen_fparm(self)
 
 
 class Accel(Field):
