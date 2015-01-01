@@ -1269,6 +1269,10 @@ class Region(ICoolObject):
         ICoolObject.__setattr__(self, name, value)
 
     def gen_for001(self, file):
+        if hasattr(self, 'begtag'):
+            print 'Writing begtag'
+            file.write(self.get_begtag())
+            file.write('\n')
         parm = self.gen_parm()
         splits = self.get_line_splits()
         count = 0
@@ -1327,10 +1331,10 @@ class PseudoRegion(Region):
 class RegularRegionContainer(RegularRegion, Container):
     def gen_for001(self, file):
         #self.gen_begtag(file)
-        if hasattr(self, 'begtag'):
-            print 'Writing begtag'
-            file.write(self.get_begtag())
-            file.write('\n')
+        #if hasattr(self, 'begtag'):
+        #    print 'Writing begtag'
+        #    file.write(self.get_begtag())
+        #    file.write('\n')
         Region.gen_for001(self, file)
         Container.gen_for001(self, file)
         #self.gen_endtag(file)
