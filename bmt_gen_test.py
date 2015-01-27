@@ -15,14 +15,13 @@ def bmt_gen_test():
     bm.add_enclosed_command(c)
     bmt = Bmt(nbeamtyp=1)
     bmt.add_enclosed_command(bm)
-    #bmt.add_enclosed_command(bm)
     interactions = Ints()
 
     output = Output()
     
-    background_sol = Sol(model='bz', strength=0, elen2=0, elen1=0, clen=10, offset=5)
+    background_sol = Sol(model='bz', strength=0, elen2=0, elen1=0, clen=4.5, offset=5)
     s = Section()
-    ac = Accel(model='ez', rect_cyn=0, freq=0, grad=3000, phase=0, mode=0)
+    ac = Accel(model='ez', rect_cyn=0, freq=4.5, grad=11.1, phase=0, mode=0)
     so = Sol(model='edge', ent_def=0, ex_def=0, foc_flag=0, bs=40)
     so_minus = Sol(model='edge', ent_def=0, ex_def=0, foc_flag=0, bs=-40)
     cell = Cell(ncells=1, field=background_sol, flip=False)

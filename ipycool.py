@@ -79,11 +79,13 @@ Command parameters:
 Each regular and pseduoregion command is respectively associated with a set of command parameters.
 """
 from IPython.core.magic_arguments import (argument, magic_arguments,
-    parse_argstring)
+                                          parse_argstring)
 from IPython.core.magic import (register_line_magic, register_cell_magic,
                                 register_line_cell_magic)
 
 #@register_line_magic
+
+
 @magic_arguments()
 @argument('-o', '--option', help='An optional argument.')
 @argument('arg', type=int, help='An integer positional argument.')
@@ -93,6 +95,7 @@ def ipycool(self, arg):
     """
     args = parse_argstring(ipycool, arg)
 
+
 @magic_arguments()
 @register_line_magic
 def icool():
@@ -101,6 +104,7 @@ def icool():
 
 
 class ICoolGenerator(object):
+
     def get_base_classes(self):
         base_tuple = self.__class__.__bases__
         bases_names = tuple()
@@ -122,7 +126,6 @@ class ICoolGenerator(object):
                     Container.gen_for001(self, file)
                 Region.gen_endtag(self, file)
 
-
     def gen_begtag(self, file):
         if hasattr(self, 'begtag'):
             file.write(self.begtag)
@@ -135,7 +138,9 @@ class ICoolGenerator(object):
 
 
 class ICoolObject(ICoolGenerator):
+
     """Generic ICOOL object providing methods for"""
+
     def __init__(self, kwargs):
         if self.check_command_params_init(kwargs) is False:
             sys.exit(0)
@@ -177,10 +182,12 @@ class ICoolObject(ICoolGenerator):
         Checks whether a parameter specified for command is valid.
         """
         command_parameters_dict = self.get_command_params()
-        #Check command parameters are all valid
+        # Check command parameters are all valid
         try:
-            if not command_param in command_parameters_dict:
-                raise ie.InvalidCommandParameter(command_param, command_parameters_dict.keys())
+            if command_param not in command_parameters_dict:
+                raise ie.InvalidCommandParameter(
+                    command_param,
+                    command_parameters_dict.keys())
         except ie.InvalidCommandParameter as e:
             print e
             return False
@@ -189,27 +196,35 @@ class ICoolObject(ICoolGenerator):
             return False
         return True
 
-    def check_command_params_valid(self, command_params, command_parameters_dict):
+    def check_command_params_valid(
+            self,
+            command_params,
+            command_parameters_dict):
         """Returns True if command_params are valid (correspond to the command)
         Otherwise raises an exception and returns False"""
-        #command_parameters_dict = self.get_command_params()
+        # command_parameters_dict = self.get_command_params()
         try:
             for key in command_params:
-                if not key in command_parameters_dict:
-                    raise ie.InvalidCommandParameter(key, command_parameters_dict)
+                if key not in command_parameters_dict:
+                    raise ie.InvalidCommandParameter(
+                        key,
+                        command_parameters_dict)
         except ie.InvalidCommandParameter as e:
             print e
             return False
         return True
 
-    def check_all_required_command_params_specified(self, command_params, command_parameters_dict):
+    def check_all_required_command_params_specified(
+            self,
+            command_params,
+            command_parameters_dict):
         """Returns True if all required command parameters were specified
         Otherwise raises an exception and returns False"""
-        #command_parameters_dict = self.get_command_params()
+        # command_parameters_dict = self.get_command_params()
         try:
             for key in command_parameters_dict:
                 if self.is_required(key, command_parameters_dict):
-                    if not key in command_params:
+                    if key not in command_params:
                         raise ie.MissingCommandParameter(key, command_params)
         except ie.MissingCommandParameter as e:
             print e
@@ -218,11 +233,15 @@ class ICoolObject(ICoolGenerator):
 
     def check_command_params_type(self, command_params, command_params_dict):
         """Checks to see whether all required command parameters specified were of the correct type"""
-        #command_params_dict = self.get_command_params()
+        # command_params_dict = self.get_command_params()
         try:
             for key in command_params:
-                if self.check_type(command_params_dict[key]['type'], command_params[key]) is False:
-                    raise ie.InvalidType(command_params_dict[key]['type'], command_params[key].__class__.__name__)
+                if self.check_type(
+                        command_params_dict[key]['type'],
+                        command_params[key]) is False:
+                    raise ie.InvalidType(
+                        command_params_dict[key]['type'],
+                        command_params[key].__class__.__name__)
         except ie.InvalidType as e:
             print e
             return False
@@ -232,8 +251,12 @@ class ICoolObject(ICoolGenerator):
         """Checks to see whether a particular command parameter of name with value is of the correct type"""
         command_params_dict = self.get_command_params()
         try:
-            if self.check_type(command_params_dict[name]['type'], value) is False:
-                raise ie.InvalidType(command_params_dict[name]['type'], value.__class__.__name__)
+            if self.check_type(
+                    command_params_dict[name]['type'],
+                    value) is False:
+                raise ie.InvalidType(
+                    command_params_dict[name]['type'],
+                    value.__class__.__name__)
         except ie.InvalidType as e:
             print e
             return False
@@ -245,15 +268,18 @@ class ICoolObject(ICoolGenerator):
         specified and all parameters are of correct type.  If not, raises an exception.
         """
         command_parameters_dict = self.get_command_params()
-        check_params = not self.check_command_params_valid(command_params, command_parameters_dict)\
-            or not self.check_all_required_command_params_specified(command_params, command_parameters_dict)\
-                or not self.check_command_params_type(command_params, command_parameters_dict)
+        check_params = not self.check_command_params_valid(
+            command_params,
+            command_parameters_dict) or not self.check_all_required_command_params_specified(
+            command_params,
+            command_parameters_dict) or not self.check_command_params_type(
+            command_params,
+            command_parameters_dict)
 
         if check_params:
             return False
         else:
             return True
-
 
     def check_command_params_call(self, command_params):
         """
@@ -261,7 +287,9 @@ class ICoolObject(ICoolGenerator):
         """
         command_parameters_dict = self.get_command_params()
         return self.check_command_params_valid(command_params, command_parameters_dict) and\
-            self.check_command_params_type(command_params, command_parameters_dict)
+            self.check_command_params_type(
+            command_params,
+            command_parameters_dict)
 
     def setall(self, command_params):
         for key in command_params:
@@ -326,12 +354,12 @@ class ICoolObject(ICoolGenerator):
                 return True
             else:
                 return False
-    
+
     def get_command_params(self):
         return self.command_params
 
     def is_required(self, command_param, command_parameters_dict):
-        #command_parameters_dict = self.get_command_params()
+        # command_parameters_dict = self.get_command_params()
         if 'req' not in command_parameters_dict[command_param]:
             return True
         else:
@@ -341,7 +369,7 @@ class ICoolObject(ICoolGenerator):
         command_params = self.get_command_params()
         parm = [None] * len(command_params)
         for key in command_params:
-            pos = int(command_params[key]['pos'])-1
+            pos = int(command_params[key]['pos']) - 1
             val = getattr(self, key)
             parm[pos] = val
         print parm
@@ -358,38 +386,41 @@ class ICoolObject(ICoolGenerator):
 
     def get_begtag(self):
         return self.begtag
-       
+
     def get_endtag(self):
         return self.endtag
 
     def get_line_splits(self):
         return self.for001_format['line_splits']
-        
 
 
 class ICoolNameList(ICoolObject):
+
     def gen_for001(self, file):
-            name = self.__class__.__name__.lower()
-            file.write('&')
-            file.write(name)
-            file.write(' ')
-            count = 0
-            items_per_line = 5
-            for key in self.command_params:
-                if hasattr(self, key):
-                    file.write(str(key))
-                    file.write('=')
-                    file.write(self.for001_str_gen(getattr(self, key)))
-                    file.write(' ')
-                    count = count + 1
-                    if count % items_per_line == 0:
-                        file.write('\n')
-            file.write('/')
-            file.write('\n')
+        name = self.__class__.__name__.lower()
+        file.write('&')
+        file.write(name)
+        file.write(' ')
+        count = 0
+        items_per_line = 5
+        for key in self.command_params:
+            if hasattr(self, key):
+                file.write(str(key))
+                file.write('=')
+                file.write(self.for001_str_gen(getattr(self, key)))
+                file.write(' ')
+                count = count + 1
+                if count % items_per_line == 0:
+                    file.write('\n')
+        file.write('/')
+        file.write('\n')
+
 
 class Container(ICoolObject):
+
     """Abstract class container for other commands.
     """
+
     def __init__(self, enclosed_commands=None):
         if enclosed_commands is None:
             self.enclosed_commands = []
@@ -398,7 +429,7 @@ class Container(ICoolObject):
                 self.enclosed_commands = enclosed_commands
 
     def __setattr__(self, name, value):
-        #command_parameters_dict = self.command_params
+        # command_parameters_dict = self.command_params
         if name == 'enclosed_commands':
             object.__setattr__(self, name, value)
         else:
@@ -435,7 +466,9 @@ class Container(ICoolObject):
     def check_allowed_enclosed_command(self, command):
         try:
             if command.__class__.__name__ not in self.allowed_enclosed_commands:
-                raise ie.ContainerCommandError(command, self.allowed_enclosed_commands)
+                raise ie.ContainerCommandError(
+                    command,
+                    self.allowed_enclosed_commands)
         except ie.ContainerCommandError as e:
             print e
             return False
@@ -454,12 +487,13 @@ class Container(ICoolObject):
 
 
 class ICoolNameListContainer(ICoolNameList, Container):
+
     def gen_for001(self, file):
         ICoolNameList.gen_for001(self, file)
         Container.gen_for001(self, file)
 
 
-class Title(ICoolObject): 
+class Title(ICoolObject):
     command_params = {
         'title': {'desc': 'Title of ICOOL simulation',
                   'doc': '',
@@ -485,402 +519,401 @@ class Title(ICoolObject):
 
 class Cont(ICoolNameList):
     command_params = {
-        'betaperp':  {'desc': '(R) beta value to use in calculating amplitude variable A^2',
-                      'doc': '',
-                      'type': 'Real',
-                      'req': False,
-                      'default': None},
-
-        'bgen':       {'desc': '(L) if .true.=>generate initial beam particles, otherwise read input from FOR003.DAT '
-                       '(true)',
-                       'doc': '',
-                       'type': 'Logical',
-                       'req': False,
-                       'default': True},
-
-        'bunchcut':   {'desc': '(R) maximum time difference allowed between a particle and the reference particle [s] '
-                       '(1E6)',
-                       'doc': '',
-                       'type': 'Real',
-                       'req': False,
-                       'default': 1E6},
-
-        'bzfldprd':   {'desc': '(R) Bz for solenoid at location of production plane (0.) This is used for output to '
-                       'file for009.dat and for canonical angular momentum correction.',
-                       'doc': '',
-                       'type': 'Real',
-                       'req': False,
-                       'default': None},
-
-        'dectrk':     {'desc': '(L) if .true. => continue tracking daughter particle following decay.',
-                       'doc': '',
-                       'type': 'Logical',
-                       'req': False,
-                       'default': False},
-
-        'diagref':    {'desc': '(L) if .true. => continue tracking daughter particle following decay.',
-                       'doc': '',
-                       'type': 'Logical',
-                       'req': False,
-                       'default': False},
-
-        'epsf':      {'desc': '(R) desired tolerance on fractional field variation, energy loss, and multiple '
-                      'scattering per step',
-                      'doc': '',
-                      'type': 'Real',
-                      'req': False,
-                      'default': 0.05},
-
-        'bzfldprd': {'desc': '(R) Bz for solenoid at location of production plane (0.) This is used for output to '
-                     'file for009.dat and for canonical angular '
-                     'momentum correction.',
-                     'doc': '',
-                     'type': 'Real',
-                     'req': False,
-                     'default': None},
-
-        'dectrk':   {'desc': '(L) if .true. => continue tracking daughter particle following decay',
-                     'doc': '',
-                     'type': 'Logical',
-                     'req': False,
-                     'default': False},
-
-        'diagref':  {'desc': '(L) if .true. => continue tracking daughter particle following decay',
-                     'doc': '',
-                     'type': 'Logical',
-                     'req': False,
-                     'default': False},
-
-        'epsf':     {'desc': '(R) desired tolerance on fractional field variation, energy loss, and multiple '
-                     'scattering per step',
-                     'doc': '',
-                     'type': 'Real',
-                     'req': False,
-                     'default': False},
-
-        'epsreq':   {'desc': '(R) required tolerance on error in tracking parameters (1E-3) This parameter is '
-                     'only used if varstep = true',
-                     'doc': '',
-                     'type': 'Real',
-                     'req': False,
-                     'default': None},
-
-        'epsstep':  {'desc': '(R) desired tolerance in spatial stepping to reach each destination plane [m]',
-                     'type': 'Real',
-                     'doc': '',
-                     'req': False,
-                     'default': 1E-6},
-
-        'ffcr':     {'desc': '(L) if .true. => inserts form feed and carriage returns in the output log file so there '
-                     'are two plots per page starting at the top of a page',
-                     'doc': '',
-                     'type': 'Logical',
-                     'req': False,
-                     'default': False},
-
-        'forcerp':  {'desc': '(L) if .true. => set x, y, Px, and Py for reference particle to 0 for each new REFP '
-                     'command and for each ACCEL region with phasemodel=4.',
-                     'doc': '',
-                     'type': 'Logical',
-                     'req': False,
-                     'default': True},
-
-        'fsav':     {'desc': '(L) if .true. => store particle info at plane IZFILE into file FOR004.DAT. (false). '
-                     'It is possible to get the initial distribution of particles that get a given error flag be '
-                     'setting the plane=IFAIL . It is possible to get the initial distribution of particles that '
-                     'successfully make it to the end of the simulation by setting the plane= -1.',
-                     'doc': '',
-                     'type': 'Logical',
-                     'req': False,
-                     'default': None},
-
-        'fsavset':  {'desc': '(L) if .true. => modify data stored using FSAV in FOR004.DAT to have z=0 and '
-                     'times relative to reference particle at plane IZFILE.',
-                     'doc': '',
-                     'type': 'Logical',
-                     'req': False,
-                     'default': False},
-
-        'f9dp':     {'desc': '(I) number of digits after the decimal point for floating point variables in FOR009.DAT '
-                     '{4,6,8,10,12,14,16,17} (4) F9DP=17 gives 16 digits after the decimal point and 3 digits in the '
-                     'exponent',
-                     'doc': '',
-                     'type': 'Integer',
-                     'req': False,
-                     'default': None},
-
-        'goodtrack': {'desc': '(L) if .true. and BGEN=.false. => only accepts input data from file FOR003.DAT if '
-                      'IPFLG=0.; if .false. => resets IPFLG of bad input tracks to 0 (this allows processing a '
-                      'file of bad tracks for diagnostic purposes)',
-                      'doc': '',
-                      'type': 'Logical',
-                      'req': False,
-                      'default': True},
-
-        'izfile':    {'desc': '(I) z-plane where particle info is desired when using FSAV. Use 1 to store beam at '
-                      'production. Saves initial particle properties for bad tracks if IZFILE=IFAIL #.  Saves initial '
-                      'particle properties for tracks that get to the end of the simulation if IZFILE=-1.  IZFILE '
-                      'should point to the end of a REGION or to an APERTURE , ROTATE or TRANSPORT pseudoregion '
-                      'command.',
-                      'doc': '',
-                      'type': 'Integer',
-                      'req': False,
-                      'default': None},
-
-        'magconf':    {'desc': '(I) if 19 < MAGCONF=mn < 100 => reads in file FOR0mn.DAT, which contains data on '
-                       'solenoidal magnets. Used with SHEET, model 4.',
-                       'doc': '',
-                       'type': 'Integer',
-                       'req': False,
-                       'default': 0},
-
-        'mapdef':     {'desc': '(I) if 19 < MAPDEF=mn < 100 => reads in file FOR0mn.DAT, which contains data on how '
-                       'to set up field grid. Used with SHEET, model 4.',
-                       'doc': '',
-                       'type': 'Integer',
-                       'req': False,
-                       'default': 0},
-
-        'neighbor':   {'desc': "(L) if .true. => include fields from previous and following regions when calculating "
-                       "field.  This parameter can be used with soft-edge fields when the magnitude of the "
-                       "field doesn't fall to 0 at the region boundary. A maximum of 100 region can be used "
-                       "with this feature.",
-                       'doc': '',
-                       'type': 'Logical',
-                       'req': False,
-                       'default': False},
-
-        'neutrino':    {'desc': '(I) if 19 < NEUTRINO=mn < 100 => writes out file FOR0mn.DAT, which contains '
-                        'neutrino production data. See section 5.2 for the format.',
-                        'doc': '',
-                        'type': 'Integer',
-                        'req': False,
-                        'default': 0},
-
-        'nnudk':       {'desc': '(I) # of neutrinos to produce at each muon, pion and kaon decay.',
-                        'doc': '',
-                        'type': 'Integer',
-                        'req': False,
-                        'default': 1},
-
-        'npart':       {'desc': '(I) # of particles in simulation. The first 300,000 particles are stored in memory. '
-                        'Larger numbers are allowed in principle since ICOOL writes the excess particle '
-                        'information to disc. However, there can be a large space and speed penalty in doing '
-                        'so.',
-                        'doc': '',
-                        'type': 'Integer',
-                        'req': False,
-                        'default': None},
-
-        'nprnt':        {'desc': ' Number of diagnostic events to print out to log file.',
-                         'doc': '',
-                         'type': 'Integer',
-                         'req': False,
-                         'default': -1},
-
-        'npskip':       {'desc': 'Number of input particles in external beam file to skip before processing starts',
-                         'doc': '',
-                         'type': 'Integer',
-                         'req': False,
-                         'default': 0},
-
-        'nsections':    {'desc': '(I) # of times to repeat basic cooling section (1).  This parameter can be used to '
-                         'repeat all the commands between the SECTION and ENDSECTION commands in the problem '
-                         'definition. If a REFP command immediately follows the SECTION command, it is not '
-                         'repeated',
-                         'doc': '',
-                         'type': 'Integer',
-                         'req': False,
-                         'default': 1},
-
-        'ntuple':        {'desc': '(L) if .true. => store information about each particle after every region in file '
-                          'FOR009.DAT. This variable is forced to be false if RTUPLE= true.(false)}',
-                          'doc': '',
-                          'type': 'Logical',
-                          'req': False,
-                          'default': False},
-
-        'nuthmin':      {'desc': '(R) Minimum polar angle to write neutrino production data to file. [radians]',
-                         'doc': '',
-                         'type': 'Real',
-                         'req': False,
-                         'default': 0},
-
-        'nuthmax':      {'desc': 'Maximum polar angle to write neutrino production data to file. [radians]',
-                         'doc': '',
-                         'type': 'Real',
-                         'req': False,
-                         'default': 3.14},
-
-        'output1':      {'desc': 'if .true. => write particle information at production (plane 1) to the '
-                         'postprocessor output file for009.dat.',
-                         'doc': '',
-                         'type': 'Logical',
-                         'req': False,
-                         'default': False},
-
-        'phantom':     {'desc': 'if .true. => force particle to keep initial transverse coordinates after every '
-                        '(L) if .true. => force particle to keep initial transverse coordinates after '
-                        'every step. This is useful for making magnetic field maps. (false)',
-                        'doc': '',
-                        'type': 'Logical',
-                        'req': False,
-                        'default': False},
-
-        'phasemodel':   {'desc': 'PHASEMODEL (I) controls how the phase is determined in rf cavities. (1) '
-                         '1: takes phase directly from ACCEL command [degrees] '
-                         '2 - 6: takes phase model from REFP command '
-                         '7: reads phases in from file FOR0mn.DAT, where RFPHASE=mn. See sec. 5.1.},',
-                         'doc': '',
-                         'type': 'Integer',
-                         'req': False,
-                         'default': 1},
-
-        'prlevel':       {'desc': 'Controls level of print information to log file (for NPRINT events);higher # '
-                                  'gives more print(1)',
-                          'doc': '1: values at end of region '
-                                 '2: + values at end of each time step '
-                                 '3: + E,B values at each step '
-                                 '4: + information in cylindrical coordinates',
-                          'type': 'Integer',
-                          'req': False,
-                          'default': 1,
-                          'min': 1,
-                          'max': 4},
-
-        'prnmax':         {'desc': 'Sets maximum number of steps to generate print out inside a region',
-                           'doc': '',
-                           'type': 'Integer',
-                           'req': False,
-                           'default': 300},
-
-        'pzmintrk':       {'desc': 'Sets the value of Pz below which tracking stops. [GeV/c]',
-                           'doc': '',
-                           'type': 'Real',
-                           'req': False,
-                           'default': 0.001},
-
-        'rfdiag':         {'desc': 'if 19 < RFDIAG=mn < 100 => writes rf diagnostic information at the '
-                                   'end of each accelerator region to file FOR0mn.DAT.',
-                           'doc': '',
-                           'type': 'Integer',
-                           'req': False,
-                           'default': 0,
-                           'min': 19,
-                           'max': 100},
-
-        'rfphase':        {'desc': 'If PHASEMODEL=5 => reads rf phases, frequencies and gradients '
-                                   'for the cavities from file FOR0mn.DAT, where RFPHASE=mn '
-                                   'and 19 < mn < 100 (0)',
-                           'doc': '',
-                           'type': 'Integer',
-                           'req': False,
-                           'default': 0,
-                           'min': 19,
-                           'max': 100},
-
-        'rnseed':          {'desc': 'Random number seed (-1) Set to a negative integer',
-                            'doc': '',
-                            'type': 'Integer',
-                            'req': False,
-                            'default': -1},
-
-        'rtuple':           {'desc': 'If .true. => particle information in file FOR009.DAT is generated after '
-                                     'every RTUPLEN steps.',
-                             'doc': '',
-                             'type': 'Logical',
-                             'req': False,
-                             'default': False},
-
-        'rtuplen':          {'desc': '# of steps to skip between RTUPLE generated outputs',
-                             'doc': '',
-                             'type': 'Integer',
-                             'req': False,
-                             'default': 5},
-
-        'run_env':          {'desc': 'If true => run ICOOL in beam envelope mode, i.e. no tracking',
-                             'doc': 'For solenoidal channels only.',
-                             'type': 'Logical',
-                             'req': False,
-                             'default': False},
-
-        'scalestep':        {'desc': 'Factor that modifies all step sizes in a problem simultaneously.',
-                             'doc': 'Only works in fixed stepsize mode.',
-                             'type': 'Real',
-                             'req': False,
-                             'default':  1.0},
-
-        'spin':             {'desc': 'If .true. => include calculation of polarization',
-                             'doc': '',
-                             'type': 'Logical',
-                             'req': False,
-                             'default': False},
-
-        'spinmatter':       {'desc': 'Controls whether muon depolarization effects in matter are simulated',
-                             'doc':  '0: no depolarization simulation '
-                                     '1: depolarization simulation using Rossmanith model'
-                                     '2: depolarization simulation using spin flip probabilities',
-                             'type': 'Integer',
-                             'req': False,
-                             'default': 0,
-                             'min': 0,
-                             'max': 3},
-
-        'spintrk':          {'desc': 'Controls whether spin variables are tracked',
-                             'doc': '0: no spin tracking '
-                                    '1: track spin in muon rest frame using BMT equations',
-                             'type': 'Integer',
-                             'req': False,
-                             'default': 0,
-                             'min': 0,
-                             'max': 1},
-
-        'stepmax':          {'desc': 'maximum step size that can be used for variable stepping [m]',
-                             'doc': '',
-                             'type': 'Real',
-                             'req': False,
-                             'default': 1},
-
-        'stepmin':          {'desc': 'minimum step size that can be used for variable stepping [m]',
-                             'doc': '',
-                             'type': 'Real',
-                             'req': False,
-                             'default': 1E-5},
-
-        'steprk':           {'desc': 'If .true. => use 4th order Runge-Kutta integrator for tracking. '
-                                     'Otherwise it uses the Boris push method in straight regions',
-                             'doc': '',
-                             'type': 'Logical',
-                             'req': False,
-                             'default': True},
-
-        'summary':          {'desc': 'if true => writes region summary table to for007.dat',
-                             'doc': '',
-                             'type': 'Logical',
-                             'req': False,
-                             'default': True},
-
-        'termout':          {'desc': 'If .true. => write output to terminal screen',
-                             'doc': '',
-                             'type': 'Logical',
-                             'req': False,
-                             'default': True},
-
-        'timelim':          {'desc': 'Time limit for simulation [min]',
-                             'doc': '',
-                             'type': 'Real',
-                             'req': False,
-                             'default': 1E9},
-
-        'varstep':         {'desc': 'If .true. => use adaptive step size; otherwise use fixed step ZSTEP '
-                                    '(until reaching the last step in a region).',
-                            'doc': 'This variable is forced to be false (1) in wedge material '
-                                   'regions, (2) when the number of radial regions is greater than 1, and (3) when '
-                                   'PHASEMODEL=2.',
-                            'type': 'Logical',
-                            'req': False,
-                            'default': True}
-    }
+        'betaperp': {
+            'desc': '(R) beta value to use in calculating amplitude variable A^2', 'doc': '',
+            'type': 'Real',
+            'req': False,
+            'default': None},
+        'bgen': {
+            'desc': '(L) if .true.=>generate initial beam particles, otherwise read input from FOR003.DAT (true)',
+            'doc': '',
+            'type': 'Logical',
+            'req': False,
+            'default': True},
+        'bunchcut': {
+            'desc': '(R) maximum time difference allowed between a particle and the reference particle [s] (1E6)',
+            'doc': '',
+            'type': 'Real',
+            'req': False,
+            'default': 1E6},
+        'bzfldprd': {
+            'desc': '(R) Bz for solenoid at location of production plane (0.) This is used for output to '
+                    'file for009.dat and for canonical angular momentum correction.',
+            'doc': '',
+            'type': 'Real',
+            'req': False,
+            'default': None},
+        'dectrk': {
+            'desc': '(L) if .true. => continue tracking daughter particle following decay.',
+            'doc': '',
+            'type': 'Logical',
+            'req': False,
+            'default': False},
+        'diagref': {
+            'desc': '(L) if .true. => continue tracking daughter particle following decay.',
+            'doc': '',
+            'type': 'Logical',
+            'req': False,
+            'default': False},
+        'epsf': {
+            'desc': '(R) desired tolerance on fractional field variation, energy loss, and multiple '
+                    'scattering per step',
+            'doc': '',
+            'type': 'Real',
+            'req': False,
+            'default': 0.05},
+        'bzfldprd': {
+            'desc': '(R) Bz for solenoid at location of production plane (0.) This is used for output to '
+                    'file for009.dat and for canonical angular '
+                    'momentum correction.',
+            'doc': '',
+            'type': 'Real',
+            'req': False,
+            'default': None},
+        'dectrk': {
+            'desc': '(L) if .true. => continue tracking daughter particle following decay',
+            'doc': '',
+            'type': 'Logical',
+            'req': False,
+            'default': False},
+        'diagref': {
+            'desc': '(L) if .true. => continue tracking daughter particle following decay',
+            'doc': '',
+            'type': 'Logical',
+            'req': False,
+            'default': False},
+        'epsf': {
+            'desc': '(R) desired tolerance on fractional field variation, energy loss, and multiple '
+                    'scattering per step',
+            'doc': '',
+            'type': 'Real',
+            'req': False,
+            'default': False},
+        'epsreq': {
+            'desc': '(R) required tolerance on error in tracking parameters (1E-3) This parameter is '
+                    'only used if varstep = true',
+            'doc': '',
+            'type': 'Real',
+            'req': False,
+            'default': None},
+        'epsstep': {
+            'desc': '(R) desired tolerance in spatial stepping to reach each destination plane [m]',
+            'type': 'Real',
+            'doc': '',
+            'req': False,
+            'default': 1E-6},
+        'ffcr': {
+            'desc': '(L) if .true. => inserts form feed and carriage returns in the output log file so there '
+                    'are two plots per page starting at the top of a page',
+            'doc': '',
+            'type': 'Logical',
+            'req': False,
+            'default': False},
+        'forcerp': {
+            'desc': '(L) if .true. => set x, y, Px, and Py for reference particle to 0 for each new REFP '
+                    'command and for each ACCEL region with phasemodel=4.',
+            'doc': '',
+            'type': 'Logical',
+            'req': False,
+            'default': True},
+        'fsav': {
+            'desc': '(L) if .true. => store particle info at plane IZFILE into file FOR004.DAT. (false). '
+                    'It is possible to get the initial distribution of particles that get a given error flag be '
+                    'setting the plane=IFAIL . It is possible to get the initial distribution of particles that '
+                    'successfully make it to the end of the simulation by setting the plane= -1.',
+            'doc': '',
+            'type': 'Logical',
+            'req': False,
+            'default': None},
+        'fsavset': {
+            'desc': '(L) if .true. => modify data stored using FSAV in FOR004.DAT to have z=0 and '
+                    'times relative to reference particle at plane IZFILE.',
+            'doc': '',
+            'type':
+            'Logical',
+            'req': False,
+            'default': False},
+        'f9dp': {
+            'desc': '(I) number of digits after the decimal point for floating point variables in FOR009.DAT '
+                    '{4,6,8,10,12,14,16,17} (4) F9DP=17 gives 16 digits after the decimal point and 3 digits in the '
+                    'exponent',
+            'doc': '',
+            'type': 'Integer',
+            'req': False,
+            'default': None},
+        'goodtrack': {
+            'desc': '(L) if .true. and BGEN=.false. => only accepts input data from file FOR003.DAT if '
+                    'IPFLG=0.; if .false. => resets IPFLG of bad input tracks to 0 (this allows processing a '
+                    'file of bad tracks for diagnostic purposes)',
+            'doc': '',
+            'type': 'Logical',
+            'req': False,
+            'default': True},
+        'izfile': {
+            'desc': '(I) z-plane where particle info is desired when using FSAV. Use 1 to store beam at '
+                    'production. Saves initial particle properties for bad tracks if IZFILE=IFAIL #.  Saves initial '
+                    'particle properties for tracks that get to the end of the simulation if IZFILE=-1.  IZFILE '
+                    'should point to the end of a REGION or to an APERTURE , ROTATE or TRANSPORT pseudoregion '
+                    'command.',
+            'doc': '',
+            'type': 'Integer',
+            'req': False,
+            'default': None},
+        'magconf': {
+            'desc': '(I) if 19 < MAGCONF=mn < 100 => reads in file FOR0mn.DAT, which contains data on '
+            'solenoidal magnets. Used with SHEET, model 4.',
+            'doc': '',
+            'type': 'Integer',
+            'req': False,
+            'default': 0},
+        'mapdef': {
+            'desc': '(I) if 19 < MAPDEF=mn < 100 => reads in file FOR0mn.DAT, which contains data on how '
+                    'to set up field grid. Used with SHEET, model 4.',
+            'doc': '',
+            'type': 'Integer',
+            'req': False,
+            'default': 0},
+        'neighbor': {
+            'desc': "(L) if .true. => include fields from previous and following regions when calculating "
+                    "field.  This parameter can be used with soft-edge fields when the magnitude of the "
+                    "field doesn't fall to 0 at the region boundary. A maximum of 100 region can be used "
+                    "with this feature.",
+            'doc': '',
+            'type': 'Logical',
+            'req': False,
+            'default': False},
+        'neutrino': {
+            'desc': '(I) if 19 < NEUTRINO=mn < 100 => writes out file FOR0mn.DAT, which contains '
+                    'neutrino production data. See section 5.2 for the format.',
+            'doc': '',
+            'type': 'Integer',
+            'req': False,
+            'default': 0},
+        'nnudk': {
+            'desc': '(I) # of neutrinos to produce at each muon, pion and kaon decay.',
+            'doc': '',
+            'type': 'Integer',
+            'req': False,
+            'default': 1},
+        'npart': {
+            'desc': '(I) # of particles in simulation. The first 300,000 particles are stored in memory. '
+                    'Larger numbers are allowed in principle since ICOOL writes the excess particle '
+                    'information to disc. However, there can be a large space and speed penalty in doing '
+                    'so.',
+            'doc': '',
+            'type': 'Integer',
+            'req': False,
+            'default': None},
+        'nprnt': {
+            'desc': ' Number of diagnostic events to print out to log file.',
+            'doc': '',
+            'type': 'Integer',
+            'req': False,
+            'default': -1},
+        'npskip': {
+            'desc': 'Number of input particles in external beam file to skip before processing starts',
+            'doc': '',
+            'type': 'Integer',
+            'req': False,
+            'default': 0},
+        'nsections': {
+            'desc': '(I) # of times to repeat basic cooling section (1).  This parameter can be used to '
+                    'repeat all the commands between the SECTION and ENDSECTION commands in the problem '
+                    'definition. If a REFP command immediately follows the SECTION command, it is not '
+                    'repeated',
+            'doc': '',
+            'type': 'Integer',
+            'req': False,
+            'default': 1},
+        'ntuple': {
+            'desc': '(L) if .true. => store information about each particle after every region in file '
+                    'FOR009.DAT. This variable is forced to be false if RTUPLE= true.(false)}',
+            'doc': '',
+            'type': 'Logical',
+            'req': False,
+            'default': False},
+        'nuthmin': {
+            'desc': '(R) Minimum polar angle to write neutrino production data to file. [radians]',
+            'doc': '',
+            'type': 'Real',
+            'req': False,
+            'default': 0},
+        'nuthmax': {
+            'desc': 'Maximum polar angle to write neutrino production data to file. [radians]',
+            'doc': '',
+            'type': 'Real',
+            'req': False,
+            'default': 3.14},
+        'output1': {
+            'desc': 'if .true. => write particle information at production (plane 1) to the '
+                    'postprocessor output file for009.dat.',
+            'doc': '',
+            'type': 'Logical',
+            'req': False,
+            'default': False},
+        'phantom': {
+            'desc': 'if .true. => force particle to keep initial transverse coordinates after every '
+                    '(L) if .true. => force particle to keep initial transverse coordinates after '
+                    'every step. This is useful for making magnetic field maps. (false)',
+            'doc': '',
+            'type': 'Logical',
+            'req': False,
+            'default': False},
+        'phasemodel': {
+            'desc': 'PHASEMODEL (I) controls how the phase is determined in rf cavities. (1) '
+                    '1: takes phase directly from ACCEL command [degrees] '
+                    '2 - 6: takes phase model from REFP command '
+                    '7: reads phases in from file FOR0mn.DAT, where RFPHASE=mn. See sec. 5.1.},',
+            'doc': '',
+            'type': 'Integer',
+            'req': False,
+            'default': 1},
+        'prlevel': {
+            'desc': 'Controls level of print information to log file (for NPRINT events);higher # '
+                    'gives more print(1)',
+            'doc': '1: values at end of region '
+                   '2: + values at end of each time step '
+                   '3: + E,B values at each step '
+                   '4: + information in cylindrical coordinates',
+            'type': 'Integer',
+            'req': False,
+            'default': 1,
+            'min': 1,
+            'max': 4},
+        'prnmax': {
+            'desc': 'Sets maximum number of steps to generate print out inside a region',
+            'doc': '',
+            'type': 'Integer',
+            'req': False,
+            'default': 300},
+        'pzmintrk': {
+            'desc': 'Sets the value of Pz below which tracking stops. [GeV/c]',
+            'doc': '',
+            'type': 'Real',
+            'req': False,
+            'default': 0.001},
+        'rfdiag': {
+            'desc': 'if 19 < RFDIAG=mn < 100 => writes rf diagnostic information at the '
+                    'end of each accelerator region to file FOR0mn.DAT.',
+            'doc': '',
+            'type': 'Integer',
+            'req': False,
+            'default': 0,
+            'min': 19,
+            'max': 100},
+        'rfphase': {
+            'desc': 'If PHASEMODEL=5 => reads rf phases, frequencies and gradients '
+                    'for the cavities from file FOR0mn.DAT, where RFPHASE=mn '
+                    'and 19 < mn < 100 (0)',
+            'doc': '',
+            'type': 'Integer',
+            'req': False,
+            'default': 0,
+            'min': 19,
+            'max': 100},
+        'rnseed': {
+            'desc': 'Random number seed (-1) Set to a negative integer',
+            'doc': '',
+            'type': 'Integer',
+            'req': False,
+            'default': -1},
+        'rtuple': {
+            'desc': 'If .true. => particle information in file FOR009.DAT is generated after '
+                    'every RTUPLEN steps.',
+            'doc': '',
+            'type': 'Logical',
+            'req': False,
+            'default': False},
+        'rtuplen': {
+            'desc': '# of steps to skip between RTUPLE generated outputs',
+            'doc': '',
+            'type': 'Integer',
+            'req': False,
+            'default': 5},
+        'run_env': {
+            'desc': 'If true => run ICOOL in beam envelope mode, i.e. no tracking',
+            'doc': 'For solenoidal channels only.',
+            'type': 'Logical',
+            'req': False,
+            'default': False},
+        'scalestep': {
+            'desc': 'Factor that modifies all step sizes in a problem simultaneously.',
+            'doc': 'Only works in fixed stepsize mode.',
+            'type': 'Real',
+            'req': False,
+            'default': 1.0},
+        'spin': {
+            'desc': 'If .true. => include calculation of polarization',
+            'doc': '',
+            'type':
+            'Logical',
+            'req': False,
+            'default': False},
+        'spinmatter': {
+            'desc': 'Controls whether muon depolarization effects in matter are simulated',
+            'doc': '0: no depolarization simulation '
+                   '1: depolarization simulation using Rossmanith model'
+                   '2: depolarization simulation using spin flip probabilities',
+            'type': 'Integer',
+            'req': False,
+            'default': 0,
+            'min': 0,
+            'max': 3},
+        'spintrk': {
+            'desc': 'Controls whether spin variables are tracked',
+            'doc': '0: no spin tracking '
+                   '1: track spin in muon rest frame using BMT equations',
+            'type': 'Integer',
+            'req': False,
+            'default': 0,
+            'min': 0,
+            'max': 1},
+        'stepmax': {
+            'desc': 'maximum step size that can be used for variable stepping [m]',
+            'doc': '',
+            'type': 'Real',
+            'req': False,
+            'default': 1},
+        'stepmin': {
+            'desc': 'minimum step size that can be used for variable stepping [m]',
+            'doc': '',
+            'type': 'Real',
+            'req': False,
+            'default': 1E-5},
+        'steprk': {
+            'desc': 'If .true. => use 4th order Runge-Kutta integrator for tracking. '
+                    'Otherwise it uses the Boris push method in straight regions',
+            'doc': '',
+            'type': 'Logical',
+            'req': False,
+            'default': True},
+        'summary': {
+            'desc': 'if true => writes region summary table to for007.dat',
+            'doc': '',
+            'type': 'Logical',
+            'req': False,
+            'default': True},
+        'termout': {
+            'desc': 'If .true. => write output to terminal screen',
+            'doc': '',
+            'type': 'Logical',
+            'req': False,
+            'default': True},
+        'timelim': {
+            'desc': 'Time limit for simulation [min]',
+            'doc': '',
+            'type': 'Real',
+            'req': False,
+            'default': 1E9},
+        'varstep': {
+            'desc': 'If .true. => use adaptive step size; otherwise use fixed step ZSTEP '
+                    '(until reaching the last step in a region).',
+            'doc': 'This variable is forced to be false (1) in wedge material '
+                   'regions, (2) when the number of radial regions is greater than 1, and (3) when '
+                   'PHASEMODEL=2.',
+            'type': 'Logical',
+            'req': False,
+            'default': True}}
 
     def __init__(self, **kwargs):
         ICoolObject.__init__(self, kwargs)
@@ -900,17 +933,18 @@ class Bmt(ICoolNameListContainer):
     allowed_enclosed_commands = ['BeamType']
 
     command_params = {
-        'nbeamtyp':     {'desc': '# of beam types, e.g., particles of different masses.',
-                         'doc': '',
-                         'type': 'Integer',
-                         'req': True,
-                         'default': 1},
-
-        'bmalt':         {'desc': 'if true => flip sign of alternate particles when BGEN = true.',
-                          'doc': '',
-                          'type': 'Logical',
-                          'req': False,
-                          'default': False}}
+        'nbeamtyp': {
+            'desc': '# of beam types, e.g., particles of different masses.',
+            'doc': '',
+            'type': 'Integer',
+            'req': True,
+            'default': 1},
+        'bmalt': {
+            'desc': 'if true => flip sign of alternate particles when BGEN = true.',
+            'doc': '',
+            'type': 'Logical',
+            'req': False,
+            'default': False}}
 
     def __init__(self, **kwargs):
         ICoolObject.__init__(self, kwargs)
@@ -922,253 +956,252 @@ class Bmt(ICoolNameListContainer):
 
 class Ints(ICoolNameList):
     command_params = {
-        'ldedx':      {'desc': 'If .true. => simulate mean ionization energy loss dE/dx (true)',
-                       'doc': '',
-                       'type': 'Logical',
-                       'req': False,
-                       'default': True},
-
-        'lscatter':   {'desc': 'if .true. => simulate multiple scattering',
-                       'doc': '',
-                       'type': 'Logical',
-                       'req': False,
-                       'default': True},
-
-        'lstrag':     {'desc': 'If .true. => simulate energy straggling',
-                       'doc': '',
-                       'type': 'Logical',
-                       'req': False,
-                       'default': True},
-
-        'ldecay':     {'desc': 'If .true. => simulate particle decays',
-                       'doc': '',
-                       'type': 'Logical',
-                       'req': False,
-                       'default': True},
-
-        'ldray':     {'desc': 'If .true. => simulate discrete energy loss from delta rays',
-                      'doc': 'When LDRAY is true, the program forces the parameters DELEV=2 and STRAGLEV=5.',
-                      'type': 'Logical',
-                      'req': False,
-                      'default': True},
-
-        
-        'linteract':    {'desc': 'If .true. => simulate inelastic nuclear interactions of pions, kaons and protons',
-                         'doc': '',
-                         'type': 'Logical',
-                         'req': False,
-                         'default': False},
-
-        'lspace':    {'desc': 'If .true. => consider effects of space charge',
-                      'doc': '',
-                      'type': 'Logical',
-                      'req': False,
-                      'default': False},
-
-        'lelms':      {'desc': 'If .true. => use ELMS model2 for energy loss and scattering',
-                       'doc': 'When this command is true an external file ELMSCOM.TXT must be provided. '
-                              'This file consists of two lines giving (1) the ELMS run directory including path '
-                              'and (2) the root part of the path name to the ELMS database files. For example, '
-                              '\muon\elmsdb\rundirectory.txt\n'
-                              '\muon\elmsdb\elmsfv3run\n'
-                              'ELMS only works in regions containing hydrogen (the SCATLEV model is used in other '
-                              'regions). '
-                              'For hydrogen regions use a stepsize around 5 mm for maximum accuracy. A stepsize of '
-                              '1 mm gives significantly worse results.',
-                       'type': 'Logical',
-                       'req': False,
-                       'default': False},
-
-        'lsamcs':     {'desc': 'If .true. => use SAMCS model3 of correlated straggling and scattering',
-                       'doc': '',
-                       'type': 'Logical',
-                       'req': False,
-                       'default': False},
-
-        'delev':   {'desc': 'Model level for dEdx (2)',
-                    'doc': '1: Bethe-Bloch\n'
-                            '2: Bethe-Bloch with density effect\n'
-                            '3: restricted Bethe-Bloch with density effect\n'
-                            '4: test mode with dE = const * dz, independent of velocity and angle',
-                    'type': 'Integer',
-                    'req': False,
-                    'default': 2,
-                    'min': 1,
-                    'max': 4},
-
-        'scatlev':  {'desc': '(I) model level for multiple scattering',
-                     'doc': '1: Gaussian( 0, Rossi-Greisen )\n'
-                            '2: Gaussian( 0, Highland )\n'
-                            '3: Gaussian( 0, Lynch-Dahl )\n'
-                            '4: Bethe version of Moliere distribution (with Rutherford limit)\n'
-                            '5: Rutherford\n'
-                            '6: Fano (with Rutherford limit)\n'
-                            '7: Tollestrup (with Rutherford limit)\n'
-                            'Level 2 contains a logarithm term in computing the Gaussian width, so\n'
-                            'it is not useful for general monte carlo work. It gives an accurate estimate of\n'
-                            'the width of the distribution when the step size is the same as the region size.\n'
-                            'In models 4, 6, and 7 when the effective number of scatters is less than 20 Rutherford\n'
-                            'scattering is used with the actual number of scatters in a given step taken from a\n'
-                            'Poisson distribution.',
-                     'type': 'Integer',
-                     'req': False,
-                     'default': 6,
-                     'min': 1,
-                     'max': 6},
-
-        'straglev':  {'desc': '(I) Model level for straggling ',
-                      'doc': '1: Gaussian( Bohr )\n'
-                             '2: Landau distribution\n'
-                             '3: (not used)\n'
-                             '4: Vavilov distribution (with appropriate Landau and Gaussian limits determined '
-                             'by the program)\n'
-                             '5: restricted energy fluctuations from continuous processes with energy below DCUTx.',
-                      'type': 'Integer',
-                      'req': False,
-                      'default': 4,
-                      'min': 1,
-                      'max': 5},
-
-        'declev':   {'desc': '(I) model level for particle decays (1)',
-                     'doc': '1: uniform polar decay angle for daughter particle in parent rest frame\n'
-                            '2: 90 degree polar decay angle for daughter particle in parent rest frame\n'
-                            '3: uniform polar decay angle for daughter particle in parent rest frame; '
-                            'no mu-->e decays.\n'
-                            '4: 90 degree polar decay angle for daughter particle in parent rest frame; '
-                            'no mu->e decays\n'
-                            '5: uniform polar decay angle for daughter particle in parent rest frame; '
-                            'no mu-->e decays;\n'
-                            'save accumulated fractional decay length in POL(1).',
-                     'type': 'Integer',
-                     'req': False,
-                     'default': 1,
-                     'min': 1,
-                     'max': 5},
-
-        'intlev':  {'desc': 'Model level for nuclear interactions (1)',
-                    'doc': '1: stop tracking after an interaction\n'
-                           '2: stop tracking after an interaction, except for protons which generate '
-                           'a pion from the Wang distribution.',
-                    'type': 'Integer',
-                    'req': False,
-                    'default': 1,
-                    'min': 1,
-                    'max': 2},
-
-        'spacelev':     {'desc': 'Model level for space charge (3)',
-                         'doc': '1: image charge of moving bunch in cylindrical, metallic can\n'
-                                '2: crude transverse space charge for free space applied to all regions\n'
-                                '3: Gaussian bunch space charge (transverse and longitudinal) for free space '
-                                'applied to all regions\n'
-                                '4: same as model 3 for single bunch in a bunch train. All the particles are '
-                                'superimposed\n'
-                                'on 1 bunch given by parameter FRFBUNSC. Adjust PARBUNSC accordingly.',
-                         'type': 'Integer',
-                         'req': False,
-                         'default': 3,
-                         'min': 1,
-                         'max': 4},
-
-        'dcute':        {'desc': 'Kinetic energy of electrons, above which delta rays are discretely '
-                                 'simulated [GeV] ',
-                         'doc': '',
-                         'type': 'Real',
-                         'req': False,
-                         'default': 0.003},
-
-
-        'dcutm':        {'desc': 'Kinetic energy of muons and other heavy particles, above which delta '
-                                 'rays are discretely simulated [GeV] ',
-                         'doc': '',
-                         'type': 'Real',
-                         'req': False,
-                         'default': 0.003},
-
-        'elmscor':     {'desc': 'ELMS correlation ',
-                        'doc': '0: run ELMS without correlations (0)\n'
-                               '1: run ELMS with correlations',
-                        'type': 'Integer',
-                        'req': False,
-                        'default': 0,
-                        'min': 0,
-                        'max': 1},
-
-        'facfms':  {'desc': 'Factor to correct the Z(Z+1) term in the characteristic angle squared '
-                            'χC2 in Moliere multiple scattering theory '
-                            'times relative to reference particle at plane IZFILE.',
-                    'doc': '',
-                    'type': 'Real',
-                    'req': False,
-                    'default': 1.0},
-
-        'facmms':     {'desc': 'Factor to correct screening angle squared χA2 in Moliere multiple ',
-                       'doc': '',
-                       'type': 'Real',
-                       'req': False,
-                       'default': 1.0},
-
-        'fastdecay': {'desc': 'If true => use unphysical decay constants to make {μ,π,K} decay immediately. ',
-                      'doc': '',
-                      'type': 'Logical',
-                      'req': False,
-                      'default': False},
-
-        'frfbunsc':    {'desc': '(R) RF frequency used for space charge model 4. [MHz] (201.) ',
-                      'doc': '',
-                      'type': 'Real',
-                      'req': False,
-                      'default': 201},
-
-        'parbunsc':    {'desc': 'Number of muons per bunch for space charge calculation ',
-                       'doc': '',
-                       'type': 'Real',
-                       'req': False,
-                       'default': 4E12},
-
-        'pdelev4':     {'desc': 'Momentum for DELEV=4 calculation',
-                       'doc': '',
-                       'type': 'Real',
-                       'req': False,
-                       'default': 0.200},
-
-        'wanga':   {'desc': 'Wang parameter A ',
-                       'doc': 'The Wang distribution is given by '
-                              'd2σ/dp dΩ = A pMAX x (1-x) exp{-BxC – DpT} where x = pL / pMAX',
-                       'type': 'Real',
-                       'req': False,
-                       'default': 90.1},
-
-        'wangb':    {'desc': 'Wang parameter B',
-                        'doc': '',
-                        'type': 'Real',
-                        'req': False,
-                        'default': 3.35},
-
-        'wangc':       {'desc': 'Wang parameter C',
-                        'doc': '',
-                        'type': 'Real',
-                        'req': False,
-                        'default': 1.22},
-
-        'wangd':       {'desc': 'Wang parameter D',
-                        'doc': '',
-                        'type': 'Real',
-                        'req': False,
-                        'default': 4.66},
-
-        'wangpmx':      {'desc': 'Wang parameter pMAX (1.500) The sign of this quantity is used to select '
-                                 'π+ or π- production.',
-                         'doc': '',
-                         'type': 'Real',
-                         'req': False,
-                         'default': 1.5},
-
-        'wangfmx':       {'desc': 'The maximum value of the Wang differential cross section',
-                          'doc': '',
-                          'type': 'Real',
-                          'req': False,
-                          'default': 13.706},
-                        }
+        'ldedx': {
+            'desc': 'If .true. => simulate mean ionization energy loss dE/dx (true)',
+            'doc': '',
+            'type': 'Logical',
+            'req': False,
+            'default': True},
+        'lscatter': {
+            'desc': 'if .true. => simulate multiple scattering',
+            'doc': '',
+            'type': 'Logical',
+            'req': False,
+            'default': True},
+        'lstrag': {
+            'desc': 'If .true. => simulate energy straggling',
+            'doc': '',
+            'type': 'Logical',
+            'req': False,
+            'default': True},
+        'ldecay': {
+            'desc': 'If .true. => simulate particle decays',
+            'doc': '',
+            'type': 'Logical',
+            'req': False,
+            'default': True},
+        'ldray': {
+            'desc': 'If .true. => simulate discrete energy loss from delta rays',
+            'doc': 'When LDRAY is true, the program forces the parameters DELEV=2 and STRAGLEV=5.',
+            'type': 'Logical',
+            'req': False,
+            'default': True},
+        'linteract': {
+            'desc': 'If .true. => simulate inelastic nuclear interactions of pions, kaons and protons',
+            'doc': '',
+            'type': 'Logical',
+            'req': False,
+            'default': False},
+        'lspace': {
+            'desc': 'If .true. => consider effects of space charge',
+            'doc': '',
+            'type': 'Logical',
+            'req': False,
+            'default': False},
+        'lelms': {
+            'desc': 'If .true. => use ELMS model2 for energy loss and scattering',
+            'doc': 'When this command is true an external file ELMSCOM.TXT must be provided. '
+            'This file consists of two lines giving (1) the ELMS run directory including path '
+            'and (2) the root part of the path name to the ELMS database files. For example, '
+            '\muon\elmsdb\rundirectory.txt\n'
+            '\muon\elmsdb\elmsfv3run\n'
+            'ELMS only works in regions containing hydrogen (the SCATLEV model is used in other '
+            'regions). '
+            'For hydrogen regions use a stepsize around 5 mm for maximum accuracy. A stepsize of '
+            '1 mm gives significantly worse results.',
+            'type': 'Logical',
+            'req': False,
+            'default': False},
+        'lsamcs': {
+            'desc': 'If .true. => use SAMCS model3 of correlated straggling and scattering',
+            'doc': '',
+            'type': 'Logical',
+            'req': False,
+            'default': False},
+        'delev': {
+            'desc': 'Model level for dEdx (2)',
+            'doc': '1: Bethe-Bloch\n'
+            '2: Bethe-Bloch with density effect\n'
+            '3: restricted Bethe-Bloch with density effect\n'
+            '4: test mode with dE = const * dz, independent of velocity and angle',
+            'type': 'Integer',
+            'req': False,
+            'default': 2,
+            'min': 1,
+            'max': 4},
+        'scatlev': {
+            'desc': '(I) model level for multiple scattering',
+            'doc': '1: Gaussian( 0, Rossi-Greisen )\n'
+            '2: Gaussian( 0, Highland )\n'
+            '3: Gaussian( 0, Lynch-Dahl )\n'
+            '4: Bethe version of Moliere distribution (with Rutherford limit)\n'
+            '5: Rutherford\n'
+            '6: Fano (with Rutherford limit)\n'
+            '7: Tollestrup (with Rutherford limit)\n'
+            'Level 2 contains a logarithm term in computing the Gaussian width, so\n'
+            'it is not useful for general monte carlo work. It gives an accurate estimate of\n'
+            'the width of the distribution when the step size is the same as the region size.\n'
+            'In models 4, 6, and 7 when the effective number of scatters is less than 20 Rutherford\n'
+            'scattering is used with the actual number of scatters in a given step taken from a\n'
+            'Poisson distribution.',
+            'type': 'Integer',
+            'req': False,
+            'default': 6,
+            'min': 1,
+            'max': 6},
+        'straglev': {
+            'desc': '(I) Model level for straggling ',
+            'doc': '1: Gaussian( Bohr )\n'
+            '2: Landau distribution\n'
+            '3: (not used)\n'
+            '4: Vavilov distribution (with appropriate Landau and Gaussian limits determined '
+            'by the program)\n'
+            '5: restricted energy fluctuations from continuous processes with energy below DCUTx.',
+            'type': 'Integer',
+            'req': False,
+            'default': 4,
+            'min': 1,
+            'max': 5},
+        'declev': {
+            'desc': '(I) model level for particle decays (1)',
+            'doc': '1: uniform polar decay angle for daughter particle in parent rest frame\n'
+            '2: 90 degree polar decay angle for daughter particle in parent rest frame\n'
+            '3: uniform polar decay angle for daughter particle in parent rest frame; '
+            'no mu-->e decays.\n'
+            '4: 90 degree polar decay angle for daughter particle in parent rest frame; '
+            'no mu->e decays\n'
+            '5: uniform polar decay angle for daughter particle in parent rest frame; '
+            'no mu-->e decays;\n'
+            'save accumulated fractional decay length in POL(1).',
+            'type': 'Integer',
+            'req': False,
+            'default': 1,
+            'min': 1,
+            'max': 5},
+        'intlev': {
+            'desc': 'Model level for nuclear interactions (1)',
+            'doc': '1: stop tracking after an interaction\n'
+            '2: stop tracking after an interaction, except for protons which generate '
+            'a pion from the Wang distribution.',
+            'type': 'Integer',
+            'req': False,
+            'default': 1,
+            'min': 1,
+            'max': 2},
+        'spacelev': {
+            'desc': 'Model level for space charge (3)',
+            'doc': '1: image charge of moving bunch in cylindrical, metallic can\n'
+            '2: crude transverse space charge for free space applied to all regions\n'
+            '3: Gaussian bunch space charge (transverse and longitudinal) for free space '
+            'applied to all regions\n'
+            '4: same as model 3 for single bunch in a bunch train. All the particles are '
+            'superimposed\n'
+            'on 1 bunch given by parameter FRFBUNSC. Adjust PARBUNSC accordingly.',
+            'type': 'Integer',
+            'req': False,
+            'default': 3,
+            'min': 1,
+            'max': 4},
+        'dcute': {
+            'desc': 'Kinetic energy of electrons, above which delta rays are discretely '
+            'simulated [GeV] ',
+            'doc': '',
+            'type': 'Real',
+            'req': False,
+            'default': 0.003},
+        'dcutm': {
+            'desc': 'Kinetic energy of muons and other heavy particles, above which delta '
+            'rays are discretely simulated [GeV] ',
+            'doc': '',
+            'type': 'Real',
+            'req': False,
+            'default': 0.003},
+        'elmscor': {
+            'desc': 'ELMS correlation ',
+            'doc': '0: run ELMS without correlations (0)\n'
+            '1: run ELMS with correlations',
+            'type': 'Integer',
+            'req': False,
+            'default': 0,
+            'min': 0,
+            'max': 1},
+        'facfms': {
+            'desc': 'Factor to correct the Z(Z+1) term in the characteristic angle squared '
+            'χC2 in Moliere multiple scattering theory '
+            'times relative to reference particle at plane IZFILE.',
+            'doc': '',
+            'type': 'Real',
+            'req': False,
+            'default': 1.0},
+        'facmms': {
+            'desc': 'Factor to correct screening angle squared χA2 in Moliere multiple ',
+            'doc': '',
+            'type': 'Real',
+            'req': False,
+            'default': 1.0},
+        'fastdecay': {
+            'desc': 'If true => use unphysical decay constants to make {μ,π,K} decay immediately. ',
+            'doc': '',
+            'type': 'Logical',
+            'req': False,
+            'default': False},
+        'frfbunsc': {
+            'desc': '(R) RF frequency used for space charge model 4. [MHz] (201.) ',
+            'doc': '',
+            'type': 'Real',
+            'req': False,
+            'default': 201},
+        'parbunsc': {
+            'desc': 'Number of muons per bunch for space charge calculation ',
+            'doc': '',
+            'type': 'Real',
+            'req': False,
+            'default': 4E12},
+        'pdelev4': {
+            'desc': 'Momentum for DELEV=4 calculation',
+            'doc': '',
+            'type': 'Real',
+            'req': False,
+            'default': 0.200},
+        'wanga': {
+            'desc': 'Wang parameter A ',
+            'doc': 'The Wang distribution is given by '
+            'd2σ/dp dΩ = A pMAX x (1-x) exp{-BxC – DpT} where x = pL / pMAX',
+            'type': 'Real',
+            'req': False,
+            'default': 90.1},
+        'wangb': {
+            'desc': 'Wang parameter B',
+            'doc': '',
+            'type': 'Real',
+            'req': False,
+            'default': 3.35},
+        'wangc': {
+            'desc': 'Wang parameter C',
+            'doc': '',
+            'type': 'Real',
+            'req': False,
+            'default': 1.22},
+        'wangd': {
+            'desc': 'Wang parameter D',
+            'doc': '',
+            'type': 'Real',
+            'req': False,
+            'default': 4.66},
+        'wangpmx': {
+            'desc': 'Wang parameter pMAX (1.500) The sign of this quantity is used to select '
+            'π+ or π- production.',
+            'doc': '',
+            'type': 'Real',
+            'req': False,
+            'default': 1.5},
+        'wangfmx': {
+            'desc': 'The maximum value of the Wang differential cross section',
+            'doc': '',
+            'type': 'Real',
+            'req': False,
+            'default': 13.706},
+    }
 
     def __init__(self, **kwargs):
         ICoolObject.__init__(self, kwargs)
@@ -1253,6 +1286,7 @@ class Ncv(ICoolNameListContainer):
 
 
 class Region(ICoolObject):
+
     def __init__(self, kwargs):
         ICoolObject.__init__(self, kwargs)
 
@@ -1282,7 +1316,7 @@ class Region(ICoolObject):
             if count == cur_split:
                 file.write('\n')
                 count = 0
-                split_num = split_num+1
+                split_num = split_num + 1
                 cur_split = splits[split_num]
             print 'Command is: ', command
             if hasattr(command, 'gen_for001'):
@@ -1295,10 +1329,12 @@ class Region(ICoolObject):
 
 
 class RegularRegion(Region):
+
     """
     RegularRegion commands include: SECTION, BEGS, REPEAT, CELL, SREGION, ENDREPEAT, ENDCELL,
     and ENDCELL.
     """
+
     def __init__(self, kwargs):
         Region.__init__(self, kwargs)
 
@@ -1312,10 +1348,12 @@ or ENDCELL.]'
 
 
 class PseudoRegion(Region):
+
     """
     PseudoRegion commands include: APERTURE, CUTV, DENP, DENS, DISP, DUMMY, DVAR, EDGE, GRID
     OUTPUT, REFP, REF2, RESET, RKICK, ROTATE, TAPER, TILT, TRANSPORT, BACKGROUND, BFIELD, ENDB, ! or &
     """
+
     def __init__(self, kwargs):
         Region.__init__(self, kwargs)
 
@@ -1329,21 +1367,23 @@ class PseudoRegion(Region):
 
 
 class RegularRegionContainer(RegularRegion, Container):
+
     def gen_for001(self, file):
-        #self.gen_begtag(file)
-        #if hasattr(self, 'begtag'):
+        # self.gen_begtag(file)
+        # if hasattr(self, 'begtag'):
         #    print 'Writing begtag'
         #    file.write(self.get_begtag())
         #    file.write('\n')
         Region.gen_for001(self, file)
         Container.gen_for001(self, file)
-        #self.gen_endtag(file)
+        # self.gen_endtag(file)
         if hasattr(self, 'endtag'):
             file.write(self.get_endtag())
             file.write('\n')
 
 
 class Section(RegularRegionContainer):
+
     """
     SECTION Start of cooling section region definition.
     The data must end with an ENDSECTION.   It can enclose any number of other commands.
@@ -1356,21 +1396,38 @@ class Section(RegularRegionContainer):
     num_params = 0
     for001_format = {'line_splits': [0]}
 
-
     allowed_enclosed_commands = [
-        'Begs', 'Repeat', 'Cell', 'Background', 'SRegion', 'Aperture', 'Cutv', 'Dens', 'Disp', 'Dummy', 'DVar',
-        'Edge', 'Output', 'Refp', 'Ref2', 'Reset', 'RKick', 'Rotate', 'Tilt', 'Transport', 'Comment'
-        'Repeat'
-        ]
+        'Begs',
+        'Repeat',
+        'Cell',
+        'Background',
+        'SRegion',
+        'Aperture',
+        'Cutv',
+        'Dens',
+        'Disp',
+        'Dummy',
+        'DVar',
+        'Edge',
+        'Output',
+        'Refp',
+        'Ref2',
+        'Reset',
+        'RKick',
+        'Rotate',
+        'Tilt',
+        'Transport',
+        'Comment'
+        'Repeat']
 
     command_params = {
-        
-        }
+
+    }
 
     def __init__(self, **kwargs):
         RegularRegion.__init__(self, kwargs)
         Container.__init__(self)
-    
+
     def __setattr__(self, name, value):
         Container.__setattr__(self, name, value)
 
@@ -1384,8 +1441,8 @@ class Section(RegularRegionContainer):
         return 'Section\n'
 
 
-
 class Begs(RegularRegion):
+
     def __init__(self):
         RegularRegion.__init(self, None, None)
 
@@ -1395,6 +1452,7 @@ class Begs(RegularRegion):
 
 
 class Repeat(RegularRegionContainer):
+
     """
     Start of a repeating group of region commands; the data must end with an ENDREPEAT
     command. This can be used to repeat regions inside a cell. The repeat loop can enclose any
@@ -1408,22 +1466,34 @@ class Repeat(RegularRegionContainer):
     for001_format = {'line_splits': [1]}
 
     command_params = {
-        'nrep':  {'desc': '# of times to repeat following region commands',
-                  'doc': '',
-                  'type': 'Integer',
-                  'req': True,
-                  'pos': 1}
-        }
+        'nrep': {'desc': '# of times to repeat following region commands',
+                 'doc': '',
+                 'type': 'Integer',
+                 'req': True,
+                 'pos': 1}
+    }
 
     allowed_enclosed_commands = [
-        'SRegion', 'Aperture', 'Dens', 'Disp', 'Dummy', 'Dvar', 'Edge', 'Output', 'Refp',
-        'Ref2', 'Reset', 'Rkick', 'Rotate', 'Tilt', 'Transport'
-    ]
+        'SRegion',
+        'Aperture',
+        'Dens',
+        'Disp',
+        'Dummy',
+        'Dvar',
+        'Edge',
+        'Output',
+        'Refp',
+        'Ref2',
+        'Reset',
+        'Rkick',
+        'Rotate',
+        'Tilt',
+        'Transport']
 
     def __init__(self, **kwargs):
         RegularRegion.__init__(self, kwargs)
         Container.__init__(self)
-        
+
     def __setattr__(self, name, value):
         Container.__setattr__(self, name, value)
 
@@ -1442,16 +1512,19 @@ class Repeat(RegularRegionContainer):
 
 
 class Background(PseudoRegion):
+
     def __init__(self, name=None, metadata=None):
         PseudoRegion.__init__(self, name, metadata)
 
 
 class Bfield(PseudoRegion):
+
     def __init__(self, name=None, metadata=None):
         PseudoRegion.__init__(self, name, metadata)
 
 
 class Edge(PseudoRegion):
+
     """EDGE Fringe field and other kicks for hard-edged field models
     1) edge type (A4) {SOL, DIP, HDIP, DIP3, QUAD, SQUA, SEX, BSOL, FACE}
 
@@ -1498,7 +1571,13 @@ class Edge(PseudoRegion):
     position and transverse momentum due to the fringe field.
     """
 
-    def __init__(self, edge_type, model, model_parameters_list, name=None, metadata=None):
+    def __init__(
+            self,
+            edge_type,
+            model,
+            model_parameters_list,
+            name=None,
+            metadata=None):
         PseudoRegion.__init__(self, name, metadata)
         self.edge_type = edge_type
         self.model = model
@@ -1506,6 +1585,7 @@ class Edge(PseudoRegion):
 
 
 class Cell(RegularRegionContainer):
+
     """CELL Start of a repeating group of region commands; the data must end with an ENDCELL command.
     The cell loop can enclose any number of commands under REPEAT plus REPEAT and ENDREPEAT commands.
     It has an associated cell field, which is superimposed on the individual region fields. Cell sections cannot
@@ -1517,31 +1597,43 @@ class Cell(RegularRegionContainer):
     for001_format = {'line_splits': [1, 1, 1, 1]}
 
     allowed_enclosed_commands = [
-        'SRegion', 'Aperture', 'Dens', 'Disp', 'Dummy', 'DVar', 'Edge', 'Output',
-        'Refp', 'Ref2', 'Reset', 'RKick', 'Rotate', 'Tilt', 'Transport', 'Repeat'
-        ]
+        'SRegion',
+        'Aperture',
+        'Dens',
+        'Disp',
+        'Dummy',
+        'DVar',
+        'Edge',
+        'Output',
+        'Refp',
+        'Ref2',
+        'Reset',
+        'RKick',
+        'Rotate',
+        'Tilt',
+        'Transport',
+        'Repeat']
 
     command_params = {
-        'ncells':  {'desc': 'Number of times to repeat this command in this cell block',
-                    'doc': '',
-                    'type': 'Integer',
-                    'req': True,
-                    'pos': 1},
-
-        'flip':      {'desc': 'if .true. => flip cell field for alternate cells',
-                      'doc': '',
-                      'type': 'Logical',
-                      'req': True,
-                      'pos': 2},
-
-
-        'field':      {'desc': 'Field object',
-                       'doc': '',
-                       'type': 'Field',
-                       'req': True,
-                       'pos': 3},
-
-        }
+        'ncells': {
+            'desc': 'Number of times to repeat this command in this cell block',
+            'doc': '',
+            'type': 'Integer',
+            'req': True,
+            'pos': 1},
+        'flip': {
+            'desc': 'if .true. => flip cell field for alternate cells',
+            'doc': '',
+            'type': 'Logical',
+            'req': True,
+            'pos': 2},
+        'field': {
+            'desc': 'Field object',
+            'doc': '',
+            'type': 'Field',
+            'req': True,
+            'pos': 3},
+    }
 
     def __init__(self, **kwargs):
         RegularRegion.__init__(self, kwargs)
@@ -1552,7 +1644,7 @@ class Cell(RegularRegionContainer):
 
     def __str__(self):
         return_str = 'CELL\n' + str(Container.__str__(self)) + 'ENDCELL\n'
-        #for command in self.enclosed_commands:
+        # for command in self.enclosed_commands:
         #    return_str += str(command)
         return return_str
 
@@ -1561,6 +1653,7 @@ class Cell(RegularRegionContainer):
 
 
 class SRegion(RegularRegionContainer):
+
     """
     SREGION - Start of new s-region. Describes field and material properties.
 
@@ -1595,7 +1688,7 @@ class SRegion(RegularRegionContainer):
     These 10 parameters must be on one input line (see specific material type below)
     """
 
-    allowed_enclosed_commands =  ['SubRegion']
+    allowed_enclosed_commands = ['SubRegion']
 
     begtag = 'SREGION'
     endtag = ''
@@ -1603,38 +1696,47 @@ class SRegion(RegularRegionContainer):
     for001_format = {'line_splits': [3]}
 
     command_params = {
-       
-        'slen':  {'desc': 'Length of this s region [m]',
-                  'doc': '',
-                  'type': 'Real',
-                  'req': True,
-                  'pos': 1},
-
-        'nrreg':   {'desc': '# of radial subregions of this s region {1-4}',
-                    'doc': '',
-                    'type': 'Int',
-                    'min': 1,
-                    'max': 4,
-                    'req': True,
-                    'pos': 2},
-
-        'zstep':   {'desc': 'Step for tracking particles [m]',
-                    'doc': '',
+        'slen': {
+            'desc': 'Length of this s region [m]',
+            'doc': '',
+            'type': 'Real',
+            'req': True,
+            'pos': 1},
+        'nrreg': {
+            'desc': '# of radial subregions of this s region {1-4}',
+            'doc': '',
+            'type': 'Int',
+            'min': 1,
+            'max': 4,
+            'req': True,
+            'pos': 2},
+        'zstep': {
+            'desc': 'Step for tracking particles [m]',
+            'doc': '',
+            'type': 'Real',
+            'req': True,
+            'pos': 3},
+        'outstep': {
+            'desc': 'Step for generating OUTPUT commands within SRegion.',
+                    'doc': 'Will wrap SRegion in REPEAT/ENDREPEAT statements.',
                     'type': 'Real',
-                    'req': True,
-                    'pos': 3}}
+                    'req': False,
+            'pos': None}
+        }
 
     def __init__(self, **kwargs):
         RegularRegion.__init__(self, kwargs)
         Container.__init__(self)
-      
+
     def __str__(self):
-        ret_str = 'SRegion:\n'+'slen='+str(self.slen) + '\n' + 'nrreg=' + str(self.nrreg) + '\n' + \
-               'zstep=' + str(self.zstep)+'\n' + str(Container.__str__(self))
-        return ret_str    
+        ret_str = 'SRegion:\n' + 'slen=' + str(self.slen) + '\n' + 'nrreg=' + str(self.nrreg) + '\n' + \
+           'zstep=' + str(self.zstep) + '\n' + str(Container.__str__(self))
+        return ret_str
 
     def __repr__(self):
-        return 'SRegion:\n '+'slen='+str(self.slen)+'\n'+'nrreg='+str(self.nrreg)+'\n'+'zstep='+str(self.zstep)
+        return 'SRegion:\n ' + 'slen=' + \
+            str(self.slen) + '\n' + 'nrreg=' + str(self.nrreg) + \
+            '\n' + 'zstep=' + str(self.zstep)
 
     def __setattr__(self, name, value):
         Container.__setattr__(self, name, value)
@@ -1649,13 +1751,14 @@ class SRegion(RegularRegionContainer):
                 raise ie.InvalidType('SubRegion', subregion.__class__.__name__)
         except ie.InvalidType as e:
             print e
-               
+
     def add_subregions(self, subregion_list):
         for subregion in subregion_list:
             self.subregions.append(subregion)
 
 
 class SubRegion(RegularRegion):
+
     """
     A SubRegion is a:
     (1) IRREG r-region number;
@@ -1668,47 +1771,51 @@ class SubRegion(RegularRegion):
     for001_format = {'line_splits': [3, 1, 1]}
 
     command_params = {
-        'irreg':  {'desc': 'R-Region Number',
-                   'doc': '',
-                   'type': 'Integer',
-                   'req': True,
-                   'pos': 1},
+        'irreg': {'desc': 'R-Region Number',
+                  'doc': '',
+                  'type': 'Integer',
+                  'req': True,
+                  'pos': 1},
 
-        'rlow':   {'desc': 'Inner radius of this r subregion',
-                   'doc': '',
-                   'type': 'Real',
-                   'req': True,
-                   'pos': 2},
+        'rlow': {'desc': 'Inner radius of this r subregion',
+                 'doc': '',
+                 'type': 'Real',
+                 'req': True,
+                 'pos': 2},
 
-        'rhigh':   {'desc': 'Outer radius of this r subregion',
-                    'doc': '',
-                    'type': 'Real',
-                    'req': True,
-                    'pos': 3},
+        'rhigh': {'desc': 'Outer radius of this r subregion',
+                  'doc': '',
+                  'type': 'Real',
+                  'req': True,
+                  'pos': 3},
 
-        'field':   {'desc': 'Field object',
-                    'doc': '',
-                    'type': 'Field',
-                    'req': True,
-                    'pos': 4},
+        'field': {'desc': 'Field object',
+                  'doc': '',
+                  'type': 'Field',
+                  'req': True,
+                  'pos': 4},
 
         'material': {'desc': 'Material object',
                      'doc': '',
                      'type': 'Material',
                      'req': True,
                      'pos': 5}
-        }
+    }
 
     def __init__(self, **kwargs):
         RegularRegion.__init__(self, kwargs)
 
     def __str__(self):
-        return 'SubRegion:\n'+'irreg='+str(self.irreg) + '\n' + 'rlow=' + str(self.rlow) + '\n' + \
-            'rhigh=' + str(self.rhigh) + '\n' + 'Field=' + str(self.field) + '\n' + 'Material=' + str(self.material)
+        return 'SubRegion:\n' + 'irreg=' + str(self.irreg) + '\n' + 'rlow=' + str(self.rlow) + '\n' + \
+            'rhigh=' + str(self.rhigh) + '\n' + 'Field=' + \
+            str(self.field) + '\n' + \
+            'Material=' + str(self.material)
 
     def __repr__(self):
-        return 'SubRegion:\n'+'irreg='+str(self.irreg) + '\n' + 'rlow=' + str(self.rlow) + '\n' + \
-            'rhigh=' + str(self.rhigh) + '\n' + 'Field=' + str(self.field) + '\n' + 'Material=' + str(self.material)
+        return 'SubRegion:\n' + 'irreg=' + str(self.irreg) + '\n' + 'rlow=' + str(self.rlow) + '\n' + \
+            'rhigh=' + str(self.rhigh) + '\n' + 'Field=' + \
+            str(self.field) + '\n' + \
+            'Material=' + str(self.material)
 
     def __setattr__(self, name, value):
         Region.__setattr__(self, name, value)
@@ -1726,7 +1833,10 @@ class ModeledCommandParameter(ICoolObject):
             if self.check_no_model():
                 return
             else:
-                setattr(self, self.get_model_descriptor_name(), self.get_model_name_in_dict(kwargs))
+                setattr(
+                    self,
+                    self.get_model_descriptor_name(),
+                    self.get_model_name_in_dict(kwargs))
                 del kwargs[self.get_model_descriptor_name()]
                 self.setall(kwargs)
 
@@ -1737,24 +1847,28 @@ class ModeledCommandParameter(ICoolObject):
             if not self.get_model_descriptor_name() in kwargs.keys():
                 ICoolObject.__call__(self, kwargs)
             else:
-                setattr(self, self.get_model_descriptor_name(), self.get_model_name_in_dict(kwargs))
+                setattr(
+                    self,
+                    self.get_model_descriptor_name(),
+                    self.get_model_name_in_dict(kwargs))
                 del kwargs[self.get_model_descriptor_name()]
                 self.setall(kwargs)
-          
+
     def __setattr__(self, name, value):
-        #Check whether the attribute being set is the model
+        # Check whether the attribute being set is the model
         if name == self.get_model_descriptor_name():
             if self.check_valid_model(value) is False:
                 return
             new_model = False
-            #Check whether this is a new model (i.e. model was previously defined)
+            # Check whether this is a new model (i.e. model was previously
+            # defined)
             if hasattr(self, self.get_model_descriptor_name()):
                 new_model = True
-                #Delete all attributes of the current model
+                # Delete all attributes of the current model
                 print 'Resetting model to ', value
                 self.reset_model()
             object.__setattr__(self, self.get_model_descriptor_name(), value)
-            #If new model, set all attributes of new model to 0.
+            # If new model, set all attributes of new model to 0.
             if new_model is True:
                 self.set_and_init_params_for_model(value)
             return
@@ -1771,12 +1885,19 @@ class ModeledCommandParameter(ICoolObject):
 
     def __str__(self):
         desc = 'ModeledCommandParameter\n'
-        for key in self.get_model_dict(getattr(self, self.get_model_descriptor_name())):
+        for key in self.get_model_dict(
+            getattr(
+                self,
+                self.get_model_descriptor_name())):
             desc = desc + key + ': ' + str(getattr(self, key)) + '\n'
         return desc
 
     def set_keyword_args_model_specified(self, kwargs):
-        setattr(self, self.get_model_descriptor_name(), kwargs[self.get_model_descriptor_name()])
+        setattr(
+            self,
+            self.get_model_descriptor_name(),
+            kwargs[
+                self.get_model_descriptor_name()])
         for key in kwargs:
             if not key == self.get_model_descriptor_name():
                 setattr(self, key, kwargs[key])
@@ -1792,9 +1913,8 @@ class ModeledCommandParameter(ICoolObject):
 
     def set_and_init_params_for_model(self, model):
         for key in self.get_model_dict(model):
-                if key is not self.get_model_descriptor_name():
-                    setattr(self, key, 0)
-
+            if key is not self.get_model_descriptor_name():
+                setattr(self, key, 0)
 
     def check_command_params_init(self, command_params):
         """
@@ -1807,17 +1927,19 @@ class ModeledCommandParameter(ICoolObject):
         if not self.check_model_specified(command_params):
             return False
         else:
-            if not self.check_valid_model(self.get_model_name_in_dict(command_params)):
+            if not self.check_valid_model(
+                    self.get_model_name_in_dict(command_params)):
                 return False
             else:
-                command_params_dict = self.get_command_params_for_specified_input_model(command_params)
-                if not self.check_command_params_valid(command_params, command_params_dict)\
-                    or not self.check_all_required_command_params_specified(command_params, command_params_dict)\
+                command_params_dict = self.get_command_params_for_specified_input_model(
+                    command_params)
+                if not self.check_command_params_valid(command_params, command_params_dict) \
+                    or not self.check_all_required_command_params_specified(command_params, command_params_dict) \
                         or not self.check_command_params_type(command_params, command_params_dict):
-                    return False
+                            return False
                 else:
                     return True
- 
+
     def check_command_params_call(self, command_params):
         """
         Checks to see whether new model specified in call.
@@ -1828,14 +1950,13 @@ class ModeledCommandParameter(ICoolObject):
         """
         if not self.get_model_descriptor_name() in command_params.keys():
             command_params_dict = self.get_model_parms_dict()
-            if not self.check_command_params_valid(command_params, command_params_dict)\
-                    or not self.check_command_params_type(command_params, command_params_dict):
-                        return False
+            if not self.check_command_params_valid(command_params, command_params_dict) \
+                or not self.check_command_params_type(command_params, command_params_dict):
+                    return False
             else:
                 return True
         else:
             return self.check_command_params_init(command_params)
-
 
     def check_valid_model(self, model):
         """
@@ -1854,10 +1975,16 @@ class ModeledCommandParameter(ICoolObject):
         """
         Checks whether the keywords specified for a current model correspond to that model.
         """
-        actual_dict = self.get_model_dict(getattr(self, self.get_model_descriptor_name()))
+        actual_dict = self.get_model_dict(
+            getattr(
+                self,
+                self.get_model_descriptor_name()))
         for key in input_dict:
-            if not key in actual_dict:
-                raise ie.InputArgumentsError('Input Arguments Error', input_dict, actual_dict)
+            if key not in actual_dict:
+                raise ie.InputArgumentsError(
+                    'Input Arguments Error',
+                    input_dict,
+                    actual_dict)
         return True
 
     def check_partial_keywords_for_new_model(self, input_dict):
@@ -1867,8 +1994,11 @@ class ModeledCommandParameter(ICoolObject):
         model = input_dict[self.get_model_descriptor_name()]
         actual_dict = self.get_model_dict(model)
         for key in input_dict:
-            if not key in actual_dict:
-                raise ie.InputArgumentsError('Input Arguments Error', input_dict, actual_dict)
+            if key not in actual_dict:
+                raise ie.InputArgumentsError(
+                    'Input Arguments Error',
+                    input_dict,
+                    actual_dict)
         return True
 
     def check_model_specified(self, input_dict):
@@ -1889,8 +2019,9 @@ class ModeledCommandParameter(ICoolObject):
             return True
         else:
             return False
-    #Helper functions
+    # Helper functions
     ##################################################
+
     def get_model_descriptor(self):
         """Returns the model descriptor dictionary"""
         return self.models['model_descriptor']
@@ -1905,7 +2036,7 @@ class ModeledCommandParameter(ICoolObject):
     def get_current_model_name(self):
         """Returns the name of the current model"""
         return getattr(self, self.get_model_descriptor_name())
-  
+
     def get_model_parms_dict(self):
         """
         Returns the parameter dictionary for the current model.
@@ -1930,11 +2061,13 @@ class ModeledCommandParameter(ICoolObject):
     def get_icool_model_name(self):
         """Check to see whether there is an alternate icool_model_name from the common name.
         If so return that.  Otherwise, just return the common name."""
-        if 'icool_model_name' not in self.models[str(self.get_current_model_name())]:
+        if 'icool_model_name' not in self.models[
+                str(self.get_current_model_name())]:
             return self.get_current_model_name()
         else:
-            return self.models[str(self.get_current_model_name())]['icool_model_name']
-  
+            return self.models[str(self.get_current_model_name())][
+                'icool_model_name']
+
     def get_model_names(self):
         """Returns a list of all model names"""
         ret_list = self.models.keys()
@@ -1952,29 +2085,32 @@ class ModeledCommandParameter(ICoolObject):
     def get_command_params(self):
         return self.get_model_parms_dict()
 
-    def get_command_params_for_specified_input_model(self, input_command_params):
-        specified_model = input_command_params[self.get_model_descriptor_name()]
+    def get_command_params_for_specified_input_model(
+            self,
+            input_command_params):
+        specified_model = input_command_params[
+            self.get_model_descriptor_name()]
         return self.get_model_dict(specified_model)
 
     def get_line_splits(self):
         return self.models['model_descriptor']['for001_format']['line_splits']
 
     ##################################################
-    
+
     def set_model_parameters(self):
         parms_dict = self.get_model_parms_dict()
         high_pos = 0
         for key in parms_dict:
             if key['pos'] > high_pos:
                 high_pos = key['pos']
-        self.parms = [0]*high_pos
+        self.parms = [0] * high_pos
 
     def gen_parm(self):
         num_parms = self.get_num_params()
         command_params = self.get_command_params()
         parm = [0] * num_parms
         for key in command_params:
-            pos = int(command_params[key]['pos'])-1
+            pos = int(command_params[key]['pos']) - 1
             if key == self.get_model_descriptor_name():
                 val = self.get_icool_model_name()
                 print 'Using icool name', val
@@ -1987,7 +2123,7 @@ class ModeledCommandParameter(ICoolObject):
     def gen_for001(self, file):
         if hasattr(self, 'begtag'):
             print 'Writing begtag'
-            #file.write('\n')
+            # file.write('\n')
             file.write(self.get_begtag())
             file.write('\n')
         parm = self.gen_parm()
@@ -1999,7 +2135,7 @@ class ModeledCommandParameter(ICoolObject):
             if count == cur_split:
                 file.write('\n')
                 count = 0
-                split_num = split_num+1
+                split_num = split_num + 1
                 cur_split = splits[split_num]
             file.write(str(i))
             file.write(' ')
@@ -2013,6 +2149,7 @@ class ModeledCommandParameter(ICoolObject):
 
 
 class Distribution(ModeledCommandParameter):
+
     """
     A Distribution is a:
     (1) bdistyp (I) beam distribution type {1:Gaussian 2:uniform circular segment}
@@ -2064,11 +2201,11 @@ class Distribution(ModeledCommandParameter):
                   'pz_low': {'pos': 12, 'type': 'Real', 'doc': ''},
                   'pz_high': {'pos': 13, 'type': 'Real', 'doc': ''}}},
 
-        }
+    }
 
     def __init__(self, **kwargs):
         ModeledCommandParameter.__init__(self, kwargs)
-    
+
     def __call__(self, **kwargs):
         ModeledCommandParameter.__call__(self, kwargs)
 
@@ -2080,6 +2217,7 @@ class Distribution(ModeledCommandParameter):
 
 
 class Correlation(ModeledCommandParameter):
+
     """
     A Correlation is a:
     (1) CORRTYP (I) correlation type
@@ -2088,119 +2226,138 @@ class Correlation(ModeledCommandParameter):
     (4) CORR3(i) (R) correlation parameter 3
     """
     models = {
-
-        'model_descriptor': {'desc': 'Correlation type',
-                             'name': 'corrtyp',
-                             'num_parms': 4,
-                             'for001_format': {'line_splits': [4]}},
-
-        'ang_mom':
-        {'desc': 'Angular momentum appropriate for constant solenoid field',
-         'doc': '',
-         'icool_model_name': 1,
-         'parms':
-                 {'corrtyp': {'pos': 1, 'type': 'String', 'doc': ''},
-                  'sol_field': {'pos': 2, 'type': 'Real', 'doc': ''}}},
-
-        'palmer':
-        {'desc': 'Palmer amplitude correlation',
-         'doc': '',
-         'icool_model_name': 2,
-         'parms':
-                 {'corrtyp': {'pos': 1, 'type': 'String', 'doc': ''},
-                  'strength': {'pos': 2, 'type': 'Real', 'doc': ''},
-                  'beta_eff': {'pos': 3, 'type': 'Real', 'doc': ''}}},
-
-        'rf_bucket_ellipse':
-        {'desc': 'Rf bucket, small amplitude ellipse',
-         'doc': '',
-         'icool_model_name': 3,
-         'parms':
-                 {'corrtyp': {'pos': 1, 'type': 'String', 'doc': ''},
-                  'e_peak': {'pos': 2, 'type': 'Real', 'doc': ''},
-                  'phase': {'pos': 3, 'type': 'Real', 'doc': ''},
-                  'freq': {'pos': 4, 'type': 'Real', 'doc': ''}}},
-
-        'rf_bucket_small_separatrix':
-        {'desc': 'Rf bucket, small amplitude separatrix',
-         'doc': '',
-         'icool_model_name': 4,
-         'parms':
-                 {'corrtyp': {'pos': 1, 'type': 'String', 'doc': ''},
-                  'e_peak': {'pos': 2, 'type': 'Real', 'doc': ''},
-                  'phase': {'pos': 3, 'type': 'Real', 'doc': ''},
-                  'freq': {'pos': 4, 'type': 'Real', 'doc': ''}}},
-
-        'rf_bucket_large_separatrix':
-        {'desc': 'Rf bucket, small amplitude separatrix',
-         'doc': '',
-         'icool_model_name': 5,
-         'parms':
-                 {'corrtyp': {'pos': 1, 'type': 'Real', 'doc': ''},
-                  'e_peak': {'pos': 2, 'type': 'Real', 'doc': ''},
-                  'phase': {'pos': 3, 'type': 'Real', 'doc': ''},
-                  'freq': {'pos': 4, 'type': 'Real', 'doc': ''}}},
-
-        'twiss_px':
-        {'desc': 'Twiss parameters in x Px',
-         'doc': '',
-         'icool_model_name': 6,
-         'parms':
-                 {'corrtyp': {'pos': 1, 'type': 'String', 'doc': ''},
-                  'alpha': {'pos': 2, 'type': 'Real', 'doc': ''},
-                  'beta': {'pos': 3, 'type': 'Real', 'doc': ''},
-                  'epsilon': {'pos': 4, 'type': 'Real', 'doc': ''}}},
-
-        'twiss_py':
-        {'desc': 'Twiss parameters in x Px',
-         'doc': 'The spread in y and Py in the beam definition are ignored. '
-                'For Gaussian distributions epsilon is the rms geometrical '
-                'emittance. For uniform distributions it specifies the limiting ellipse.',
-         'icool_model_name': 7,
-         'parms':
-                 {'corrtyp': {'pos': 1, 'type': 'String', 'doc': ''},
-                  'alpha': {'pos': 2, 'type': 'Real', 'doc': 'Twiss alpha parameter [m]'},
-                  'beta': {'pos': 3, 'type': 'Real', 'doc': 'Twiss beta parameter [m]'},
-                  'epsilon': {'pos': 4, 'type': 'Real', 'doc': 'Twiss epsilon parameter [m]'}}},
-
-        'equal_sol':
-        {'desc': 'Equal time in solenoid.',
-         'doc':  'Set up with pz and σPz such that βz > βo. '
-                 'Set up initial pt = 0. This correlation determines the pt '
-                 'for a given pz that gives all the initial particles the same βo. '
-                 'If parameter 3 is 0, the azimuthal angle is chosen randomly.',
-         'icool_model_name': 9,
-         'parms':
-                 {'corrtyp': {'pos': 1, 'type': 'String', 'doc': ''},
-                  'axial_beta': {'pos': 2, 'type': 'Real', 'doc': 'desired axial beta (=v/c) value βo'},
-                  'az_ang_mom': {'pos': 3, 'type': 'Real', 'doc': 'azimuthal angle of transverse momentum [deg]'}}},
-
-        'balbekov':
-        {'desc': 'Balbekov version of amplitude-energy.',
-         'doc':  '',
-         'icool_model_name': 10,
-         'parms':
-                 {'corrtyp': {'pos': 1, 'type': 'String', 'doc': ''},
-                  'eref': {'pos': 2, 'type': 'Real', 'doc': 'Eref [GeV]'},
-                  'babs': {'pos': 3, 'type': 'Real', 'doc': 'Babs [ T ]'},
-                  'sigma_e:': {'pos': 4, 'type': 'Real', 'doc': 'σE [GeV]'}}},
-
-        'dispersion':
-        {'desc': 'Dispersion',
-         'doc':  '',
-         'icool_model_name': 11,
-         'parms':
-                 {'corrtyp': {'pos': 1, 'type': 'String', 'doc': ''},
-                  'value': {'pos': 2, 'type': 'Real', 'doc': '[m or rad]'},
-                  'pref': {'pos': 3, 'type': 'Real', 'doc': '[GeV/c]'},
-                  'type': {'pos': 4, 'type': 'Real', 'doc': 'Type flag.  x, y, x_prime, y_prime'}}},
-
-
-        }
-
+        'model_descriptor': {
+            'desc': 'Correlation type',
+            'name': 'corrtyp',
+            'num_parms': 4,
+            'for001_format': {
+                'line_splits': [4]}
+            },
+        'ang_mom': {
+            'desc': 'Angular momentum appropriate for constant solenoid field',
+            'doc': '',
+            'icool_model_name': 1,
+            'parms': {
+                        'corrtyp': {
+                            'pos': 1, 'type': 'String', 'doc': ''},
+                        'sol_field': {
+                            'pos': 2, 'type': 'Real', 'doc': ''}}},
+        'palmer': {
+            'desc': 'Palmer amplitude correlation',
+            'doc': '', 'icool_model_name': 2,
+            'parms': {
+                        'corrtyp': {
+                            'pos': 1, 'type': 'String', 'doc': ''},
+                        'strength': {
+                            'pos': 2, 'type': 'Real', 'doc': ''},
+                        'beta_eff': {
+                            'pos': 3, 'type': 'Real', 'doc': ''}}},
+        'rf_bucket_ellipse': {
+            'desc': 'Rf bucket, small amplitude ellipse',
+            'doc': '', 'icool_model_name': 3,
+            'parms': {
+                        'corrtyp': {
+                            'pos': 1, 'type': 'String', 'doc': ''},
+                        'e_peak': {
+                            'pos': 2, 'type': 'Real', 'doc': ''},
+                        'phase': {
+                            'pos': 3, 'type': 'Real', 'doc': ''},
+                        'freq': {
+                            'pos': 4, 'type': 'Real', 'doc': ''}}},
+        'rf_bucket_small_separatrix': {
+            'desc': 'Rf bucket, small amplitude separatrix',
+            'doc': '', 'icool_model_name': 4,
+            'parms': {
+                        'corrtyp': {
+                            'pos': 1, 'type': 'String', 'doc': ''},
+                            'e_peak': {
+                                'pos': 2, 'type': 'Real', 'doc': ''},
+                            'phase': {
+                                'pos': 3, 'type': 'Real', 'doc': ''},
+                            'freq': {
+                                'pos': 4, 'type': 'Real', 'doc': ''}}},
+        'rf_bucket_large_separatrix': {
+            'desc': 'Rf bucket, small amplitude separatrix',
+            'doc': '', 'icool_model_name': 5,
+            'parms': {
+                        'corrtyp': {
+                            'pos': 1, 'type': 'Real', 'doc': ''},
+                        'e_peak': {
+                            'pos': 2, 'type': 'Real', 'doc': ''},
+                        'phase': {
+                            'pos': 3, 'type': 'Real', 'doc': ''},
+                        'freq': {
+                            'pos': 4, 'type': 'Real', 'doc': ''}}},
+        'twiss_px': {
+            'desc': 'Twiss parameters in x Px',
+            'doc': '',
+            'icool_model_name': 6,
+            'parms': {
+                        'corrtyp': {
+                            'pos': 1, 'type': 'String', 'doc': ''},
+                        'alpha': {
+                            'pos': 2, 'type': 'Real', 'doc': ''},
+                        'beta': {
+                            'pos': 3, 'type': 'Real', 'doc': ''},
+                        'epsilon': {
+                            'pos': 4, 'type': 'Real', 'doc': ''}}},
+        'twiss_py': {
+            'desc': 'Twiss parameters in x Px',
+            'doc': 'The spread in y and Py in the beam definition are ignored. '
+                   'For Gaussian distributions epsilon is the rms geometrical '
+                   'emittance. For uniform distributions it specifies the limiting ellipse.',
+            'icool_model_name': 7,
+            'parms': {
+                        'corrtyp': {
+                            'pos': 1, 'type': 'String', 'doc': ''},
+                        'alpha': {
+                            'pos': 2, 'type': 'Real', 'doc': 'Twiss alpha parameter [m]'},
+                        'beta': {
+                            'pos': 3, 'type': 'Real', 'doc': 'Twiss beta parameter [m]'},
+                        'epsilon': {
+                            'pos': 4, 'type': 'Real', 'doc': 'Twiss epsilon parameter [m]'}}},
+        'equal_sol': {
+            'desc': 'Equal time in solenoid.', 'doc': 'Set up with pz and σPz such that βz > βo. '
+                    'Set up initial pt = 0. This correlation determines the pt '
+                    'for a given pz that gives all the initial particles the same βo. '
+                    'If parameter 3 is 0, the azimuthal angle is chosen randomly.',
+            'icool_model_name': 9,
+            'parms': {
+                        'corrtyp': {
+                            'pos': 1, 'type': 'String', 'doc': ''},
+                        'axial_beta': {
+                            'pos': 2, 'type': 'Real', 'doc': 'desired axial beta (=v/c) value βo'},
+                        'az_ang_mom': {
+                            'pos': 3, 'type': 'Real', 'doc': 'azimuthal angle of transverse momentum [deg]'}}},
+        'balbekov': {
+            'desc': 'Balbekov version of amplitude-energy.',
+            'doc': '',
+            'icool_model_name': 10,
+            'parms': {
+                        'corrtyp': {
+                            'pos': 1, 'type': 'String', 'doc': ''},
+                        'eref': {
+                            'pos': 2, 'type': 'Real', 'doc': 'Eref [GeV]'},
+                        'babs': {
+                            'pos': 3, 'type': 'Real', 'doc': 'Babs [ T ]'},
+                        'sigma_e:': {
+                            'pos': 4, 'type': 'Real', 'doc': 'σE [GeV]'}}},
+        'dispersion': {
+            'desc': 'Dispersion', 'doc': '',
+            'icool_model_name': 11,
+            'parms': {
+                        'corrtyp': {
+                            'pos': 1, 'type': 'String', 'doc': ''},
+                        'value': {
+                            'pos': 2, 'type': 'Real', 'doc': '[m or rad]'},
+                        'pref': {
+                            'pos': 3, 'type': 'Real', 'doc': '[GeV/c]'},
+                        'type': {
+                            'pos': 4, 'type': 'Real', 'doc': 'Type flag.  x, y, x_prime, y_prime'}}}}
+    
     def __init__(self, **kwargs):
         ModeledCommandParameter.__init__(self, kwargs)
-    
+
     def __call__(self, **kwargs):
         ModeledCommandParameter.__call__(self, kwargs)
 
@@ -2208,7 +2365,8 @@ class Correlation(ModeledCommandParameter):
         ModeledCommandParameter.__setattr__(self, name, value)
 
     def __str__(self):
-        return self.corrtyp + ':' + 'Correlation:' + ModeledCommandParameter.__str__(self)
+        return self.corrtyp + ':' + 'Correlation:' + \
+            ModeledCommandParameter.__str__(self)
 
 
 class BeamType(Container):
@@ -2233,39 +2391,48 @@ class BeamType(Container):
     allowed_enclosed_commands = ['Correlation']
 
     command_params = {
-        'partnum':      {'desc': 'Particle number',
-                         'doc': '',
-                         'type': 'Integer',
-                         'req': True,
-                         'default': None},
-
-        'bmtype':       {'desc': 'beam type {magnitude = mass code; sign = charge}: 1: e, 2: μ, 3: π, 4: K, 5: p. '
-                                 '6: d, 7: He3, 8: Li7',
-                         'doc': '',
-                         'out_dict': {'e': 1, 'mu': 2, 'pi': 3, 'k': 4, 'p': 5, 'd': 6, 'he3': 7, 'li7': 8},
-                         'type': 'Integer',
-                         'req': True,
-                         'default': None},
-
-        'fractbt':       {'desc': 'Fraction of beam of this type {0-1} The sum of all fracbt(i) should =1.0',
-                          'doc': '',
-                          'type': 'Real',
-                          'req': True,
-                          'default': None},
-
-        'distribution':  {'desc': 'Beam distribution object',
-                          'doc': '',
-                          'type': 'Distribution',
-                          'req': True,
-                          'default': None},
-
-        'nbcorr':        {'desc': '# of beam correlations {0-10}',
-                          'doc': '',
-                          'type': 'Integer',
-                          'req': True,
-                          'default': 0,
-                          'min': 0,
-                          'max': 10}}
+        'partnum': {
+            'desc': 'Particle number',
+            'doc': '',
+            'type': 'Integer',
+            'req': True,
+            'default': None},
+        'bmtype': {
+            'desc': 'beam type {magnitude = mass code; sign = charge}: 1: e, 2: μ, 3: π, 4: K, 5: p. '
+            '6: d, 7: He3, 8: Li7',
+            'doc': '',
+            'out_dict': {
+                'e': 1,
+                'mu': 2,
+                'pi': 3,
+                'k': 4,
+                'p': 5,
+                'd': 6,
+                'he3': 7,
+                'li7': 8},
+            'type': 'Integer',
+            'req': True,
+            'default': None},
+        'fractbt': {
+            'desc': 'Fraction of beam of this type {0-1} The sum of all fracbt(i) should =1.0',
+                    'doc': '',
+                    'type': 'Real',
+                    'req': True,
+                    'default': None},
+        'distribution': {
+            'desc': 'Beam distribution object',
+            'doc': '',
+            'type': 'Distribution',
+            'req': True,
+            'default': None},
+        'nbcorr': {
+            'desc': '# of beam correlations {0-10}',
+            'doc': '',
+            'type': 'Integer',
+            'req': True,
+            'default': 0,
+            'min': 0,
+            'max': 10}}
 
     def __init__(self, **kwargs):
         if self.check_command_params_init(kwargs) is False:
@@ -2298,14 +2465,17 @@ class BeamType(Container):
 
 
 class Field(ModeledCommandParameter):
+
     """
     A Field is a:
     FTAG - A tag identifying the field.  Valid FTAGS are:
-    NONE, ACCEL, BLOCK, BROD, BSOL, COIL, DIP, EFLD, FOFO, HDIP, HELI(X), HORN, KICK, QUAD,
+    NONE, ACCEL, BLOCK, BROD, BSOL, COIL, DIP, EFLD, FOFO, HDIP, HELI(
+        X), HORN, KICK, QUAD,
     ROD, SEX, SHEE(T), SOL, SQUA, STUS, WIG
 
     FPARM - 15 parameters describing the field.  The first parameter is the model.
     """
+
     def __init__(self, ftag, kwargs):
         ModeledCommandParameter.__init__(self, kwargs)
         self.ftag = ftag
@@ -2320,13 +2490,14 @@ class Field(ModeledCommandParameter):
             ModeledCommandParameter.__setattr__(self, name, value)
 
     def __str__(self):
-        return self.ftag + ':' + 'Field:' + ModeledCommandParameter.__str__(self)
+        return self.ftag + ':' + 'Field:' + \
+            ModeledCommandParameter.__str__(self)
 
     def gen_fparm(self):
         self.fparm = [0] * 10
         cur_model = self.get_model_dict(self.model)
         for key in cur_model:
-            pos = int(cur_model[key]['pos'])-1
+            pos = int(cur_model[key]['pos']) - 1
             if key == self.get_model_descriptor_name():
                 val = self.get_icool_model_name()
             else:
@@ -2336,6 +2507,7 @@ class Field(ModeledCommandParameter):
 
 
 class Material(ModeledCommandParameter):
+
     """
     A Material is a:
     (1) MTAG (A) material composition tag
@@ -2367,244 +2539,283 @@ class Material(ModeledCommandParameter):
     """
     materials = {
         'VAC': {'desc': 'Vacuum (no material)', 'icool_material_name': ''},
-        'GH':  {'desc': 'Gaseous hydrogen'},
+        'GH': {'desc': 'Gaseous hydrogen'},
         'GHE': {'desc': 'Gaseous helium'},
-        'LH':  {'desc': 'Liquid hydrogen'},
+        'LH': {'desc': 'Liquid hydrogen'},
         'LHE': {'desc': 'Liquid helium'},
-        'LI':  {'desc': 'Lithium'},
-        'BE':  {'desc': 'Berylliyum'},
-        'B':   {'desc': 'Boron'},
-        'C':   {'desc': 'Carbon'},
-        'AL':  {'desc': 'Aluminum'},
-        'TI':  {'desc': 'Titanium'},
-        'FE':  {'desc': 'Iron'},
-        'CU':  {'desc': 'Copper'},
-        'W':   {'desc': 'Tungsten'},
-        'HG':  {'desc:': 'Mercury'},
-        'PB':  {'desc:': 'Lead'}
-        }
-    
+        'LI': {'desc': 'Lithium'},
+        'BE': {'desc': 'Berylliyum'},
+        'B': {'desc': 'Boron'},
+        'C': {'desc': 'Carbon'},
+        'AL': {'desc': 'Aluminum'},
+        'TI': {'desc': 'Titanium'},
+        'FE': {'desc': 'Iron'},
+        'CU': {'desc': 'Copper'},
+        'W': {'desc': 'Tungsten'},
+        'HG': {'desc:': 'Mercury'},
+        'PB': {'desc:': 'Lead'}
+    }
+
     models = {
-
-        'model_descriptor': {'desc': 'Geometry',
-                             'name': 'geom',
-                             'num_parms': 12,
-                             'for001_format': {'line_splits': [1, 1, 10]}},
-        'VAC':
-        {'desc': 'Vacuum',
-         'doc': 'Vacuum region.  Specify vacuum for mtag.  Geom will be set to NONE.',
-         'parms':
-                 {'mtag': {'pos': 1, 'type': 'String', 'doc': ''}}},
-
-        'CBLOCK':
-        {'desc': 'Cylindrical block',
-         'doc': 'Cylindrical block',
-         'parms':
-                 {'mtag': {'pos': 1, 'type': 'String', 'doc': ''},
-                  'geom': {'pos': 2, 'type': 'String', 'doc': ''}}},
-
-        'ASPW':
-        {'desc': 'Azimuthally Symmetric Polynomial Wedge absorber region',
-         'doc': 'Edge shape given by '
-                'r(dz) = a0 + a1*dz + a2*dz^2 + a3*dz^3 in the 1st quadrant and '
-                'where dz is measured from the wedge center. '
-                '1 z position of wedge center in region [m] '
-                '2 z offset from wedge center to edge of absorber [m] '
-                '3 a0 [m] '
-                '4 a1 '
-                '5 a2 [m^(-1)] '
-                '6 a3 [m^(-2)]',
-         'parms':
-                 {'mtag': {'pos': 1, 'type': 'String', 'doc': ''},
-                  'geom': {'pos': 2, 'type': 'String', 'doc': ''},
-                  'zpos': {'pos': 3, 'type': 'Real', 'doc': ''},
-                  'zoff': {'pos': 4, 'type': 'Real', 'doc': ''},
-                  'a0': {'pos': 5, 'type': 'Real', 'doc': ''},
-                  'a1': {'pos': 6, 'type': 'Real', 'doc': ''},
-                  'a2': {'pos': 7, 'type': 'Real', 'doc': ''},
-                  'a3': {'pos': 8, 'type': 'Real', 'doc': ''}}},
-
-        'ASRW':
-        {'desc': 'Azimuthally Symmetric Polynomial Wedge absorber region',
-         'doc': 'Edge shape given by '
-                'r(dz) = a0 + a1*dz + a2*dz^2 + a3*dz^3 in the 1st quadrant and '
-                'where dz is measured from the wedge center. '
-                '1 z position of wedge center in region [m] '
-                '2 z offset from wedge center to edge of absorber [m] '
-                '3 a0 [m] '
-                '4 a1 '
-                '5 a2 [m^(-1)] '
-                '6 a3 [m^(-2)]',
-         'parms':
-                 {'mtag': {'pos': 1, 'type': 'String', 'doc': ''},
-                  'geom': {'pos': 2, 'type': 'String', 'doc': ''},
-                  'zpos': {'pos': 3, 'type': 'Real', 'doc': ''},
-                  'zoff': {'pos': 4, 'type': 'Real', 'doc': ''},
-                  'a0': {'pos': 5, 'type': 'Real', 'doc': ''},
-                  'a1': {'pos': 6, 'type': 'Real', 'doc': ''},
-                  'a2': {'pos': 7, 'type': 'Real', 'doc': ''},
-                  'a3': {'pos': 8, 'type': 'Real', 'doc': ''}}},
-
-
-        'HWIN':
-        {'desc': 'Hemispherical absorber end region',
-         'doc': '1 end flag {-1: entrance, +1: exit} '
-                '2 inner radius of window[m] '
-                '3 window thickness [m] '
-                '4 axial offset of center of spherical window from start of end region [m]',
-         'parms':
-                 {'mtag': {'pos': 1, 'type': 'String', 'doc': ''},
-                  'geom': {'pos': 2, 'type': 'String', 'doc': ''},
-                  'end_flag': {'pos': 3, 'type': 'Real', 'doc': 'End flag {-1: entrance, +1: exit}'},
-                  'in_rad': {'pos': 4, 'type': 'Real', 'doc': 'Inner radius of window'},
-                  'thick': {'pos': 5, 'type': 'Real', 'doc': 'Thickness of window'},
-                  'offset': {'pos': 6, 'type': 'Real', 'doc': 'Axial offset of center of spherical '
-                             'window from start of end region [m]'}}},
-
-        'NIA':
-        {'desc': 'Non-isosceles absorber',
-         'doc': '1 zV distance of wedge “center” from start of region [m] '
-                '2 z0 distance from center to left edge [m] '
-                '3 z1 distance from center to right edge [m] '
-                '4 θ0 polar angle from vertex of left edge [deg] '
-                '5 φ0 azimuthal angle of left face [deg] '
-                '6 θ1 polar angle from vertex of right edge [deg] '
-                '7 φ1 azimuthal angle of right face [deg]',
-         'parms':
-                 {'mtag': {'pos': 1, 'type': 'String', 'doc': ''},
-                  'geom': {'pos': 2, 'type': 'String', 'doc': ''},
-                  'zv': {'pos': 3, 'type': 'Real', 'doc': 'Distance of wedge “center” from start of region [m]'},
-                  'z0': {'pos': 4, 'type': 'Real', 'doc': 'Distance from center to left edge [m] '},
-                  'z1': {'pos': 5, 'type': 'Real', 'doc': 'Distance from center to right edge [m]}'},
-                  'θ0': {'pos': 6, 'type': 'Real', 'doc': 'Polar angle from vertex of left edge [deg]'},
-                  'φ0': {'pos': 7, 'type': 'Real', 'doc': 'Azimuthal angle of left face [deg]'},
-                  'θ1': {'pos': 8, 'type': 'Real', 'doc': 'Polar angle from vertex of right edge [deg] '},
-                  'φ1': {'pos': 9, 'type': 'Real', 'doc': 'Azimuthal angle of right face [deg]'}}},
-                             
-        'PWEDGE':
-        {'desc': 'Asymmetric polynomial wedge absorber region',
-         'doc': 'Imagine the wedge lying with its narrow end along the x axis. The wedge is symmetric about the '
-                'x-y plane. The edge shape is given by dz(x) = a0 + a1*x + a2*x^2 + a3*x^3 '
-                'where dz is measured from the x axis.',
-         'parms':
-                 {'mtag': {'pos': 1, 'type': 'String', 'doc': ''},
-                  'geom': {'pos': 2, 'type': 'String', 'doc': ''},
-                  'init_vertex': {'pos': 3, 'type': 'Real', 'doc': 'Initial position of the vertex along '
-                                  'the x axis [m]'},
-                  'z_wedge_vertex': {'pos': 4, 'type': 'Real', 'doc': 'z position of wedge vertex [m] '},
-                  'az': {'pos': 5, 'type': 'Real', 'doc': 'Azimuthal angle of vector pointing to vertex in plane '
-                         'of wedge w.r.t. +ve x-axis [deg]'},
-                  'width': {'pos': 6, 'type': 'Real', 'doc': 'Total width of wedge in dispersion direction [m]'},
-                  'height': {'pos': 7, 'type': 'Real', 'doc': 'Total height of wedge in non-dispersion direction [m]'},
-                  'a0': {'pos': 8, 'type': 'Real', 'doc': 'Polar angle from vertex of right edge [deg] '},
-                  'a1': {'pos': 9, 'type': 'Real', 'doc': 'Azimuthal angle of right face [deg]'},
-                  'a2': {'pos': 10, 'type': 'Real', 'doc': 'Polar angle from vertex of right edge [deg] '},
-                  'a3': {'pos': 11, 'type': 'Real', 'doc': 'Azimuthal angle of right face [deg]'}}},
-
-        'RING':
-        {'desc': 'Annular ring of material',
-         'doc': 'This is functionally equivalent to defining a region with two radial subregions, the first of '
-                 'which has vacuum as the material type. However, the boundary crossing algorithm used for RING is '
-                 'more sophisticated and should give more accurate simulations.',
-         'parms':
-                 {'mtag': {'pos': 1, 'type': 'String', 'doc': ''},
-                  'geom': {'pos': 2, 'type': 'String', 'doc': ''},
-                  'inner': {'pos': 3, 'type': 'Real', 'doc': 'Inner radius (R) [m]'},
-                  'outer': {'pos': 4, 'type': 'Real', 'doc': 'Outer radius (R) [m]'}}},
-
-        'WEDGE':
-        {'desc': 'Asymmetric wedge absorber region',
-         'doc': 'We begin with an isosceles triangle, sitting on its base, vertex at the top. '
-         'The base-to-vertex distance is W. The full opening angle at the vertex is A. Using '
-         'two of these triangles as sides, we construct a prism-shaped wedge. The distance from '
-         'one triangular side to the other is H. The shape and size of the wedge are now established. '
-         'We define the vertex line of the wedge to be the line connecting the vertices of its two '
-         'triangular sides.  Next, we place the wedge in the right-handed ICOOL coordinate system. '
-         'The beam travels in the +Z direction. Looking downstream along the beamline (+Z into the page), '
-         '+X is horizontal and to the left, and +Y is up.  Assume the initial position of the wedge is as '
-         'follows: The vertex line of the wedge is vertical and lies along the Y axis, extending from Y = -H/2 '
-         'to Y = +H/2. The wedge extends to the right in the direction of -X, such that it is symmetric about '
-         "the XY plane. (Note that it is also symmetric about the XZ plane.) From the beam's point of view, "
-         'particles passing on the +X side of the Y axis will not encounter the wedge, while particles passing '
-         'on the -X side of the Y axis see a rectangle of height H and width W, centered in the Y direction, with '
-         'Z thickness proportional to -X.  '
-         'By setting parameter U to a non-zero value, the user may specify that the wedge is to be '
-         'translated in the X direction. If U>0, the wedge is moved (without rotation) in the +X direction. '
-         'For example, if U = W/2, then the wedge is centered in the X direction; its vertex is at X = W/2 '
-         'and its base is at X = -W/2. Note that the wedge is still symmetric about both the XY plane and '
-         'the XZ plane. '
-         'Next, the wedge may be rotated about the Z axis by angle PHI. Looking downstream in the beam '
-         'direction, positive rotations are clockwise and negative rotations are counter-clockwise. For '
-         'example, setting PHI to 90 degrees rotates the wedge about the Z axis so that its vertex line is '
-         'parallel to the X axis and on top, while its base is parallel to the XZ plane and at the bottom. In '
-         'general this rotation breaks the symmetry about the XZ plane, but the symmetry about the XY '
-         'plane is maintained. '
-         'Finally, the wedge is translated in the Z direction by a distance Zv, so that its XY symmetry plane '
-         'lies a distance Zv downstream of the start of the region. Usually Zv should be at least large '
-         'enough so that the entire volume of the wedge lies within its region, i.e. Zv .ge. W tan (A/2), the '
-         'maximum Z half-thickness of the wedge. As well, the region usually should be long enough to '
-         'contain the entire volume of the wedge, i.e. RegionLength .ge. Zv + W tan (A/2). Wedges that do '
-         'lie completely within their region retain their symmetry about the XY plane Z=Zv.  '
-         'If portions of a wedge lie outside their region in Z, then the volume of the wedge lying outside '
-         'the region is ignored when propagating particles through the wedge. Such a wedge will grow in '
-         'thickness until it reaches the region boundary, but will not extend beyond it. In such cases, '
-         'wedges may lose their symmetry about the XY plane Z=Zv.'
-         'Wedges may be defined such that they extend outside the radial boundaries of the radial '
-         'subregion within which they are defined. However, any portion of the wedge volume lying inside the inner '
-         'radial boundary or outside the outer radial boundary is ignored when propagating particles through '
-         'the wedge. For example, if the user intends that an entire radial subregion of circular cross-section be '
-         'filled with a wedge, then it is clear that the corners of the wedge must extend outside the radial region, '
-         "but particles passing outside the wedge's radial subregion will not see the wedge at all.  "
-         'In short, we may say that although it is permitted (and sometimes essential) to define a wedge to '
-         'be larger than its subregion, for the purposes of particle propagation the wedge is always trimmed at the '
-         "region's Z boundaries and the subregion's radial boundaries. Any volume within the region and subregion "
-         'that is not occupied by the material specified for the wedge is assumed to be vacuum.'
-         '------------------------------------------------------------------------------------------------------------'
-         'Example 1: Within a region 0.4 meters long in Z, within a radial subregion extending from the Z axis out '
-         'to a radius of 0.3 meters, a wedge is to fill the X<0 (right) half of the 0.3 meter aperture of the '
-         'subregion, and increase in Z thickness proportional to -X, such that it is 0.2 meters thick at the '
-         'rightmost point in the subregion (X=-0.3, Y=0).  The wedge is to be 0.2 meters thick at a point 0.3 '
-         'meters from its vertex. The half-thickness is 0.1 meters, the half-opening angle is '
-         'atan (0.1/0.3) = 18.4 degrees, so the full opening angle of the wedge A is 36.8 degrees. The width '
-         '(X extent) of the wedge must be 0.3 meters, and the height (Y extent) of the wedge must be 0.6 meters. '
-         'Two corners of the wedge extend well beyond the subregion, but they will be ignored during particle '
-         'propagation. The wedge does not need to be translated in X (U = 0) nor does it need to be rotated '
-         'about the Z axis (PHI = 0). For convenience we center the wedge (in Z) within its region, '
-         'so Zv = 0.2 meters. Since the maximum half-thickness of the wedge is only 0.1 meters, the wedge '
-         'does not extend beyond (or even up to) the Z boundaries of the region. The volume within the region '
-         'and subregion but outside the wedge is assumed to be vacuum.'
-         '------------------------------------------------------------------------------------------------------------'
-         'Example 2: In the same region and subregion, we need a wedge with the same opening angle, '
-         'but filling the entire aperture of the subregion, thickness gradient in the +Y direction, thickness = '
-         '0 at the lowest point in the subregion (X=0, Y=-0.3).'
-         'The wedge must now have H = W = 0.6 meters so it can fill the entire aperture of the subregion.'
-         'From its initial position, it must first be translated 0.3 meters in the +X direction (U = 0.3) to '
-         "center it in the subregion's aperture, and then (from the perspective of someone looking "
-         'downstream along the beam) rotated counterclockwise 90 degrees (PHI = -90.) so that the Z '
-         'thickness increases proportionally to +Y. Since the wedge has the same opening angle as before '
-         'but has twice the width, its maximum Z thickness is now 0.4 meters, just barely fitting between '
-         'the Z boundaries of the region if Zv = 0.2 meters. All four corners of the wedge now extend '
-         "outside the radial subregion's outer boundary, but they will be ignored during particle "
-         'propagation.” {S.B.}'
-         'The wedge geometry can accept a second MTAG parameter in the SREGION construct. The first material '
-         'refers to the interior of the wedge. The second material, if present, refers to the exterior of the wedge. '
-         'If a second MTAG parameter is not present, vacuum is assumed.',
-         
-         'parms':
-                 {'mtag': {'pos': 1, 'type': 'String', 'doc': ''},
-                  'geom': {'pos': 2, 'type': 'String', 'doc': ''},
-                  'vert_ang': {'pos': 3, 'type': 'Real', 'doc': 'Full angle at vertex, α (or A) [degrees]'
-                                  'the x axis [m]'},
-                  'vert_init': {'pos': 4, 'type': 'Real', 'doc': 'Initial position of the vertex along '
-                                'the x axis, U [m]'},
-                  'vert_z': {'pos': 5, 'type': 'Real', 'doc': 'Z position of wedge vertex, Zv [m]'},
-                  'vert_az': {'pos': 6, 'type': 'Real', 'doc': 'azimuthal angle φ of vector pointing to vertex '
-                              'in plane of wedge w.r.t. +ve x-axis [deg]'},
-                  'width': {'pos': 7, 'type': 'Real', 'doc': 'Total width of wedge in dispersion direction, w [m]'},
-                  'height': {'pos': 8, 'type': 'Real', 'doc': 'Total height of wedge in non-dispersion direction, '
-                             'h [m]'}}}
-}
-
+        'model_descriptor': {
+            'desc': 'Geometry',
+            'name': 'geom',
+            'num_parms': 12,
+            'for001_format': {
+                'line_splits': [1, 1, 10]}},
+        'VAC': {
+            'desc': 'Vacuum',
+            'doc': 'Vacuum region.  Specify vacuum for mtag.  Geom will be set to NONE.',
+            'parms': {
+                'mtag': {
+                           'pos': 1, 'type': 'String', 'doc': ''}}},
+        'CBLOCK': {
+            'desc': 'Cylindrical block',
+            'doc': 'Cylindrical block',
+            'parms': {
+                'mtag': {
+                    'pos': 1, 'type': 'String', 'doc': ''},
+                'geom': {
+                    'pos': 2, 'type': 'String', 'doc': ''}}},
+        'ASPW': {
+            'desc': 'Azimuthally Symmetric Polynomial Wedge absorber region', 'doc': 'Edge shape given by '
+                    'r(dz) = a0 + a1*dz + a2*dz^2 + a3*dz^3 in the 1st quadrant and '
+                    'where dz is measured from the wedge center. '
+                    '1 z position of wedge center in region [m] '
+                    '2 z offset from wedge center to edge of absorber [m] '
+                    '3 a0 [m] '
+                    '4 a1 '
+                    '5 a2 [m^(-1)] '
+                    '6 a3 [m^(-2)]',
+            'parms': {
+                'mtag': {
+                    'pos': 1, 'type': 'String', 'doc': ''},
+                'geom': {
+                    'pos': 2, 'type': 'String', 'doc': ''},
+                'zpos': {
+                    'pos': 3, 'type': 'Real', 'doc': ''},
+                'zoff': {
+                    'pos': 4, 'type': 'Real', 'doc': ''},
+                'a0': {
+                    'pos': 5, 'type': 'Real', 'doc': ''},
+                'a1': {
+                    'pos': 6, 'type': 'Real', 'doc': ''},
+                'a2': {
+                    'pos': 7, 'type': 'Real', 'doc': ''},
+                'a3': {
+                    'pos': 8, 'type': 'Real', 'doc': ''}}},
+        'ASRW': {
+            'desc': 'Azimuthally Symmetric Polynomial Wedge absorber region',
+            'doc':  'Edge shape given by '
+                    'r(dz) = a0 + a1*dz + a2*dz^2 + a3*dz^3 in the 1st quadrant and '
+                    'where dz is measured from the wedge center. '
+                    '1 z position of wedge center in region [m] '
+                    '2 z offset from wedge center to edge of absorber [m] '
+                    '3 a0 [m] '
+                    '4 a1 '
+                    '5 a2 [m^(-1)] '
+                    '6 a3 [m^(-2)]',
+            'parms': {
+                'mtag': {
+                    'pos': 1, 'type': 'String', 'doc': ''},
+                'geom': {
+                    'pos': 2, 'type': 'String', 'doc': ''},
+                'zpos': {
+                    'pos': 3, 'type': 'Real', 'doc': ''},
+                'zoff': {
+                    'pos': 4, 'type': 'Real', 'doc': ''},
+                'a0': {
+                    'pos': 5, 'type': 'Real', 'doc': ''},
+                'a1': {
+                    'pos': 6, 'type': 'Real', 'doc': ''},
+                'a2': {
+                    'pos': 7, 'type': 'Real', 'doc': ''},
+                'a3': {
+                    'pos': 8, 'type': 'Real', 'doc': ''}}},
+        'HWIN': {
+            'desc': 'Hemispherical absorber end region',
+            'doc': '1 end flag {-1: entrance, +1: exit} '
+                   '2 inner radius of window[m] '
+                   '3 window thickness [m] '
+                   '4 axial offset of center of spherical window from start of end region [m]',
+            'parms': {
+                'mtag': {
+                    'pos': 1, 'type': 'String', 'doc': ''},
+                'geom': {
+                    'pos': 2, 'type': 'String', 'doc': ''},
+                'end_flag': {
+                    'pos': 3, 'type': 'Real', 'doc': '1 end flag {-1: entrance, +1: exit} '},
+                'in_rad': {
+                    'pos': 4, 'type': 'Real', 'doc': 'Inner radius of window'},
+                'thick': {
+                    'pos': 5, 'type': 'Real', 'doc': 'Thickness of window'},
+                'offset': {
+                    'pos': 6, 'type': 'Real', 'doc': 'Axial offset of center of spherical '
+                                                     'window from start of end region [m]'}}},
+        'NIA': {
+            'desc': 'Non-isosceles absorber',
+            'doc': '1 zV distance of wedge “center” from start of region [m] '
+                   '2 z0 distance from center to left edge [m] '
+                   '3 z1 distance from center to right edge [m] '
+                   '4 θ0 polar angle from vertex of left edge [deg] '
+                   '5 φ0 azimuthal angle of left face [deg] '
+                   '6 θ1 polar angle from vertex of right edge [deg] '
+                   '7 φ1 azimuthal angle of right face [deg]',
+            'parms': {
+                'mtag': {
+                    'pos': 1, 'type': 'String', 'doc': ''},
+                'geom': {
+                    'pos': 2, 'type': 'String', 'doc': ''},
+                'zv': {
+                    'pos': 3, 'type': 'Real', 'doc': 'Distance of wedge “center” from start of region [m]'},
+                'z0': {
+                    'pos': 4, 'type': 'Real', 'doc': 'Distance from center to left edge [m] '},
+                'z1': {
+                    'pos': 5, 'type': 'Real', 'doc': 'Distance from center to right edge [m]}'},
+                'θ0': {
+                    'pos': 6, 'type': 'Real', 'doc': 'Polar angle from vertex of left edge [deg]'},
+                'φ0': {
+                    'pos': 7, 'type': 'Real', 'doc': 'Azimuthal angle of left face [deg]'},
+                'θ1': {
+                    'pos': 8, 'type': 'Real', 'doc': 'Polar angle from vertex of right edge [deg] '},
+                'φ1': {
+                    'pos': 9, 'type': 'Real', 'doc': 'Azimuthal angle of right face [deg]'}}},
+        'PWEDGE': {
+            'desc': 'Asymmetric polynomial wedge absorber region',
+            'doc': 'Imagine the wedge lying with its narrow end along the x axis. The wedge is symmetric about the '
+                   'x-y plane. The edge shape is given by dz(x) = a0 + a1*x + a2*x^2 + a3*x^3 '
+                   'where dz is measured from the x axis.',
+            'parms': {
+                'mtag': {
+                    'pos': 1, 'type': 'String', 'doc': ''},
+                'geom': {
+                    'pos': 2, 'type': 'String', 'doc': ''},
+                'init_vertex': {
+                    'pos': 3, 'type': 'Real', 'doc': 'Initial position of the vertex along the x axis [m]'},
+                'z_wedge_vertex': {
+                    'pos': 4, 'type': 'Real', 'doc': 'z position of wedge vertex [m] '},
+                'az': {
+                    'pos': 5, 'type': 'Real', 'doc': 'Azimuthal angle of vector pointing to vertex in plane of wedge w.r.t. +ve x-axis [deg]'},
+                'width': {
+                    'pos': 6, 'type': 'Real', 'doc': 'Total width of wedge in dispersion direction [m]'},
+                'height': {
+                    'pos': 7, 'type': 'Real', 'doc': 'Total height of wedge in non-dispersion direction [m]'},
+                'a0': {
+                    'pos': 8, 'type': 'Real', 'doc': 'Polar angle from vertex of right edge [deg] '},
+                'a1': {
+                    'pos': 9, 'type': 'Real', 'doc': 'Azimuthal angle of right face [deg]'},
+                'a2': {
+                    'pos': 10, 'type': 'Real', 'doc': 'Polar angle from vertex of right edge [deg] '},
+                'a3': {
+                    'pos': 11, 'type': 'Real', 'doc': 'Azimuthal angle of right face [deg]'}}},
+        'RING': {
+            'desc': 'Annular ring of material',
+            'doc': 'This is functionally equivalent to defining a region with two radial subregions, the first of '
+                   'which has vacuum as the material type. However, the boundary crossing algorithm used for RING is '
+                   'more sophisticated and should give more accurate simulations.',
+            'parms': {
+                'mtag': {
+                    'pos': 1, 'type': 'String', 'doc': ''},
+                'geom': {
+                    'pos': 2, 'type': 'String', 'doc': ''},
+                'inner': {
+                    'pos': 3, 'type': 'Real', 'doc': 'Inner radius (R) [m]'},
+                'outer': {
+                    'pos': 4, 'type': 'Real', 'doc': 'Outer radius (R) [m]'}}},
+        'WEDGE': {
+            'desc': 'Asymmetric wedge absorber region',
+            'doc': 'We begin with an isosceles triangle, sitting on its base, vertex at the top. '
+                   'The base-to-vertex distance is W. The full opening angle at the vertex is A. Using '
+                   'two of these triangles as sides, we construct a prism-shaped wedge. The distance from '
+                   'one triangular side to the other is H. The shape and size of the wedge are now established. '
+                   'We define the vertex line of the wedge to be the line connecting the vertices of its two '
+                   'triangular sides.  Next, we place the wedge in the right-handed ICOOL coordinate system. '
+                   'The beam travels in the +Z direction. Looking downstream along the beamline (+Z into the page), '
+                   '+X is horizontal and to the left, and +Y is up.  Assume the initial position of the wedge is as '
+                   'follows: The vertex line of the wedge is vertical and lies along the Y axis, extending from Y = -H/2 '
+                   'to Y = +H/2. The wedge extends to the right in the direction of -X, such that it is symmetric about '
+                   "the XY plane. (Note that it is also symmetric about the XZ plane.) From the beam's point of view, "
+                   'particles passing on the +X side of the Y axis will not encounter the wedge, while particles passing '
+                   'on the -X side of the Y axis see a rectangle of height H and width W, centered in the Y direction, with '
+                   'Z thickness proportional to -X.  '
+                   'By setting parameter U to a non-zero value, the user may specify that the wedge is to be '
+                   'translated in the X direction. If U>0, the wedge is moved (without rotation) in the +X direction. '
+                   'For example, if U = W/2, then the wedge is centered in the X direction; its vertex is at X = W/2 '
+                   'and its base is at X = -W/2. Note that the wedge is still symmetric about both the XY plane and '
+                   'the XZ plane. '
+                   'Next, the wedge may be rotated about the Z axis by angle PHI. Looking downstream in the beam '
+                   'direction, positive rotations are clockwise and negative rotations are counter-clockwise. For '
+                   'example, setting PHI to 90 degrees rotates the wedge about the Z axis so that its vertex line is '
+                   'parallel to the X axis and on top, while its base is parallel to the XZ plane and at the bottom. In '
+                   'general this rotation breaks the symmetry about the XZ plane, but the symmetry about the XY '
+                   'plane is maintained. '
+                   'Finally, the wedge is translated in the Z direction by a distance Zv, so that its XY symmetry plane '
+                   'lies a distance Zv downstream of the start of the region. Usually Zv should be at least large '
+                   'enough so that the entire volume of the wedge lies within its region, i.e. Zv .ge. W tan (A/2), the '
+                   'maximum Z half-thickness of the wedge. As well, the region usually should be long enough to '
+                   'contain the entire volume of the wedge, i.e. RegionLength .ge. Zv + W tan (A/2). Wedges that do '
+                   'lie completely within their region retain their symmetry about the XY plane Z=Zv.  '
+                   'If portions of a wedge lie outside their region in Z, then the volume of the wedge lying outside '
+                   'the region is ignored when propagating particles through the wedge. Such a wedge will grow in '
+                   'thickness until it reaches the region boundary, but will not extend beyond it. In such cases, '
+                   'wedges may lose their symmetry about the XY plane Z=Zv.'
+                   'Wedges may be defined such that they extend outside the radial boundaries of the radial '
+                   'subregion within which they are defined. However, any portion of the wedge volume lying inside the inner '
+                   'radial boundary or outside the outer radial boundary is ignored when propagating particles through '
+                   'the wedge. For example, if the user intends that an entire radial subregion of circular cross-section be '
+                   'filled with a wedge, then it is clear that the corners of the wedge must extend outside the radial region, '
+                   "but particles passing outside the wedge's radial subregion will not see the wedge at all.  "
+                   'In short, we may say that although it is permitted (and sometimes essential) to define a wedge to '
+                   'be larger than its subregion, for the purposes of particle propagation the wedge is always trimmed at the '
+                   "region's Z boundaries and the subregion's radial boundaries. Any volume within the region and subregion "
+                   'that is not occupied by the material specified for the wedge is assumed to be vacuum.'
+                   '------------------------------------------------------------------------------------------------------------'
+                   'Example 1: Within a region 0.4 meters long in Z, within a radial subregion extending from the Z axis out '
+                   'to a radius of 0.3 meters, a wedge is to fill the X<0 (right) half of the 0.3 meter aperture of the '
+                   'subregion, and increase in Z thickness proportional to -X, such that it is 0.2 meters thick at the '
+                   'rightmost point in the subregion (X=-0.3, Y=0).  The wedge is to be 0.2 meters thick at a point 0.3 '
+                   'meters from its vertex. The half-thickness is 0.1 meters, the half-opening angle is '
+                   'atan (0.1/0.3) = 18.4 degrees, so the full opening angle of the wedge A is 36.8 degrees. The width '
+                   '(X extent) of the wedge must be 0.3 meters, and the height (Y extent) of the wedge must be 0.6 meters. '
+                   'Two corners of the wedge extend well beyond the subregion, but they will be ignored during particle '
+                   'propagation. The wedge does not need to be translated in X (U = 0) nor does it need to be rotated '
+                   'about the Z axis (PHI = 0). For convenience we center the wedge (in Z) within its region, '
+                   'so Zv = 0.2 meters. Since the maximum half-thickness of the wedge is only 0.1 meters, the wedge '
+                   'does not extend beyond (or even up to) the Z boundaries of the region. The volume within the region '
+                   'and subregion but outside the wedge is assumed to be vacuum.'
+                   '------------------------------------------------------------------------------------------------------------'
+                   'Example 2: In the same region and subregion, we need a wedge with the same opening angle, '
+                   'but filling the entire aperture of the subregion, thickness gradient in the +Y direction, thickness = '
+                   '0 at the lowest point in the subregion (X=0, Y=-0.3).'
+                   'The wedge must now have H = W = 0.6 meters so it can fill the entire aperture of the subregion.'
+                   'From its initial position, it must first be translated 0.3 meters in the +X direction (U = 0.3) to '
+                   "center it in the subregion's aperture, and then (from the perspective of someone looking "
+                   'downstream along the beam) rotated counterclockwise 90 degrees (PHI = -90.) so that the Z '
+                   'thickness increases proportionally to +Y. Since the wedge has the same opening angle as before '
+                   'but has twice the width, its maximum Z thickness is now 0.4 meters, just barely fitting between '
+                   'the Z boundaries of the region if Zv = 0.2 meters. All four corners of the wedge now extend '
+                   "outside the radial subregion's outer boundary, but they will be ignored during particle "
+                   'propagation.” {S.B.}'
+                   'The wedge geometry can accept a second MTAG parameter in the SREGION construct. The first material '
+                   'refers to the interior of the wedge. The second material, if present, refers to the exterior of the wedge. '
+                   'If a second MTAG parameter is not present, vacuum is assumed.',
+            'parms': {
+                'mtag': {
+                    'pos': 1, 'type': 'String', 'doc': ''},
+                'geom': {
+                    'pos': 2, 'type': 'String', 'doc': ''},
+                'vert_ang': {
+                    'pos': 3, 'type': 'Real', 'doc': 'Full angle at vertex, α (or A) [degrees]the x axis [m]'},
+                'vert_init': {
+                    'pos': 4, 'type': 'Real', 'doc': 'Initial position of the vertex along the x axis, U [m]'},
+                'vert_z': {
+                    'pos': 5, 'type': 'Real', 'doc': 'Z position of wedge vertex, Zv [m]'},
+                'vert_az': {
+                    'pos': 6, 'type': 'Real', 'doc': 'azimuthal angle φ of vector pointing to vertex in plane of wedge w.r.t. +ve x-axis [deg]'},
+                'width': {
+                    'pos': 7, 'type': 'Real', 'doc': 'Total width of wedge in dispersion direction, w [m]'},
+                'height': {
+                    'pos': 8, 'type': 'Real', 'doc': 'Total height of wedge in non-dispersion direction, h [m]'}}}}
 
     def __init__(self, **kwargs):
         ModeledCommandParameter.__init__(self, kwargs)
@@ -2622,7 +2833,7 @@ class Material(ModeledCommandParameter):
         self.mparm = [0] * 12
         cur_model = self.get_model_dict(self.geom)
         for key in cur_model:
-            pos = int(cur_model[key]['pos'])-1
+            pos = int(cur_model[key]['pos']) - 1
             val = getattr(self, key)
             self.mparm[pos] = val
         print self.mparm
@@ -2639,16 +2850,17 @@ class Material(ModeledCommandParameter):
 
 
 class NoField(Field):
+
     """No Field"""
     begtag = 'NONE'
     endtag = ''
 
     models = {
-                'model_descriptor': {'desc': 'Name of model parameter descriptor',
-                    'name': None,
-                    'num_parms': 15,
-                    'for001_format': {'line_splits': [15]}},
-                }
+        'model_descriptor': {'desc': 'Name of model parameter descriptor',
+                                     'name': None,
+                                     'num_parms': 15,
+                                     'for001_format': {'line_splits': [15]}},
+    }
 
     def __init__(self, **kwargs):
         Field.__init__(self, 'NONE', kwargs)
@@ -2661,12 +2873,13 @@ class NoField(Field):
             if value == 'NONE':
                 object.__setattr__(self, name, value)
             else:
-                print '\n Illegal attempt to set incorrect ftag.\n'  # Should raise exception here
+                # Should raise exception here
+                print '\n Illegal attempt to set incorrect ftag.\n'
         else:
             Field.__setattr__(self, name, value)
 
     def __str__(self):
-        #return Field.__str__(self)
+        # return Field.__str__(self)
         return 'NONE'
 
     def gen_fparm(self):
@@ -2674,6 +2887,7 @@ class NoField(Field):
 
 
 class Accel(Field):
+
     """ACCE(L) linear accelerator fields
     1 Model
     1: EZ only with no transverse variation
@@ -2749,7 +2963,8 @@ class Accel(Field):
     12 axial symmetry through center of cavity
     0: symmetric
     1: not symmetric
-    The contents of the user-supplied file FOR0##.DAT has the same format as the Parmela output of
+    ##.DAT has the same format as the Parmela output of
+    The contents of the user-supplied file FOR0
     the SuperFish postprocessor SF07.
     1.1 zmin Start of axial grid [cm]
     1.2 zmax End of axial grid [cm]
@@ -2786,9 +3001,12 @@ class Accel(Field):
     dependent, but does not depend on z or r. The radial electric field and azimuthal
     magnetic fields are assumed to be negligible. When the time reset parameter is 1,
     the start time for the voltage pulse is determined from the time the reference particle
-    entered the cell. The user can adjust this time using parameter #2 above. Subsequent cells
-    should use parameter #4 set to 0 to sample later portions of the same voltage pulse.
-    A new pulse shape can be started at any time by setting parameter #4 back to 1.
+    #2 above. Subsequent cells
+    entered the cell. The user can adjust this time using parameter
+    #4 set to 0 to sample later portions of the same voltage pulse.
+    should use parameter
+    #4 back to 1.
+    A new pulse shape can be started at any time by setting parameter
 
     For model = 7
     2 number of gaps
@@ -2800,7 +3018,9 @@ class Accel(Field):
     8 parameter to adjust slope at end of voltage pulse
     9 number of bins in voltage pulse
     10 gap length [m]
-    11 file # of output diagnostic file {20-99} (Set this <20 for no diagnostic output.)
+    # of output diagnostic file {20-99} (Set this <20 for no diagnostic
+    # output.)
+    11 file
     12 kill particle flag (Set=1 to eliminate non-useful particles)
     13 restart flag (Set =1 to restart calculation)
     This model, based on a routine by Charles Kim, uses the local E-t phase space to create a voltage
@@ -2831,8 +3051,11 @@ class Accel(Field):
     the voltage profile into an electric field. The field is applied everywhere in the region.
     When the time reset parameter is 1, the start time for the voltage pulse is determined
     from the time the reference particle entered the cell. The user can adjust this time using
-    parameter #2 above. Subsequent cells can use parameter #4 set to 0 to sample later portions of
-    the same voltage pulse. A new pulse shape can be started at any time by setting parameter #4
+    # 2 above. Subsequent cells can use parameter #4 set to 0 to sample later
+    # portions of
+    parameter
+    #4
+    the same voltage pulse. A new pulse shape can be started at any time by setting parameter
     back to 1.
     The contents of the waveform input file FOR0##.DAT is
     1) number of points N {1-100}
@@ -2869,10 +3092,12 @@ class Accel(Field):
     defined and phasemodel=2,3,4. The cavity frequency is set using the number of wavelengths
     (parameter 5) and the time difference between the two reference particles. When the reset
     parameter is 1, the starting location of the buncher is determined from the current position
-    of the reference particle. Subsequent ACCEL commands should use parameter #6 set to 0 to
+    #6 set to 0 to
+    of the reference particle. Subsequent ACCEL commands should use parameter
     sample later portions of the gradient waveform, which is given by
     G = g0 + g1*(z/L) + g2*(z/L)^2
-    A new pulse shape can be started at any time by setting parameter #6 back to 1.
+    #6 back to 1.
+    A new pulse shape can be started at any time by setting parameter
 
     For model = 11
     2 frequency f [MHz]
@@ -2884,7 +3109,8 @@ class Accel(Field):
     7 cavity type
     0: pillbox
     1: SuperFish
-    8 file ## of azimuthally symmetric SuperFish RF input file (see model 5) {20-99}
+    ## of azimuthally symmetric SuperFish RF input file (see model 5) {20-99}
+    8 file
     9 SuperFish field normalization [MV/m] This multiplies the value in the SuperFish file.
     10 SuperFish radial cut off [m]
     11 axial displacement of center of SuperFish cavity from start of the region [m]
@@ -2915,190 +3141,290 @@ class Accel(Field):
     endtag = ''
 
     models = {
-
-        'model_descriptor': {'desc': 'Name of model parameter descriptor',
-                             'name': 'model',
-                             'num_parms': 15,
-                             'for001_format': {'line_splits': [15]}},
-
-        'ez': {'desc': 'Ez only with no transverse variation',
-               'doc': '',
-               'icool_model_name': 1,
-               'parms':
-                       {'model': {'pos': 1, 'type': 'String', 'doc': ''},
-                        'freq': {'pos': 2, 'type': 'Real', 'doc': 'Frequency [MHz]'},
-                        'grad': {'pos': 3, 'type': 'Real', 'doc': 'Gradient on-axis at center of gap [MV/m]'},
-                        'phase': {'pos': 4, 'type': 'Real', 'doc': 'Phase shift [deg] {0-360}.'},
-                        'rect_cyn': {'pos': 5, 'type': 'Real', 'doc': 'Parameter to approximate a rectangular cavity '
-                                     'in cylindrical geometry; if set to radius of curvature ρ, then EZ is scaled by '
-                                     '1-x/ ρ, where x is the horizontal distance from the reference circle.'},
-                        'mode': {'pos': 8, 'type': 'Int', 'doc': '0 : Time-independent 1: sinusoidal time '
-                                 'variation'}}},
-
-        'cyn_pill': {'desc': 'Cylindrical TM01p pillbox',
-                     'doc': '',
-                     'icool_model_name': 2,
-                     'parms':
-                             {'model': {'pos': 1, 'type': 'String', 'doc': ''},
-                              'freq': {'pos': 2, 'type': 'Real', 'doc': ''},
-                              'grad': {'pos': 3, 'type': 'Real', 'doc': ''},
-                              'phase': {'pos': 4, 'type': 'Real', 'doc': ''},
-                              'rect_cyn': {'pos': 5, 'type': 'Real', 'doc': ''},
-                              'longitudinal_mode': {'pos': 8, 'type': 'Real', 'doc': ''}}},
-
-        'trav': {'desc': 'Traveling wave cavity',
-                 'doc': '',
-                 'icool_model_name': 3,
-                 'parms':
-                         {'model': {'pos': 1, 'type': 'String', 'doc': ''},
-                          'freq': {'pos': 2, 'type': 'Real', 'doc': ''},
-                          'grad': {'pos': 3, 'type': 'Real', 'doc': ''},
-                          'phase': {'pos': 4, 'type': 'Real', 'doc': ''},
-                          'rect_cyn': {'pos': 5, 'type': 'Real', 'doc': ''},
-                          'x_offset': {'pos': 6, 'type': 'Real', 'doc': ''},
-                          'y_offset': {'pos': 7, 'type': 'Real', 'doc': ''},
-                          'phase_velocity': {'pos': 8, 'type': 'Real', 'doc': ''}}},
-
-        'circ_nose': {'desc': 'Approximate fields for symmetric circular-nosed cavity',
-                      'doc': '',
-                      'icool_model_name': 4,
-                      'parms':
-                              {'model': {'pos': 1, 'type': 'String', 'doc': ''},
-                               'freq': {'pos': 2, 'type': 'Real', 'doc': ''},
-                               'grad': {'pos': 3, 'type': 'Real', 'doc': ''},
-                               'phase': {'pos': 4, 'type': 'Real', 'doc': ''},
-                               'length': {'pos': 8, 'type': 'Real', 'doc': ''},
-                               'gap': {'pos': 9, 'type': 'Real', 'doc': ''},
-                               'drift_tube_radius': {'pos': 10, 'type': 'Real', 'doc': ''},
-                               'nose_radius': {'pos': 11, 'type': 'Real', 'doc': ''}}},
-
-        'az_tm': {'desc': 'User-supplied azimuthally-symmetric TM mode (SuperFish)',
-                  'doc': '',
-                  'icool_model_name': 5,
-                  'parms':
-                          {'model': {'pos': 1, 'type': 'String', 'doc': ''},
-                           'freq': {'pos': 2,  'type': 'Real', 'doc': ''},
-                           'phase': {'pos': 4, 'type': 'Real', 'doc': ''},
-                           'file_no': {'pos': 8, 'type': 'Real', 'doc': ''},
-                           'field_strength_norm': {'pos': 9, 'type': 'Real', 'doc': ''},
-                           'rad_cut': {'pos': 10, 'type': 'Real', 'doc': ''},
-                           'axial_dist': {'pos': 11, 'type': 'Real', 'doc': ''},
-                           'daxial_sym': {'pos': 12, 'type': 'Real', 'doc': ''}}},
-
-        'ilpoly': {'desc': 'Induction linac model - waveform from user-supplied polynomial coefficients',
-                   'doc': '',
-                   'icool_model_name': 6,
-                   'parms':
-                          {'model': {'pos': 1, 'type': 'String', 'doc': ''},
-                           'time_offset': {'pos': 2,  'type': 'Real', 'doc': ''},
-                           'gap': {'pos': 3, 'type': 'Real', 'doc': ''},
-                           'time_reset': {'pos': 4, 'type': 'Real', 'doc': ''},
-                           'v0': {'pos': 5, 'type': 'Real', 'doc': ''},
-                           'v1': {'pos': 6, 'type': 'Real', 'doc': ''},
-                           'v2': {'pos': 7, 'type': 'Real', 'doc': ''},
-                           'v3': {'pos': 8, 'type': 'Real', 'doc': ''},
-                           'v4': {'pos': 9, 'type': 'Real', 'doc': ''},
-                           'v5': {'pos': 10, 'type': 'Real', 'doc': ''},
-                           'v6': {'pos': 11, 'type': 'Real', 'doc': ''},
-                           'v7': {'pos': 12, 'type': 'Real', 'doc': ''},
-                           'v8': {'pos': 13, 'type': 'Real', 'doc': ''}}},
-
-        'ilgen': {'desc': 'Induction linac model - waveform from internally generated waveform',
-                  'doc': '',
-                  'icool_model_name': 7,
-                  'parms':
-                          {'model': {'pos': 1, 'type': 'String', 'doc': ''},
-                           'num_gaps': {'pos': 2,  'type': 'Real', 'doc': ''},
-                           'start_volt': {'pos': 3, 'type': 'Real', 'doc': ''},
-                           'volt_swing': {'pos': 4, 'type': 'Real', 'doc': ''},
-                           'time_offset': {'pos': 5, 'type': 'Real', 'doc': ''},
-                           'kin': {'pos': 6, 'type': 'Real', 'doc': ''},
-                           'pulse_dur': {'pos': 7, 'type': 'Real', 'doc': ''},
-                           'slope': {'pos': 8, 'type': 'Real', 'doc': ''},
-                           'bins': {'pos': 9, 'type': 'Real', 'doc': ''},
-                           'gap_len': {'pos': 10, 'type': 'Real', 'doc': ''},
-                           'file_num': {'pos': 11, 'type': 'Real', 'doc': ''},
-                           'kill': {'pos': 12, 'type': 'Real', 'doc': ''},
-                           'restart': {'pos': 13, 'type': 'Real', 'doc': ''}}},
-
-        'ilfile': {'desc': 'Induction linac model - Waveform from user-supplied file',
-                   'doc': '',
-                   'icool_model_name': 8,
-                   'parms':
-                          {'model': {'pos': 1, 'type': 'String', 'doc': ''},
-                           'time_offset': {'pos': 2,  'type': 'Real', 'doc': ''},
-                           'gap': {'pos': 3, 'type': 'Real', 'doc': ''},
-                           'time_reset': {'pos': 4, 'type': 'Real', 'doc': ''},
-                           'file_num_wav': {'pos': 5, 'type': 'Real', 'doc': ''},
-                           'poly_order': {'pos': 6, 'type': 'Real', 'doc': ''},
-                           'file_num_out': {'pos': 7, 'type': 'Real', 'doc': ''},
-                           'time_inc': {'pos': 8, 'type': 'Real', 'doc': ''}}},
-
-
-        'sec_pill_circ': {'desc': 'Sector-shaped pillbox cavity (circular cross section)',
-                          'doc': '',
-                          'icool_model_name': 9,
-                          'parms':
-                                  {'model': {'pos': 1, 'type': 'String', 'doc': ''},
-                                   'freq': {'pos': 2,  'type': 'Real', 'doc': ''},
-                                   'grad': {'pos': 3, 'type': 'Real', 'doc': ''},
-                                   'phase': {'pos': 4, 'type': 'Real', 'doc': ''}}},
-
-        'var_pill': {'desc': 'Variable {frequency gradient} pillbox cavity',
-                     'doc': '',
-                     'icool_model_name': 10,
-                     'parms':
-                            {'model': {'pos': 1, 'type': 'String', 'doc': ''},
-                             'phase': {'pos': 2,  'type': 'Real', 'doc': ''},
-                             'num_wavelengths': {'pos': 3, 'type': 'Real', 'doc': ''},
-                             'reset_parms': {'pos': 4, 'type': 'Real', 'doc': ''},
-                             'buncher_len': {'pos': 5, 'type': 'Real', 'doc': ''},
-                             'g0': {'pos': 6, 'type': 'Real', 'doc': ''},
-                             'g1': {'pos': 7, 'type': 'Real', 'doc': ''},
-                             'g2': {'pos': 8, 'type': 'Real', 'doc': ''},
-                             'phase_model': {'pos': 9, 'type': 'Real', 'doc': ''}}},
-
-        'straight_pill': {'desc': 'Straight pillbox or SuperFish cavity in dipole region',
-                          'doc': '',
-                          'icool_model_name': 11,
-                          'parms':
-                                  {'model': {'pos': 1, 'type': 'String', 'doc': ''},
-                                   'freq': {'pos': 2,  'type': 'Real', 'doc': ''},
-                                   'grad': {'pos': 3, 'type': 'Real', 'doc': ''},
-                                   'phase': {'pos': 4, 'type': 'Real', 'doc': ''},
-                                   'radial_offset': {'pos': 5, 'type': 'Real', 'doc': ''},
-                                   'axial_length': {'pos': 6, 'type': 'Real', 'doc': ''},
-                                   'cavity_type': {'pos': 7, 'type': 'Real', 'doc': ''},
-                                   'file_num': {'pos': 8, 'type': 'Real', 'doc': ''},
-                                   'sf_field_norm': {'pos': 9, 'type': 'Real', 'doc': ''},
-                                   'sf_rad_cut': {'pos': 10, 'type': 'Real', 'doc': ''},
-                                   'sf_axial_disp': {'pos': 11, 'type': 'Real', 'doc': ''},
-                                   'sf_axial_sym': {'pos': 12, 'type': 'Real', 'doc': ''}}},
-
-        'sec_pill_rec': {'desc': 'Variable {frequency gradient} pillbox cavity',
-                         'doc': '',
-                         'icool_model_name': 12,
-                         'parms':
-                                 {'model': {'pos': 1, 'type': 'String', 'doc': ''},
-                                  'freq': {'pos': 2,  'type': 'Real', 'doc': ''},
-                                  'grad': {'pos': 3, 'type': 'Real', 'doc': ''},
-                                  'phase': {'pos': 4, 'type': 'Real', 'doc': ''},
-                                  'rad_offset': {'pos': 5, 'type': 'Real', 'doc': ''},
-                                  'width': {'pos': 6, 'type': 'Real', 'doc': ''},
-                                  'height': {'pos': 7, 'type': 'Real', 'doc': ''}}},
-
-        'open_cell_stand': {'desc': 'Open cell standing wave cavity',
-                            'doc': '',
-                            'icool_model_name': 13,
-                            'parms':
-                                   {'model': {'pos': 1, 'type': 'String', 'doc': ''},
-                                    'freq': {'pos': 2,  'type': 'Real', 'doc': ''},
-                                    'grad': {'pos': 3, 'type': 'Real', 'doc': ''},
-                                    'phase': {'pos': 4, 'type': 'Real', 'doc': ''},
-                                    'focus_flag': {'pos': 5, 'type': 'Real', 'doc': ''}}},
-
-    }
-
+        'model_descriptor': {
+            'desc': 'Name of model parameter descriptor',
+            'name': 'model',
+            'num_parms': 15,
+            'for001_format': {
+                'line_splits': [15]}},
+        'ez': {
+            'desc': 'Ez only with no transverse variation',
+            'doc': '',
+            'icool_model_name': 1,
+            'parms': {
+                'model': {
+                    'pos': 1, 'type': 'String', 'doc': ''},
+                'freq': {
+                    'pos': 2, 'type': 'Real', 'doc': 'Frequency [MHz]'},
+                'grad': {
+                    'pos': 3, 'type': 'Real', 'doc': 'Gradient on-axis at center of gap [MV/m]'},
+                'phase': {
+                    'pos': 4, 'type': 'Real', 'doc': 'Phase shift [deg] {0-360}.'},
+                'rect_cyn': {
+                    'pos': 5, 'type': 'Real', 'doc': 'Parameter to approximate a rectangular cavity '
+                                      'in cylindrical geometry; if set to radius of curvature ρ, then EZ is scaled by '
+                                      '1-x/ ρ, where x is the horizontal distance from the reference circle.'},
+                'mode': {
+                    'pos': 8, 'type': 'Int', 'doc': '0 : Time-independent 1: sinusoidal time variation'}}},
+        'cyn_pill': {
+            'desc': 'Cylindrical TM01p pillbox',
+            'doc': '', 'icool_model_name': 2,
+            'parms': {
+                    'model': {
+                        'pos': 1, 'type': 'String', 'doc': ''},
+                    'freq': {
+                        'pos': 2, 'type': 'Real', 'doc': ''},
+                    'grad': {
+                        'pos': 3, 'type': 'Real', 'doc': ''},
+                    'phase': {
+                        'pos': 4, 'type': 'Real', 'doc': ''},
+                    'rect_cyn': {
+                        'pos': 5, 'type': 'Real', 'doc': ''},
+                    'longitudinal_mode': {
+                        'pos': 8, 'type': 'Real', 'doc': ''}}},
+        'trav': {
+            'desc': 'Traveling wave cavity',
+            'doc': '',
+            'icool_model_name': 3,
+            'parms': {
+                    'model': {
+                        'pos': 1, 'type': 'String', 'doc': ''},
+                    'freq': {
+                        'pos': 2, 'type': 'Real', 'doc': ''},
+                    'grad': {
+                        'pos': 3, 'type': 'Real', 'doc': ''},
+                    'phase': {
+                        'pos': 4, 'type': 'Real', 'doc': ''},
+                    'rect_cyn': {
+                        'pos': 5, 'type': 'Real', 'doc': ''},
+                    'x_offset': {
+                        'pos': 6, 'type': 'Real', 'doc': ''},
+                    'y_offset': {
+                        'pos': 7, 'type': 'Real', 'doc': ''},
+                    'phase_velocity': {
+                        'pos': 8, 'type': 'Real', 'doc': ''}}},
+        'circ_nose': {
+            'desc': 'Approximate fields for symmetric circular-nosed cavity',
+            'doc': '',
+            'icool_model_name': 4,
+            'parms': {
+                    'model': {
+                        'pos': 1, 'type': 'String', 'doc': ''},
+                    'freq': {
+                        'pos': 2, 'type': 'Real', 'doc': ''},
+                    'grad': {
+                        'pos': 3, 'type': 'Real', 'doc': ''},
+                    'phase': {
+                        'pos': 4, 'type': 'Real', 'doc': ''},
+                    'length': {
+                        'pos': 8, 'type': 'Real', 'doc': ''},
+                    'gap': {
+                        'pos': 9, 'type': 'Real', 'doc': ''},
+                    'drift_tube_radius': {
+                        'pos': 10, 'type': 'Real', 'doc': ''},
+                    'nose_radius': {
+                        'pos': 11, 'type': 'Real', 'doc': ''}}},
+        'az_tm': {
+            'desc': 'User-supplied azimuthally-symmetric TM mode (SuperFish)',
+            'doc': '', 'icool_model_name': 5,
+            'parms': {
+                    'model': {
+                        'pos': 1, 'type': 'String', 'doc': ''},
+                    'freq': {
+                        'pos': 2, 'type': 'Real', 'doc': ''},
+                    'phase': {
+                        'pos': 4, 'type': 'Real', 'doc': ''},
+                    'file_no': {
+                        'pos': 8, 'type': 'Real', 'doc': ''},
+                    'field_strength_norm': {
+                        'pos': 9, 'type': 'Real', 'doc': ''},
+                    'rad_cut': {
+                        'pos': 10, 'type': 'Real', 'doc': ''},
+                    'axial_dist': {
+                        'pos': 11, 'type': 'Real', 'doc': ''},
+                    'daxial_sym': {
+                        'pos': 12, 'type': 'Real', 'doc': ''}}},
+        'ilpoly': {
+            'desc': 'Induction linac model - waveform from user-supplied polynomial coefficients',
+            'doc': '', 'icool_model_name': 6,
+            'parms': {
+                    'model': {
+                        'pos': 1, 'type': 'String', 'doc': ''},
+                    'time_offset': {
+                        'pos': 2, 'type': 'Real', 'doc': ''},
+                    'gap': {
+                        'pos': 3, 'type': 'Real', 'doc': ''},
+                    'time_reset': {
+                        'pos': 4, 'type': 'Real', 'doc': ''},
+                    'v0': {
+                        'pos': 5, 'type': 'Real', 'doc': ''},
+                    'v1': {
+                        'pos': 6, 'type': 'Real', 'doc': ''},
+                    'v2': {
+                        'pos': 7, 'type': 'Real', 'doc': ''},
+                    'v3': {
+                        'pos': 8, 'type': 'Real', 'doc': ''},
+                    'v4': {
+                        'pos': 9, 'type': 'Real', 'doc': ''},
+                    'v5': {
+                        'pos': 10, 'type': 'Real', 'doc': ''},
+                    'v6': {
+                        'pos': 11, 'type': 'Real', 'doc': ''},
+                    'v7': {
+                        'pos': 12, 'type': 'Real', 'doc': ''},
+                    'v8': {
+                         'pos': 13, 'type': 'Real', 'doc': ''}}},
+        'ilgen': {
+            'desc': 'Induction linac model - waveform from internally generated waveform',
+            'doc': '',
+            'icool_model_name': 7,
+            'parms': {
+                    'model': {
+                        'pos': 1, 'type': 'String', 'doc': ''},
+                    'num_gaps': {
+                        'pos': 2, 'type': 'Real', 'doc': ''},
+                    'start_volt': {
+                        'pos': 3, 'type': 'Real', 'doc': ''},
+                    'volt_swing': {
+                        'pos': 4, 'type': 'Real', 'doc': ''},
+                    'time_offset': {
+                        'pos': 5, 'type': 'Real', 'doc': ''},
+                    'kin': {
+                        'pos': 6, 'type': 'Real', 'doc': ''},
+                    'pulse_dur': {
+                        'pos': 7, 'type': 'Real', 'doc': ''},
+                    'slope': {
+                        'pos': 8, 'type': 'Real', 'doc': ''},
+                    'bins': {
+                        'pos': 9, 'type': 'Real', 'doc': ''},
+                    'gap_len': {
+                        'pos': 10, 'type': 'Real', 'doc': ''},
+                    'file_num': {
+                        'pos': 11, 'type': 'Real', 'doc': ''},
+                    'kill': {
+                        'pos': 12, 'type': 'Real', 'doc': ''},
+                    'restart': {
+                        'pos': 13, 'type': 'Real', 'doc': ''}}},
+        'ilfile': {
+            'desc': 'Induction linac model - Waveform from user-supplied file',
+            'doc': '',
+            'icool_model_name': 8,
+            'parms': {
+                    'model': {
+                        'pos': 1, 'type': 'String', 'doc': ''},
+                    'time_offset': {
+                        'pos': 2, 'type': 'Real', 'doc': ''},
+                    'gap': {
+                        'pos': 3, 'type': 'Real', 'doc': ''},
+                    'time_reset': {
+                        'pos': 4, 'type': 'Real', 'doc': ''},
+                    'file_num_wav': {
+                        'pos': 5, 'type': 'Real', 'doc': ''},
+                    'poly_order': {
+                        'pos': 6, 'type': 'Real', 'doc': ''},
+                    'file_num_out': {
+                        'pos': 7, 'type': 'Real', 'doc': ''},
+                    'time_inc': {
+                        'pos': 8, 'type': 'Real', 'doc': ''}}},
+        'sec_pill_circ': {
+            'desc': 'Sector-shaped pillbox cavity (circular cross section)',
+            'doc': '',
+            'icool_model_name': 9,
+            'parms': {
+                    'model': {
+                        'pos': 1, 'type': 'String', 'doc': ''},
+                    'freq': {
+                        'pos': 2, 'type': 'Real', 'doc': ''},
+                    'grad': {
+                        'pos': 3, 'type': 'Real', 'doc': ''},
+                    'phase': {
+                        'pos': 4, 'type': 'Real', 'doc': ''}}},
+        'var_pill': {
+            'desc': 'Variable {frequency gradient} pillbox cavity',
+            'doc': '',
+            'icool_model_name': 10,
+            'parms': {
+                    'model': {
+                        'pos': 1, 'type': 'String', 'doc': ''},
+                    'phase': {
+                        'pos': 2, 'type': 'Real', 'doc': ''},
+                    'num_wavelengths': {
+                        'pos': 3, 'type': 'Real', 'doc': ''},
+                    'reset_parms': {
+                        'pos': 4, 'type': 'Real', 'doc': ''},
+                    'buncher_len': {
+                        'pos': 5, 'type': 'Real', 'doc': ''},
+                    'g0': {
+                        'pos': 6, 'type': 'Real', 'doc': ''},
+                    'g1': {
+                        'pos': 7, 'type': 'Real', 'doc': ''},
+                    'g2': {
+                        'pos': 8, 'type': 'Real', 'doc': ''},
+                    'phase_model': {
+                        'pos': 9, 'type': 'Real', 'doc': ''}}},
+        'straight_pill': {
+                'desc': 'Straight pillbox or SuperFish cavity in dipole region',
+                'doc': '',
+                'icool_model_name': 11,
+                'parms': {
+                        'model': {
+                            'pos': 1, 'type': 'String', 'doc': ''},
+                        'freq': {
+                            'pos': 2, 'type': 'Real', 'doc': ''},
+                        'grad': {
+                            'pos': 3, 'type': 'Real', 'doc': ''},
+                        'phase': {
+                            'pos': 4, 'type': 'Real', 'doc': ''},
+                        'radial_offset': {
+                            'pos': 5, 'type': 'Real', 'doc': ''},
+                        'axial_length': {
+                            'pos': 6, 'type': 'Real', 'doc': ''},
+                        'cavity_type': {
+                            'pos': 7, 'type': 'Real', 'doc': ''},
+                        'file_num': {
+                            'pos': 8, 'type': 'Real', 'doc': ''},
+                        'sf_field_norm': {
+                            'pos': 9, 'type': 'Real', 'doc': ''},
+                        'sf_rad_cut': {
+                            'pos': 10, 'type': 'Real', 'doc': ''},
+                        'sf_axial_disp': {
+                            'pos': 11, 'type': 'Real', 'doc': ''},
+                        'sf_axial_sym': {
+                            'pos': 12, 'type': 'Real', 'doc': ''}}},
+        'sec_pill_rec': {
+                'desc': 'Variable {frequency gradient} pillbox cavity',
+                'doc': '', 'icool_model_name': 12,
+                'parms': {
+                        'model': {
+                            'pos': 1, 'type': 'String', 'doc': ''},
+                        'freq': {
+                            'pos': 2, 'type': 'Real', 'doc': ''},
+                        'grad': {
+                            'pos': 3, 'type': 'Real', 'doc': ''},
+                        'phase': {
+                            'pos': 4, 'type': 'Real', 'doc': ''},
+                        'rad_offset': {
+                            'pos': 5, 'type': 'Real', 'doc': ''},
+                        'width': {
+                            'pos': 6, 'type': 'Real', 'doc': ''},
+                        'height': {
+                            'pos': 7, 'type': 'Real', 'doc': ''}}},
+        'open_cell_stand': {
+                'desc': 'Open cell standing wave cavity',
+                'doc': '',
+                'icool_model_name': 13,
+                'parms': {
+                        'model': {
+                            'pos': 1, 'type': 'String', 'doc': ''},
+                        'freq': {
+                            'pos': 2, 'type': 'Real', 'doc': ''},
+                        'grad': {
+                            'pos': 3, 'type': 'Real', 'doc': ''},
+                        'phase': {
+                            'pos': 4, 'type': 'Real', 'doc': ''},
+                        'focus_flag': {
+                            'pos': 5, 'type': 'Real', 'doc': ''}}}}
+    
     def __init__(self, **kwargs):
         Field.__init__(self, 'ACCEL', kwargs)
 
@@ -3110,7 +3436,8 @@ class Accel(Field):
             if value == 'ACCEL':
                 object.__setattr__(self, name, value)
             else:
-                print '\n Illegal attempt to set incorrect ftag.\n'  # Should raise exception here
+                # Should raise exception here
+                print '\n Illegal attempt to set incorrect ftag.\n'
         else:
             Field.__setattr__(self, name, value)
 
@@ -3125,6 +3452,7 @@ class Accel(Field):
 
 
 class Sol(Field):
+
     """
     SOL solenoid field
     1 model level
@@ -3214,175 +3542,136 @@ class Sol(Field):
     endtag = ''
 
     models = {
-        'model_descriptor': {'desc': 'Name of model parameter descriptor',
-                             'name': 'model',
-                             'num_parms': 15,
-                             'for001_format': {'line_splits': [15]}},
-
-        'bz': {'desc': 'Bz with constant central region + linear ends',
-               'doc': '',
-               'icool_model_name': 1,
-               'parms':
-                       {'model': {'pos': 1, 'type': 'String', 'doc': ''},
-                        'strength': {'pos': 2, 'type': 'Real', 'doc': 'Field strength [T] '},
-                        'clen': {'pos': 3, 'type': 'Real', 'doc': 'Length of central region, CLEN[m] '
-                                                                  '(You can use this to get a tapered field profile)'},
-                        'elen1': {'pos': 4, 'type': 'Real', 'doc': 'Length of entrance end region, ELEN1 [m]. '
-                                                                   'This is the displacement of the upstream end of '
-                                                                   'the solenoid from the start of the region'},
-                        'offset': {'pos': 5, 'type': 'Real', 'doc': 'Use parameter 5 to get an indefinitely long, '
-                                                                    'constant solenoidal field.'},
-                        'elen2': {'pos': 6, 'type': 'Real', 'doc': 'Length of exit end region, ELEN2 [m]. '
-                                                                   'For a symmetric field, set '
-                                                                   'SLEN =CLEN + ELEN1 + ELEN2. '
-                                                                   'Hard-edge field models can include the focusing '
-                                                                   'effects of the missing fringe field by using EDGE '
-                                                                   'commands before and after the hard-edge field '
-                                                                   'region'}}},
-
-        'dtanh': {'desc': 'dTANH(z) Bz dependence',
-                  'doc': '',
-                  'icool_model_name': 2,
-                  'parms':
-                         {'model': {'pos': 1, 'type': 'String', 'doc': ''},
-                          'strength': {'pos': 2, 'type': 'Real', 'doc': 'Field strength [T] '},
-                          'clen': {'pos': 3, 'type': 'Real', 'doc': 'Length of central region, CLEN[m] '
-                                                                    '(You can use this to get a tapered field '
-                                                                    'profile)'},
-                          'elen': {'pos': 4, 'type': 'Real', 'doc': 'Length for end region, ELEN [m] (This is the '
+        'model_descriptor': {
+            'desc': 'Name of model parameter descriptor', 'name': 'model', 'num_parms': 15, 'for001_format': {
+                'line_splits': [15]}}, 'bz': {
+            'desc': 'Bz with constant central region + linear ends', 'doc': '', 'icool_model_name': 1, 'parms': {
+                    'model': {
+                        'pos': 1, 'type': 'String', 'doc': ''}, 'strength': {
+                            'pos': 2, 'type': 'Real', 'doc': 'Field strength [T] '}, 'clen': {
+                                'pos': 3, 'type': 'Real', 'doc': 'Length of central region, CLEN[m] '
+                                '(You can use this to get a tapered field profile)'}, 'elen1': {
+                                    'pos': 4, 'type': 'Real', 'doc': 'Length of entrance end region, ELEN1 [m]. '
+                                    'This is the displacement of the upstream end of '
+                                    'the solenoid from the start of the region'}, 'offset': {
+                                        'pos': 5, 'type': 'Real', 'doc': 'Use parameter 5 to get an indefinitely long, '
+                                        'constant solenoidal field.'}, 'elen2': {
+                                            'pos': 6, 'type': 'Real', 'doc': 'Length of exit end region, ELEN2 [m]. '
+                                            'For a symmetric field, set '
+                                            'SLEN =CLEN + ELEN1 + ELEN2. '
+                                            'Hard-edge field models can include the focusing '
+                                            'effects of the missing fringe field by using EDGE '
+                                            'commands before and after the hard-edge field '
+                                            'region'}}}, 'dtanh': {
+                                                'desc': 'dTANH(z) Bz dependence', 'doc': '', 'icool_model_name': 2, 'parms': {
+                                                    'model': {
+                                                        'pos': 1, 'type': 'String', 'doc': ''}, 'strength': {
+                                                            'pos': 2, 'type': 'Real', 'doc': 'Field strength [T] '}, 'clen': {
+                                                                'pos': 3, 'type': 'Real', 'doc': 'Length of central region, CLEN[m] '
+                                                                '(You can use this to get a tapered field '
+                                                                'profile)'}, 'elen': {
+                                                                    'pos': 4, 'type': 'Real', 'doc': 'Length for end region, ELEN [m] (This is the '
                                                                     'displacement of the upstream end of the solenoid '
                                                                     'from the start of the region; for a symmetric '
-                                                                    'field, set SLEN =CLEN + 2*ELEN.)'},
-                          'order': {'pos': 5, 'type': 'Real', 'doc': 'Order of vector potential expansion '
-                                                                     '{1, 3, 5, 7}'},
-                          'att_len': {'pos': 6, 'type': 'Real', 'doc': 'End attenuation length, [m] '
-                                                                       '(Set larger than '
-                                                                       'maximum beam size) '},
-                          'offset': {'pos': 7, 'type': 'Real', 'doc': 'Constant offset for Bs [T]'
-                                                                      'For a symmetric field, set'}}},
+                                                                    'field, set SLEN =CLEN + 2*ELEN.)'}, 'order': {
+                                                                        'pos': 5, 'type': 'Real', 'doc': 'Order of vector potential expansion '
+                                                                        '{1, 3, 5, 7}'}, 'att_len': {
+                                                                            'pos': 6, 'type': 'Real', 'doc': 'End attenuation length, [m] '
+                                                                            '(Set larger than '
+                                                                            'maximum beam size) '}, 'offset': {
+                                                                                'pos': 7, 'type': 'Real', 'doc': 'Constant offset for Bs [T]'
+                                                                                'For a symmetric field, set'}}}, 'circ': {
+                                                                                    'desc': 'Field from sum of circular current loops', 'doc': 'For a symmetric field with 1 loop, set ELEN=0.5 SLEN.', 'icool_model_name': 3, 'parms': {
+                                                                                        'model': {
+                                                                                            'pos': 1, 'type': 'String', 'doc': ''}, 'strength': {
+                                                                                                'pos': 2, 'type': 'Real', 'doc': 'Field strength [T] '}, 'clen': {
+                                                                                                    'pos': 3, 'type': 'Real', 'doc': 'Length of central region, CLEN[m] '
+                                                                                                    '(This is the region over which the coils are '
+                                                                                                    'distributed))'}, 'elen': {
+                                                                                                        'pos': 4, 'type': 'Real', 'doc': 'Length for end region, ELEN [m] (This is the '
+                                                                                                        'displacement of the upstream end of the solenoid '
+                                                                                                        'from the start of the region; for a symmetric '
+                                                                                                        'field, set SLEN =CLEN + 2*ELEN.)'}, 'loops': {
+                                                                                                            'pos': 5, 'type': 'Real', 'doc': 'Number of coil loops'}, 'radius': {
+                                                                                                                'pos': 6, 'type': 'Real', 'doc': 'Radius of coils [m]'}}}, 'sheet': {
+                                                                                                                    'desc': 'Field from annular current sheet', 'doc': '', 'icool_model_name': 4, 'parms': {
+                                                                                                                        'model': {
+                                                                                                                            'pos': 1, 'type': 'String', 'doc': ''}, 'strength': {
+                                                                                                                                'pos': 2, 'type': 'Real', 'doc': 'Field strength [T] '}, 'length': {
+                                                                                                                                    'pos': 3, 'type': 'Real', 'doc': 'Length of sheet [m] '}, 'z_offset': {
+                                                                                                                                        'pos': 4, 'type': 'Real', 'doc': 'z offset of center of sheet from start '
+                                                                                                                                        'of region [m]'}, 'radius': {
+                                                                                                                                            'pos': 5, 'type': 'Real', 'doc': 'Radius of sheet [m]'}}}, 'block': {
+                                                                                                                                                'desc': 'Field from thick annular current block', 'doc': '', 'icool_model_name': 5, 'parms': {
+                                                                                                                                                    'model': {
+                                                                                                                                                        'pos': 1, 'type': 'String', 'doc': ''}, 'strength': {
+                                                                                                                                                            'pos': 2, 'type': 'Real', 'doc': 'Field strength [T] '}, 'length': {
+                                                                                                                                                                'pos': 3, 'type': 'Real', 'doc': 'Length of block [m] '}, 'z_offset': {
+                                                                                                                                                                    'pos': 4, 'type': 'Real', 'doc': 'z offset of center of block from start of '
+                                                                                                                                                                    'of region [m]'}, 'inner': {
+                                                                                                                                                                        'pos': 5, 'type': 'Real', 'doc': 'Inner radius of block [m]'}, 'outer': {
+                                                                                                                                                                            'pos': 6, 'type': 'Real', 'doc': 'Outer radius of block [m]'}}}, 'interp': {
+                                                                                                                                                                                'desc': 'Interpolate field from predefined USER r-z grid', 'doc': 'The required format of the field map is:\n'
+                                                                                                                                                                                'title (A80)\n'
+                                                                                                                                                                                '# of z grid points (I) {1-5000}\n'
+                                                                                                                                                                                '# of r grid points (I) {1-100}\n'
+                                                                                                                                                                                'i, j, zi, rj, BZi,j, BRi,j (I, R)', 'icool_model_name': 6, 'parms': {
+                                                                                                                                                                                    'model': {
+                                                                                                                                                                                        'pos': 1, 'type': 'String', 'doc': ''}, 'grid': {
+                                                                                                                                                                                            'pos': 2, 'type': 'Real', 'doc': 'Grid ##of user-supplied field {1-4} '}, 'level': {
+                                                                                                                                                                                                'pos': 3, 'type': 'Int', 'doc': 'Interpolation level {1-3}:\n'
+                                                                                                                                                                                                '1: bi-linear\n'
+                                                                                                                                                                                                '2: bi-quadratic polynomial\n'
+                                                                                                                                                                                                '3: bi-cubic polynomial ', 'min': 1, 'max': 3}}}, 'tapered': {
+                                                                                                                                                                                                    'desc': 'Tapered radius', 'doc': 'This model applies a geometry cut on particles whose radius exceeds the '
+                                                                                                                                                                                                    'specified radial taper.', 'icool_model_name': 7, 'parms': {
+                                                                                                                                                                                                        'model': {
+                                                                                                                                                                                                            'pos': 1, 'type': 'String', 'doc': ''}, 'bc': {
+                                                                                                                                                                                                                'pos': 2, 'type': 'Real', 'doc': 'Bc [T] (flat central field strength) '}, 'rc': {
+                                                                                                                                                                                                                    'pos': 3, 'type': 'Real', 'doc': 'Rc [m] (flat central coil radius) '}, 'lc': {
+                                                                                                                                                                                                                        'pos': 4, 'type': 'Real', 'doc': 'Lc [m] (central field length) '}, 'b1': {
+                                                                                                                                                                                                                            'pos': 5, 'type': 'Real', 'doc': 'B1 [T] (starting field strength)'}, 'r1': {
+                                                                                                                                                                                                                                'pos': 6, 'type': 'Real', 'doc': 'R1 [m] (starting coil radius)'}, 'l1': {
+                                                                                                                                                                                                                                    'pos': 7, 'type': 'Real', 'doc': 'L1 [m] (length of entrance transition region)'}, 'b2': {
+                                                                                                                                                                                                                                        'pos': 8, 'type': 'Real', 'doc': 'B2 [T] (ending field strength)'}, 'r2': {
+                                                                                                                                                                                                                                            'pos': 9, 'type': 'Real', 'doc': 'R2 [m] (ending coil radius)'}, 'l2': {
+                                                                                                                                                                                                                                                'pos': 10, 'type': 'Real', 'doc': 'L2 [m] (length of exit transition region)'}}}, 'edge': {
+                                                                                                                                                                                                                                                    'desc': 'Hard-edge with adjustable end fields', 'doc': 'The focusing deficit is B2L - ∫B2 ds. The deficit is independent of the focusing effect '
+                                                                                                                                                                                                                                                    'chosen with parameter 3.', 'icool_model_name': 8, 'parms': {
+                                                                                                                                                                                                                                                        'model': {
+                                                                                                                                                                                                                                                            'pos': 1, 'type': 'String', 'doc': ''}, 'bs': {
+                                                                                                                                                                                                                                                                'pos': 2, 'type': 'Real', 'doc': 'Bc [T] (flat central field strength) '}, 'foc_flag': {
+                                                                                                                                                                                                                                                                    'pos': 3, 'type': 'Integer', 'doc': 'Flag on whether to include end focusing:\n'
+                                                                                                                                                                                                                                                                    '0: both entrance and exit focusing\n'
+                                                                                                                                                                                                                                                                    '1: exit focusing only\n'
+                                                                                                                                                                                                                                                                    '2: entrance focusing only\n'
+                                                                                                                                                                                                                                                                    '3: no edge focusing ', 'min': 0, 'max': 3}, 'ent_def': {
+                                                                                                                                                                                                                                                                        'pos': 4, 'type': 'Real', 'doc': 'Focusing deficit at entrance [T2 m] '}, 'ex_def': {
+                                                                                                                                                                                                                                                                            'pos': 5, 'type': 'Real', 'doc': 'focusing deficit at exit [T2 m]'}}}, 'fourier': {
+                                                                                                                                                                                                                                                                                'desc': 'Determine field from file of Fourier coefficients', 'doc': 'The contents of the input file for0JK.dat is\n'
+                                                                                                                                                                                                                                                                                '1 title (A80)\n'
+                                                                                                                                                                                                                                                                                '2.1 period, λ (R)\n'
+                                                                                                                                                                                                                                                                                '2.2 field strength, S (R)\n'
+                                                                                                                                                                                                                                                                                '3 maximum Fourier order (I)\n'
+                                                                                                                                                                                                                                                                                '(4 repeated for each order)\n'
+                                                                                                                                                                                                                                                                                '4.1 order, m (I) {0 – 199}\n'
+                                                                                                                                                                                                                                                                                '4.2 cm (R)\n'
+                                                                                                                                                                                                                                                                                '4.3 dm (R)\n'
+                                                                                                                                                                                                                                                                                'The on-axis field is given by:\n'
+                                                                                                                                                                                                                                                                                'f (s) = S Σ ( cm COS(u) + dm SIN(u) )\n'
+                                                                                                                                                                                                                                                                                'where u = 2πms / λ.', 'icool_model_name': 9, 'parms': {
+                                                                                                                                                                                                                                                                                    'model': {
+                                                                                                                                                                                                                                                                                        'pos': 1, 'type': 'String', 'doc': ''}, 'order': {
+                                                                                                                                                                                                                                                                                            'pos': 2, 'type': 'Integer', 'doc': 'Order of off-axis expansion (I) {1, 3, 5, 7} '}, 'scale': {
+                                                                                                                                                                                                                                                                                                'pos': 3, 'type': 'Real', 'doc': '(R) Multiplies field strength '}}}, 'on_axis': {
+                                                                                                                                                                                                                                                                                                    'desc': 'Determine field from file of on-axis field', 'doc': '', 'icool_model_name': 10, 'parms': {
+                                                                                                                                                                                                                                                                                                        'model': {
+                                                                                                                                                                                                                                                                                                            'pos': 1, 'type': 'String', 'doc': ''}, 'file_num': {
+                                                                                                                                                                                                                                                                                                                'pos': 2, 'type': 'Integer', 'doc': 'File number JK for input data (I) File name is '
+                                                                                                                                                                                                                                                                                                                'for0JK.dat'}, 'order': {
+                                                                                                                                                                                                                                                                                                                    'pos': 3, 'type': 'Integer', 'doc': 'Order of off-axis expansion (I) {1, 3, 5, 7} '}, 'scale': {
+                                                                                                                                                                                                                                                                                                                        'pos': 4, 'type': 'Real', 'doc': '(R) Multiplies field strength '}}}, }
 
-
-        'circ':  {'desc': 'Field from sum of circular current loops',
-                  'doc': 'For a symmetric field with 1 loop, set ELEN=0.5 SLEN.',
-                  'icool_model_name': 3,
-                  'parms':
-                         {'model': {'pos': 1, 'type': 'String', 'doc': ''},
-                          'strength': {'pos': 2, 'type': 'Real', 'doc': 'Field strength [T] '},
-                          'clen': {'pos': 3, 'type': 'Real', 'doc': 'Length of central region, CLEN[m] '
-                                                                    '(This is the region over which the coils are '
-                                                                    'distributed))'},
-                          'elen': {'pos': 4, 'type': 'Real', 'doc': 'Length for end region, ELEN [m] (This is the '
-                                                                    'displacement of the upstream end of the solenoid '
-                                                                    'from the start of the region; for a symmetric '
-                                                                    'field, set SLEN =CLEN + 2*ELEN.)'},
-                          'loops': {'pos': 5, 'type': 'Real', 'doc': 'Number of coil loops'},
-                          'radius': {'pos': 6, 'type': 'Real', 'doc': 'Radius of coils [m]'}}},
-
-        'sheet':    {'desc': 'Field from annular current sheet',
-                     'doc': '',
-                     'icool_model_name': 4,
-                     'parms':
-                             {'model': {'pos': 1, 'type': 'String', 'doc': ''},
-                              'strength': {'pos': 2, 'type': 'Real', 'doc': 'Field strength [T] '},
-                              'length': {'pos': 3, 'type': 'Real', 'doc': 'Length of sheet [m] '},
-                              'z_offset': {'pos': 4, 'type': 'Real', 'doc': 'z offset of center of sheet from start '
-                                                                            'of region [m]'},
-                              'radius': {'pos': 5, 'type': 'Real', 'doc': 'Radius of sheet [m]'}}},
-
-        'block':  {'desc': 'Field from thick annular current block',
-                   'doc': '',
-                   'icool_model_name': 5,
-                   'parms':
-                           {'model': {'pos': 1, 'type': 'String', 'doc': ''},
-                            'strength': {'pos': 2, 'type': 'Real', 'doc': 'Field strength [T] '},
-                            'length': {'pos': 3, 'type': 'Real', 'doc': 'Length of block [m] '},
-                            'z_offset': {'pos': 4, 'type': 'Real', 'doc': 'z offset of center of block from start of '
-                                                                          'of region [m]'},
-                            'inner': {'pos': 5, 'type': 'Real', 'doc': 'Inner radius of block [m]'},
-                            'outer': {'pos': 6, 'type': 'Real', 'doc': 'Outer radius of block [m]'}}},
-
-
-        'interp':  {'desc': 'Interpolate field from predefined USER r-z grid',
-                    'doc': 'The required format of the field map is:\n'
-                            'title (A80)\n'
-                            '# of z grid points (I) {1-5000}\n'
-                            '# of r grid points (I) {1-100}\n'
-                            'i, j, zi, rj, BZi,j, BRi,j (I, R)',
-                    'icool_model_name': 6,
-                    'parms':
-                            {'model': {'pos': 1, 'type': 'String', 'doc': ''},
-                             'grid': {'pos': 2, 'type': 'Real', 'doc': 'Grid ##of user-supplied field {1-4} '},
-                             'level': {'pos': 3, 'type': 'Int', 'doc': 'Interpolation level {1-3}:\n'
-                                                                       '1: bi-linear\n'
-                                                                       '2: bi-quadratic polynomial\n'
-                                                                       '3: bi-cubic polynomial ',
-                                       'min': 1, 'max': 3}}},
-
-        'tapered':  {'desc': 'Tapered radius',
-                     'doc': 'This model applies a geometry cut on particles whose radius exceeds the '
-                            'specified radial taper.',
-                     'icool_model_name': 7,
-                     'parms':
-                            {'model': {'pos': 1, 'type': 'String', 'doc': ''},
-                             'bc': {'pos': 2, 'type': 'Real', 'doc': 'Bc [T] (flat central field strength) '},
-                             'rc': {'pos': 3, 'type': 'Real', 'doc': 'Rc [m] (flat central coil radius) '},
-                             'lc': {'pos': 4, 'type': 'Real', 'doc': 'Lc [m] (central field length) '},
-                             'b1': {'pos': 5, 'type': 'Real', 'doc': 'B1 [T] (starting field strength)'},
-                             'r1': {'pos': 6, 'type': 'Real', 'doc': 'R1 [m] (starting coil radius)'},
-                             'l1': {'pos': 7, 'type': 'Real', 'doc': 'L1 [m] (length of entrance transition region)'},
-                             'b2': {'pos': 8, 'type': 'Real', 'doc': 'B2 [T] (ending field strength)'},
-                             'r2': {'pos': 9, 'type': 'Real', 'doc': 'R2 [m] (ending coil radius)'},
-                             'l2': {'pos': 10, 'type': 'Real', 'doc': 'L2 [m] (length of exit transition region)'}}},
-
-        'edge':     {'desc': 'Hard-edge with adjustable end fields',
-                     'doc': 'The focusing deficit is B2L - ∫B2 ds. The deficit is independent of the focusing effect '
-                            'chosen with parameter 3.',
-                     'icool_model_name': 8,
-                     'parms':
-                            {'model': {'pos': 1, 'type': 'String', 'doc': ''},
-                             'bs': {'pos': 2, 'type': 'Real', 'doc': 'Bc [T] (flat central field strength) '},
-                             'foc_flag': {'pos': 3, 'type': 'Integer', 'doc':
-                                          'Flag on whether to include end focusing:\n'
-                                          '0: both entrance and exit focusing\n'
-                                          '1: exit focusing only\n'
-                                          '2: entrance focusing only\n'
-                                          '3: no edge focusing ',
-                               'min': 0,
-                               'max': 3},
-                               'ent_def': {'pos': 4, 'type': 'Real', 'doc': 'Focusing deficit at entrance [T2 m] '},
-                               'ex_def': {'pos': 5, 'type': 'Real', 'doc': 'focusing deficit at exit [T2 m]'}}},
-                          
-        'fourier':  {'desc': 'Determine field from file of Fourier coefficients',
-                     'doc': 'The contents of the input file for0JK.dat is\n'
-                            '1 title (A80)\n'
-                            '2.1 period, λ (R)\n'
-                            '2.2 field strength, S (R)\n'
-                            '3 maximum Fourier order (I)\n'
-                            '(4 repeated for each order)\n'
-                            '4.1 order, m (I) {0 – 199}\n'
-                            '4.2 cm (R)\n'
-                            '4.3 dm (R)\n'
-                            'The on-axis field is given by:\n'
-                            'f (s) = S Σ ( cm COS(u) + dm SIN(u) )\n'
-                            'where u = 2πms / λ.',
-                     'icool_model_name': 9,
-                     'parms':
-                    {'model': {'pos': 1, 'type': 'String', 'doc': ''},
-                     'order': {'pos': 2, 'type': 'Integer', 'doc': 'Order of off-axis expansion (I) {1, 3, 5, 7} '},
-                     'scale': {'pos': 3, 'type': 'Real', 'doc': '(R) Multiplies field strength '}}},
-
-
-        'on_axis':  {'desc': 'Determine field from file of on-axis field',
-                     'doc': '',
-                     'icool_model_name': 10,
-                     'parms':
-                    {'model': {'pos': 1, 'type': 'String', 'doc': ''},
-                     'file_num': {'pos': 2, 'type': 'Integer', 'doc': 'File number JK for input data (I) File name is '
-                                                                      'for0JK.dat'},
-                     'order': {'pos': 3, 'type': 'Integer', 'doc': 'Order of off-axis expansion (I) {1, 3, 5, 7} '},
-                     'scale': {'pos': 4, 'type': 'Real', 'doc': '(R) Multiplies field strength '}}},
-        }
-    
     def __init__(self, **kwargs):
         Field.__init__(self, 'SOL', kwargs)
 
@@ -3394,7 +3683,8 @@ class Sol(Field):
             if value == 'SOL':
                 object.__setattr__(self, name, value)
             else:
-                print '\n Illegal attempt to set incorrect ftag.\n'  # Should raise exception here
+                # Should raise exception here
+                print '\n Illegal attempt to set incorrect ftag.\n'
         else:
             Field.__setattr__(self, name, value)
 
@@ -3406,6 +3696,7 @@ class Sol(Field):
 
 
 class Edge(Field):
+
     """
     EDGE
     1) edge type (A4) {SOL, DIP, HDIP,DIP3,QUAD,SQUA,SEX, BSOL,FACE}
@@ -3447,19 +3738,29 @@ class Edge(Field):
     endtag = ''
 
     models = {
-        'model_descriptor': {'desc': 'Name of model parameter descriptor',
-                             'name': 'model',
-                             'num_parms': 6,
-                             'for001_format': {'line_splits': [1, 5]}},
-
-        'sol': {'desc': 'Solenoid',
-                'doc': '',
-                'icool_model_name': 'SOL',
-                'parms':
-                {'model': {'pos': 1, 'type': 'String', 'doc': ''},
-                 'bs': {'pos': 3, 'type': 'Real', 'doc': 'p1: BS [T] '
-                       'If the main solenoid field is B, use p1=-B for the entrance edge and p1=+B for the '
-                       'exit edge. (You can use this to get a tapered field profile)'}}},
+        'model_descriptor': {
+            'desc': 'Name of model parameter descriptor',
+            'name': 'model',
+            'num_parms': 6,
+            'for001_format': {
+                'line_splits': [
+                    1,
+                    5]}},
+        'sol': {
+            'desc': 'Solenoid',
+                    'doc': '',
+                    'icool_model_name': 'SOL',
+                    'parms': {
+                        'model': {
+                            'pos': 1,
+                            'type': 'String',
+                            'doc': ''},
+                        'bs': {
+                            'pos': 3,
+                            'type': 'Real',
+                            'doc': 'p1: BS [T] '
+                            'If the main solenoid field is B, use p1=-B for the entrance edge and p1=+B for the '
+                            'exit edge. (You can use this to get a tapered field profile)'}}},
     }
 
     def __init__(self, **kwargs):
@@ -3473,7 +3774,8 @@ class Edge(Field):
             if value == 'EDGE':
                 object.__setattr__(self, name, value)
             else:
-                print '\n Illegal attempt to set incorrect ftag.\n'  # Should raise exception here
+                # Should raise exception here
+                print '\n Illegal attempt to set incorrect ftag.\n'
         else:
             Field.__setattr__(self, name, value)
 
@@ -3482,7 +3784,7 @@ class Edge(Field):
 
     def gen_fparm(self):
         Field.gen_fparm(self)
- 
+
 
 class Output(PseudoRegion):
     begtag = 'OUTPUT'
@@ -3492,16 +3794,20 @@ class Output(PseudoRegion):
     for001_format = {'line_splits': [0]}
 
     command_params = {}
-    
+
     def __init__(self):
         PseudoRegion.__init__(self, {})
 
+
 class Comment(PseudoRegion):
+
     def __init__(self, comment):
         PseudoRegion.__init__(self, None)
         self.comment = comment
 
+
 class ICoolInput(ICoolObject):
+
     """This is the actual generated ICoolInput from command objects
     Command objects include:
     Title, Cont, Bmt, Ints, Nhs, Nsc, Nzh, Nrh, Nem, Ncv and region command objects.
@@ -3530,71 +3836,71 @@ class ICoolInput(ICoolObject):
     """
 
     command_params = {
-        'title':      {'desc': 'Title of ICOOL simulation',
-                       'doc': '',
-                       'type': 'Title',
-                       'req': True,
-                       'default': None},
+        'title': {'desc': 'Title of ICOOL simulation',
+                  'doc': '',
+                  'type': 'Title',
+                  'req': True,
+                  'default': None},
 
-        'cont':       {'desc': 'ICOOL control variables',
-                       'doc': '',
-                       'type': 'Cont',
-                       'req': True,
-                       'default': None},
+        'cont': {'desc': 'ICOOL control variables',
+                 'doc': '',
+                 'type': 'Cont',
+                 'req': True,
+                 'default': None},
 
-        'bmt':       {'desc': 'ICOOL beam generation variables',
-                      'doc': '',
-                      'type': 'Bmt',
-                      'req': True,
-                      'default': None},
+        'bmt': {'desc': 'ICOOL beam generation variables',
+                'doc': '',
+                'type': 'Bmt',
+                'req': True,
+                'default': None},
 
-        'ints':      {'desc': 'ICOOL interaction control variables',
-                      'doc': '',
-                      'type': 'Ints',
-                      'req': True,
-                      'default': None},
-    
-        'nhs':       {'desc': 'ICOOL histogram definition variables',
-                      'doc': '',
-                      'type': 'Nhs',
-                      'req': False,
-                      'default': Nhs()},
+        'ints': {'desc': 'ICOOL interaction control variables',
+                 'doc': '',
+                 'type': 'Ints',
+                 'req': True,
+                 'default': None},
 
-        'nsc':       {'desc': 'ICOOL scatterplot defintion variables',
-                       'doc': '',
-                       'type': 'Nsc',
+        'nhs': {'desc': 'ICOOL histogram definition variables',
+                'doc': '',
+                'type': 'Nhs',
+                'req': False,
+                'default': Nhs()},
+
+        'nsc': {'desc': 'ICOOL scatterplot defintion variables',
+                'doc': '',
+                'type': 'Nsc',
                        'req': False,
                        'default': Nsc()},
 
-        'nzh':       {'desc': 'ICOOL z history definition variables',
-                      'doc': '',
-                      'type': 'Nzh',
-                      'req': False,
-                      'default': Nzh()},
+        'nzh': {'desc': 'ICOOL z history definition variables',
+                'doc': '',
+                'type': 'Nzh',
+                'req': False,
+                'default': Nzh()},
 
-        'nrh':       {'desc': 'ICOOL r history definition variables',
-                      'doc': '',
-                      'type': 'Nrh',
-                      'req': False,
-                      'default': Nrh()},
+        'nrh': {'desc': 'ICOOL r history definition variables',
+                'doc': '',
+                'type': 'Nrh',
+                'req': False,
+                'default': Nrh()},
 
-        'nem':       {'desc': 'ICOOL emittance plane definition variables',
-                       'doc': '',
-                       'type': 'Nem',
+        'nem': {'desc': 'ICOOL emittance plane definition variables',
+                'doc': '',
+                'type': 'Nem',
                        'req': False,
                        'default': Nem()},
 
-        'ncv':       {'desc': 'ICOOL covariance plane definition variables',
-                       'doc': '',
-                       'type': 'Ncv',
+        'ncv': {'desc': 'ICOOL covariance plane definition variables',
+                'doc': '',
+                'type': 'Ncv',
                        'req': False,
                        'default': Ncv()},
 
-        'section':       {'desc': 'ICOOL cooling section region definition ',
-                          'doc': '',
-                          'type': 'Section',
-                          'req': True,
-                          'default': None}}
+        'section': {'desc': 'ICOOL cooling section region definition ',
+                    'doc': '',
+                    'type': 'Section',
+                    'req': True,
+                    'default': None}}
 
     def __init__(self, **kwargs):
         ICoolObject.__init__(self, kwargs)
