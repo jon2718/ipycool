@@ -40,7 +40,7 @@ def bmt_gen_test():
     subr = SubRegion(material=mat, rlow=0, rhigh=0.5, irreg=1, field=so)
     sreg.add_enclosed_command(subr)
 
-    wrapped = Repeat.wrapped_sreg(outstep=0.1, sreg=sreg)
+    wrapped = Repeat.wrapped_sreg(outstep=0.001, sreg=sreg)
     cell.add_enclosed_command(wrapped)
 
     sreg_minus = SRegion(zstep=0.001, nrreg=1, slen=1)

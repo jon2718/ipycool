@@ -1511,6 +1511,8 @@ class Repeat(RegularRegionContainer):
         nrep = int(sreg.slen/outstep)
         sreg_copy.slen = outstep
         r = cls(nrep=nrep)
+        output = Output()
+        r.add_enclosed_command(output)
         r.add_enclosed_command(sreg_copy)
         return r
 
@@ -3596,15 +3598,15 @@ class Sol(Field):
                 'clen': {
                     'pos': 3, 'type': 'Real', 'doc': 'Length of central region, CLEN[m] (You can use this to get a tapered field profile)'},
                 'elen1': {
-                    'pos': 4, 'type': 'Real', 'doc': 'Length of entrance end region, ELEN1 [m].  This is the displacement of the upstream end of '
-                                              'the solenoid from the start of the region'},
+                    'pos': 4, 'type': 'Real', 'doc': 'Length of entrance end region, ELEN1 [m].  This is the displacement of the '
+                                                     'upstream end of the solenoid from the start of the region'},
                 'offset': {
                     'pos': 5, 'type': 'Real', 'doc': 'Use parameter 5 to get an indefinitely long, constant solenoidal field.'},
                 'elen2': {
                     'pos': 6, 'type': 'Real', 'doc': 'Length of exit end region, ELEN2 [m]. For a symmetric field, set:'
                                                      'SLEN =CLEN + ELEN1 + ELEN2. '
-                                                     'Hard-edge field models can include the focusing effects of the missing fringe field by using EDGE '
-                                                     'commands before and after the hard-edge field region'}}},
+                                                     'Hard-edge field models can include the focusing effects of the missing fringe '
+                                                     'field by using EDGE commands before and after the hard-edge field region'}}},
         'dtanh': {
             'desc': 'dTANH(z) Bz dependence',
             'doc': '',
@@ -3618,8 +3620,9 @@ class Sol(Field):
                     'pos': 3, 'type': 'Real', 'doc': 'Length of central region, CLEN[m] (You can use this to get a tapered field '
                                                      'profile)'},
                 'elen': {
-                    'pos': 4, 'type': 'Real', 'doc': 'Length for end region, ELEN [m] (This is the displacement of the upstream end of the solenoid '
-                                                     'from the start of the region; for a symmetric field, set SLEN =CLEN + 2*ELEN.)'},
+                    'pos': 4, 'type': 'Real', 'doc': 'Length for end region, ELEN [m] (This is the displacement of the upstream end '
+                                                     'of the solenoid from the start of the region; for a symmetric field, '
+                                                     'set SLEN =CLEN + 2*ELEN.)'},
                 'order': {
                     'pos': 5, 'type': 'Real', 'doc': 'Order of vector potential expansion {1, 3, 5, 7}'},
                 'att_len': {
@@ -3636,10 +3639,12 @@ class Sol(Field):
                 'strength': {
                     'pos': 2, 'type': 'Real', 'doc': 'Field strength [T] '},
                 'clen': {
-                    'pos': 3, 'type': 'Real', 'doc': 'Length of central region, CLEN[m].  (This is the region over which the coils are distributed))'},
+                    'pos': 3, 'type': 'Real', 'doc': 'Length of central region, CLEN[m]. '
+                                                     '(This is the region over which the coils are distributed))'},
                 'elen': {
-                    'pos': 4, 'type': 'Real', 'doc': 'Length for end region, ELEN [m] (This is the displacement of the upstream end of the solenoid '
-                                                     'from the start of the region; for a symmetric field, set SLEN =CLEN + 2*ELEN.)'},
+                    'pos': 4, 'type': 'Real', 'doc': 'Length for end region, ELEN [m] (This is the displacement of the upstream end of '
+                                                     'the solenoid from the start of the region; for a symmetric field, '
+                                                     'set SLEN =CLEN + 2*ELEN.)'},
                 'loops': {
                     'pos': 5, 'type': 'Real', 'doc': 'Number of coil loops'},
                 'radius': {
@@ -3694,7 +3699,8 @@ class Sol(Field):
                                                         '2: bi-quadratic polynomial\n'
                                                         '3: bi-cubic polynomial ', 'min': 1, 'max': 3}}},
         'tapered': {
-                'desc': 'Tapered radius', 'doc': 'This model applies a geometry cut on particles whose radius exceeds the specified radial taper.',
+                'desc': 'Tapered radius', 'doc': 'This model applies a geometry cut on particles whose radius '
+                                                 'exceeds the specified radial taper.',
                 'icool_model_name': 7, 'parms': {
                     'model': {
                         'pos': 1, 'type': 'String', 'doc': ''},
@@ -3770,7 +3776,7 @@ class Sol(Field):
                             'pos': 3, 'type': 'Integer', 'doc': 'Order of off-axis expansion (I) {1, 3, 5, 7} '},
                         'scale': {
                             'pos': 4, 'type': 'Real', 'doc': '(R) Multiplies field strength '}}}}
-                                                                                                                                   
+                                                                                                                                                            
     def __init__(self, **kwargs):
         Field.__init__(self, 'SOL', kwargs)
 
