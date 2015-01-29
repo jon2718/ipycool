@@ -30,14 +30,18 @@ def bmt_gen_test():
     cell.add_enclosed_command(rep)
     rep.add_enclosed_command(output)
     sreg = SRegion(zstep=0.001, nrreg=1, slen=1)
+    #cell.add_enclosed_command(sreg)
   
     s.add_enclosed_command(cell)
 
-    empty=NoField()
+    empty = NoField()
     mat = Material(geom='CBLOCK', mtag='LH')
-    mat_vac=Material(geom='CBLOCK', mtag='VAC')
+    mat_vac = Material(geom='CBLOCK', mtag='VAC')
     subr = SubRegion(material=mat, rlow=0, rhigh=0.5, irreg=1, field=so)
     sreg.add_enclosed_command(subr)
+
+    wrapped = Repeat.wrapped_sreg(outstep=0.1, sreg=sreg)
+    cell.add_enclosed_command(wrapped)
 
     sreg_minus = SRegion(zstep=0.001, nrreg=1, slen=1)
     subr_minus = SubRegion(material=mat_vac, rlow=0, rhigh=0.5, irreg=1, field=so_minus)

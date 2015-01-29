@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import sys
 import icool_exceptions as ie
+import copy
 
 
 """Nomenclature:
@@ -367,7 +368,8 @@ class ICoolObject(ICoolGenerator):
 
     def gen_parm(self):
         command_params = self.get_command_params()
-        parm = [None] * len(command_params)
+        #parm = [None] * len(command_params)
+        parm = [None] * self.num_params
         for key in command_params:
             pos = int(command_params[key]['pos']) - 1
             val = getattr(self, key)
@@ -423,6 +425,7 @@ class Container(ICoolObject):
 
     def __init__(self, enclosed_commands=None):
         if enclosed_commands is None:
+            print "Setting self.enclosed_commands to []"
             self.enclosed_commands = []
         else:
             if self.check_allowed_enclosed_commands(enclosed_commands):
@@ -1465,6 +1468,14 @@ class Repeat(RegularRegionContainer):
     num_params = 1
     for001_format = {'line_splits': [1]}
 
+    optional_params = {    #Not implemented yet
+
+     'enclosed': {'desc': 'Enclosed commands',
+                  'doc': 'Must be one of allowed_enclosed_commands',
+                  'type': ''}
+
+    }
+
     command_params = {
         'nrep': {'desc': '# of times to repeat following region commands',
                  'doc': '',
@@ -1489,6 +1500,19 @@ class Repeat(RegularRegionContainer):
         'Rotate',
         'Tilt',
         'Transport']
+
+    # Used to add wrapped SRegion object. Will wrap object SRegion in Repeat with nrep = slen/outstep and generate
+    # a new SRegion With slen=outstep.  Need to implement exception handling for types.
+    @classmethod
+    def wrapped_sreg(cls, **kwargs):
+        sreg = kwargs['sreg']
+        outstep = kwargs['outstep']
+        sreg_copy = copy.deepcopy(sreg)
+        nrep = int(sreg.slen/outstep)
+        sreg_copy.slen = outstep
+        r = cls(nrep=nrep)
+        r.add_enclosed_command(sreg_copy)
+        return r
 
     def __init__(self, **kwargs):
         RegularRegion.__init__(self, kwargs)
@@ -1593,8 +1617,8 @@ class Cell(RegularRegionContainer):
     """
     begtag = 'CELL'
     endtag = 'ENDCELL'
-    num_params = 4
-    for001_format = {'line_splits': [1, 1, 1, 1]}
+    num_params = 3
+    for001_format = {'line_splits': [1, 1, 1]}
 
     allowed_enclosed_commands = [
         'SRegion',
@@ -1716,12 +1740,12 @@ class SRegion(RegularRegionContainer):
             'type': 'Real',
             'req': True,
             'pos': 3},
-        'outstep': {
-            'desc': 'Step for generating OUTPUT commands within SRegion.',
-                    'doc': 'Will wrap SRegion in REPEAT/ENDREPEAT statements.',
-                    'type': 'Real',
-                    'req': False,
-            'pos': None}
+        #'outstep': {
+        #    'desc': 'Step for generating OUTPUT commands within SRegion.',
+        #    'doc': 'Will wrap SRegion in REPEAT/ENDREPEAT statements.',
+        #    'type': 'Real',
+        #    'req': False,
+        #    'pos': None}
         }
 
     def __init__(self, **kwargs):
@@ -1755,6 +1779,19 @@ class SRegion(RegularRegionContainer):
     def add_subregions(self, subregion_list):
         for subregion in subregion_list:
             self.subregions.append(subregion)
+
+    """def gen_for001(self, file):
+        if hasattr(self, 'outstep'):
+            sreg_copy = copy.deepcopy(self)
+            delattr(sreg_copy, 'outstep')
+            sreg_copy.slen = self.outstep
+            nrep = int(self.slen/self.outstep)
+            r = Repeat(nrep=nrep)
+            r.add_enclosed_command(sreg_copy)
+            r.gen_for001(file)
+        else:
+            RegularRegionContainer.gen_for001(self, file)"""
+
 
 
 class SubRegion(RegularRegion):

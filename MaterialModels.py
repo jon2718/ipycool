@@ -243,17 +243,17 @@ models = {
                    'If a second MTAG parameter is not present, vacuum is assumed.',
             'parms': {
                 'mtag': {
-                    'pos': 1, 'type': 'String', 'doc': ''}, 
+                    'pos': 1, 'type': 'String', 'doc': ''},
                 'geom': {
                     'pos': 2, 'type': 'String', 'doc': ''},
                 'vert_ang': {
                     'pos': 3, 'type': 'Real', 'doc': 'Full angle at vertex, α (or A) [degrees]the x axis [m]'},
                 'vert_init': {
-                    'pos': 4, 'type': 'Real', 'doc': 'Initial position of the vertex along the x axis, U [m]'}, 
+                    'pos': 4, 'type': 'Real', 'doc': 'Initial position of the vertex along the x axis, U [m]'},
                 'vert_z': {
                     'pos': 5, 'type': 'Real', 'doc': 'Z position of wedge vertex, Zv [m]'},
                 'vert_az': {
-                    'pos': 6, 'type': 'Real', 'doc': 'azimuthal angle φ of vector pointing to vertex in plane of wedge w.r.t. +ve x-axis [deg]'}, 
+                    'pos': 6, 'type': 'Real', 'doc': 'azimuthal angle φ of vector pointing to vertex in plane of wedge w.r.t. +ve x-axis [deg]'},
                 'width': {
                     'pos': 7, 'type': 'Real', 'doc': 'Total width of wedge in dispersion direction, w [m]'},
                 'height': {
