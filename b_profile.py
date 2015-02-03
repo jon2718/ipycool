@@ -20,6 +20,8 @@ def b_profile_gen():
 
     # Create Section
     s = Section()
+    rp = Refp(phmodref='const_v', bmtype=2, pz0=0.054, t0=0)
+    s.add_enclosed_command(rp)
     so_minus = Sol(model='edge', ent_def=0, ex_def=0, foc_flag=0, bs=-40)
     mat_vac = Material(geom='CBLOCK', mtag='VAC')
     sreg_minus = SRegion(zstep=0.001, nrreg=1, slen=1)

@@ -126,4 +126,4 @@ models = {
                         'pref': {
                             'pos': 3, 'type': 'Real', 'doc': '[GeV/c]'},
                         'type': {
-                            'pos': 4, 'type': 'Real', 'doc': 'Type flag.  x, y, x_prime, y_prime'}}}}                                                                     
+                            'pos': 4, 'type': 'Real', 'doc': 'Type flag.  x, y, x_prime, y_prime'}}}}                                                               
